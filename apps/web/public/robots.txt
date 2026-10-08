@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Allow: /c/*
+Allow: /q/*
+Allow: /profile/*
+Allow: /search
+Disallow: /api/*
+Disallow: /dashboard/*
+Disallow: /settings/*
+Disallow: /admin/*
+
+Sitemap: https://mquora.com/sitemap.xml
