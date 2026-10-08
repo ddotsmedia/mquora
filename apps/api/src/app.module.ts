@@ -4,9 +4,26 @@ import cookieParser from 'cookie-parser';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { CommunitiesModule } from './communities/communities.module';
+import { PostsModule } from './posts/posts.module';
+import { AnswersModule } from './answers/answers.module';
+import { CommentsModule } from './comments/comments.module';
+import { VotesModule } from './votes/votes.module';
+import { BookmarksModule } from './bookmarks/bookmarks.module';
+import { FollowsModule } from './follows/follows.module';
 
 @Module({
-  imports: [ConfigModule.forRoot(), AuthModule],
+  imports: [
+    ConfigModule.forRoot(),
+    AuthModule,
+    CommunitiesModule,
+    PostsModule,
+    AnswersModule,
+    CommentsModule,
+    VotesModule,
+    BookmarksModule,
+    FollowsModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
