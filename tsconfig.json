@@ -29,6 +29,7 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
+      "@/*": ["apps/web/src/*"],
       "@web/*": ["apps/web/src/*"],
       "@api/*": ["apps/api/src/*"],
       "@worker/*": ["apps/worker/src/*"],
@@ -41,5 +42,5 @@
     }
   },
   "include": ["apps", "packages"],
-  "exclude": ["**/node_modules", "**/dist", "**/.next"]
+  "exclude": ["**/node_modules", "**/dist", "**/.next", "**/test", "**/*.e2e-spec.ts"]
 }

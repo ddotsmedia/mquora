@@ -7,7 +7,9 @@
     "build": "nest build",
     "start": "node dist/main.js",
     "lint": "eslint src",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "jest",
+    "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
@@ -16,7 +18,16 @@
     "@nestjs/config": "^3.1.0",
     "@nestjs/jwt": "^12.0.0",
     "@nestjs/passport": "^10.0.0",
+    "@nestjs/throttler": "^5.0.0",
     "@prisma/client": "^6.0.0",
+    "class-validator": "^0.14.0",
+    "class-transformer": "^0.5.1",
+    "argon2": "^0.31.1",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "passport-google-oauth20": "^2.0.0",
+    "cookie-parser": "^1.4.6",
+    "rxjs": "^7.8.1",
     "@mquora/db": "workspace:*",
     "@mquora/types": "workspace:*",
     "@mquora/config": "workspace:*",
@@ -24,9 +35,18 @@
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.0",
+    "@nestjs/testing": "^11.0.0",
     "@types/node": "^22.0.0",
     "@types/express": "^4.17.21",
+    "@types/passport-jwt": "^3.0.11",
+    "@types/passport-google-oauth20": "^2.0.14",
+    "@types/cookie-parser": "^1.4.4",
+    "@types/jest": "^29.5.5",
     "typescript": "^5.3.3",
-    "ts-loader": "^9.5.1"
+    "ts-loader": "^9.5.1",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1",
+    "supertest": "^6.3.3",
+    "@types/supertest": "^6.0.2"
   }
 }
