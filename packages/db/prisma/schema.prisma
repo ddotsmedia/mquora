@@ -53,6 +53,21 @@ enum NotifType {
   SYSTEM
 }
 
+enum ReputationEventType {
+  POST_UPVOTED
+  POST_DOWNVOTED
+  ANSWER_UPVOTED
+  ANSWER_DOWNVOTED
+  ANSWER_ACCEPTED
+  COMMENT_UPVOTED
+}
+
+enum ReportStatus {
+  PENDING
+  UNDER_REVIEW
+  RESOLVED
+}
+
 model User {
   id                    String          @id @default(cuid())
   email                 String          @unique
@@ -62,6 +77,8 @@ model User {
   role                  UserRole        @default(USER)
   reputationScore       Int             @default(0)
   isVerified            Boolean         @default(false)
+  bannedAt              DateTime?
+  bannedUntil           DateTime?
   deletedAt             DateTime?
   createdAt             DateTime        @default(now())
   updatedAt             DateTime        @updatedAt
@@ -356,27 +373,26 @@ model Notification {
   type              NotifType
   title             String
   body              String
-  isRead            Boolean   @default(false)
-  refId             String?
-  refType           String?
+  link              String?
+  readAt            DateTime?
   createdAt         DateTime  @default(now())
 
   user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@index([isRead])
+  @@index([readAt])
   @@index([createdAt])
 }
 
 model ReputationEvent {
-  id                String    @id @default(cuid())
+  id                String              @id @default(cuid())
   userId            String
+  event             ReputationEventType
   delta             Int
-  reason            String
-  refId             String?
-  createdAt         DateTime  @default(now())
+  sourceId          String?
+  createdAt         DateTime            @default(now())
 
-  user              User      @relation(fields: [userId], references: [id])
+  user              User                @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([createdAt])
@@ -384,15 +400,14 @@ model ReputationEvent {
 
 model Badge {
   id                String    @id @default(cuid())
-  slug              String    @unique
-  name              String
+  name              String    @unique
   description       String?
-  iconUrl           String?
+  type              String    @default("CONTENT")
   createdAt         DateTime  @default(now())
 
   users             UserBadge[]
 
-  @@index([slug])
+  @@index([name])
 }
 
 model UserBadge {
@@ -410,20 +425,21 @@ model UserBadge {
 }
 
 model Report {
-  id                String    @id @default(cuid())
+  id                String        @id @default(cuid())
   reporterId        String
   targetId          String
   targetType        String
   reason            String
-  body              String?
-  status            String    @default("OPEN")
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  details           String?
+  status            ReportStatus  @default(PENDING)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
-  reporter          User      @relation("reporter", fields: [reporterId], references: [id])
-  post              Post?     @relation("report_post", fields: [targetId], references: [id], onDelete: Cascade, map: "Report_post_fkey")
-  answer            Answer?   @relation("report_answer", fields: [targetId], references: [id], onDelete: Cascade, map: "Report_answer_fkey")
-  comment           Comment?  @relation("report_comment", fields: [targetId], references: [id], onDelete: Cascade, map: "Report_comment_fkey")
+  reporter          User          @relation("reporter", fields: [reporterId], references: [id])
+  post              Post?         @relation("report_post", fields: [targetId], references: [id], onDelete: Cascade, map: "Report_post_fkey")
+  answer            Answer?       @relation("report_answer", fields: [targetId], references: [id], onDelete: Cascade, map: "Report_answer_fkey")
+  comment           Comment?      @relation("report_comment", fields: [targetId], references: [id], onDelete: Cascade, map: "Report_comment_fkey")
+  moderationLogs    ModerationLog[]
 
   @@index([reporterId])
   @@index([targetId])
@@ -432,19 +448,18 @@ model Report {
 }
 
 model ModerationLog {
-  id                String    @id @default(cuid())
+  id                String              @id @default(cuid())
   moderatorId       String
-  targetId          String
-  targetType        String
+  reportId          String
   action            ModerationAction
-  reason            String
-  createdAt         DateTime  @default(now())
+  notes             String?
+  createdAt         DateTime            @default(now())
 
-  moderator         User      @relation(fields: [moderatorId], references: [id])
+  moderator         User                @relation(fields: [moderatorId], references: [id])
+  report            Report              @relation(fields: [reportId], references: [id], onDelete: Cascade)
 
   @@index([moderatorId])
-  @@index([targetId])
-  @@index([targetType])
+  @@index([reportId])
   @@index([createdAt])
 }
 

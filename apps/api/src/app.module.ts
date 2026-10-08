@@ -11,6 +11,10 @@ import { CommentsModule } from './comments/comments.module';
 import { VotesModule } from './votes/votes.module';
 import { BookmarksModule } from './bookmarks/bookmarks.module';
 import { FollowsModule } from './follows/follows.module';
+import { ReputationModule } from './reputation/reputation.module';
+import { ModerationModule } from './moderation/moderation.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -23,6 +27,10 @@ import { FollowsModule } from './follows/follows.module';
     VotesModule,
     BookmarksModule,
     FollowsModule,
+    ReputationModule,
+    ModerationModule,
+    NotificationsModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

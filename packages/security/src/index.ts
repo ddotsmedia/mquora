@@ -16,3 +16,5 @@ export function signToken(payload: Record<string, unknown>, secret: string): str
 export function verifyToken(token: string, secret: string): Record<string, unknown> {
   return jwt.verify(token, secret) as Record<string, unknown>;
 }
+
+export { sanitizeHtml, sanitizeMalayalam } from './sanitize';

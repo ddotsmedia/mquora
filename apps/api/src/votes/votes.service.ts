@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClient, VoteType } from '@prisma/client';
+import { PrismaClient, VoteType, ReputationEventType } from '@prisma/client';
 
 @Injectable()
 export class VotesService {
@@ -15,7 +15,19 @@ export class VotesService {
     const previousDelta = existing && existing.type === 'UP' ? 1 : existing && existing.type === 'DOWN' ? -1 : 0;
     const delta = scoreDelta - previousDelta;
 
-    const repDelta = voteType === 'UP' ? 10 : -2;
+    let eventType: ReputationEventType;
+    let repDelta: number;
+
+    if (targetType === 'POST') {
+      eventType = voteType === 'UP' ? 'POST_UPVOTED' : 'POST_DOWNVOTED';
+      repDelta = voteType === 'UP' ? 10 : -2;
+    } else if (targetType === 'ANSWER') {
+      eventType = voteType === 'UP' ? 'ANSWER_UPVOTED' : 'ANSWER_DOWNVOTED';
+      repDelta = voteType === 'UP' ? 15 : -3;
+    } else {
+      eventType = voteType === 'UP' ? 'COMMENT_UPVOTED' : 'COMMENT_UPVOTED';
+      repDelta = voteType === 'UP' ? 5 : 0;
+    }
 
     const vote = await this.prisma.vote.upsert({
       where: { authorId_targetId_targetType: { authorId, targetId, targetType } },
@@ -44,8 +56,9 @@ export class VotesService {
     await this.prisma.reputationEvent.create({
       data: {
         userId: authorId,
-        delta: voteType === 'UP' ? repDelta : -repDelta,
-        reason: `VOTE_${voteType}`,
+        event: eventType,
+        delta: repDelta,
+        sourceId: targetId,
       },
     });
 

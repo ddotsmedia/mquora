@@ -66,7 +66,7 @@ export class AnswersService {
         data: { acceptedAnswerId: answerId },
       }),
       this.prisma.reputationEvent.create({
-        data: { userId: answer!.authorId, delta: 15, reason: 'ANSWER_ACCEPTED' },
+        data: { userId: answer!.authorId, event: 'ANSWER_ACCEPTED', delta: 25, sourceId: answerId },
       }),
     ]);
   }

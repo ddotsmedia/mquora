@@ -30,6 +30,7 @@
     "rxjs": "^7.8.1",
     "slug": "^5.3.0",
     "nanoid": "^3.3.6",
+    "ioredis": "^5.3.0",
     "@mquora/db": "workspace:*",
     "@mquora/types": "workspace:*",
     "@mquora/config": "workspace:*",
