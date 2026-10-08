@@ -225,6 +225,9 @@ model Post {
   bookmarks         Bookmark[]
   tags              PostTag[]
   reports           Report[]  @relation("report_post")
+  embedding         PostEmbedding?
+  sourceOf          DuplicateCandidate[] @relation("source")
+  targetOf          DuplicateCandidate[] @relation("target")
 
   @@index([authorId])
   @@index([communityId])
@@ -247,6 +250,7 @@ model Answer {
   voteScore         Int       @default(0)
   commentCount      Int       @default(0)
   isAccepted        Boolean   @default(false)
+  qualityScore      Int?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   deletedAt         DateTime?
@@ -256,6 +260,7 @@ model Answer {
   comments          Comment[]
   votes             Vote[]    @relation("answer")
   reports           Report[]  @relation("report_answer")
+  embedding         AnswerEmbedding?
 
   @@index([postId])
   @@index([authorId])
@@ -514,4 +519,45 @@ model SystemSetting {
   updatedAt         DateTime  @updatedAt
 
   @@index([key])
+}
+
+model PostEmbedding {
+  id                String    @id @default(cuid())
+  postId            String    @unique
+  embedding         Unsupported("vector(768)")?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  post              Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+}
+
+model AnswerEmbedding {
+  id                String    @id @default(cuid())
+  answerId          String    @unique
+  embedding         Unsupported("vector(768)")?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  answer            Answer    @relation(fields: [answerId], references: [id], onDelete: Cascade)
+
+  @@index([answerId])
+}
+
+model DuplicateCandidate {
+  id                String    @id @default(cuid())
+  sourcePostId      String
+  targetPostId      String
+  score             Float
+  status            String    @default("PENDING")
+  createdAt         DateTime  @default(now())
+
+  sourcePost        Post      @relation("source", fields: [sourcePostId], references: [id], onDelete: Cascade)
+  targetPost        Post      @relation("target", fields: [targetPostId], references: [id], onDelete: Cascade)
+
+  @@unique([sourcePostId, targetPostId])
+  @@index([sourcePostId])
+  @@index([targetPostId])
+  @@index([status])
 }

@@ -9,7 +9,8 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@mquora/types": "workspace:*"
+    "@mquora/types": "workspace:*",
+    "axios": "^1.6.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
