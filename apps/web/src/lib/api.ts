@@ -6,7 +6,7 @@ export class ApiError extends Error {
 }
 
 export function createApiUrl(path: string): string {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3100';
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3041';
   return `${baseUrl}${path}`;
 }
 
@@ -53,3 +53,4 @@ export async function serverApiFetch<T>(
 
   return response.json();
 }
+

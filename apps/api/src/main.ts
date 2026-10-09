@@ -18,8 +18,8 @@ async function bootstrap() {
       transform: true,
     }),
   );
-  app.setGlobalPrefix('api/v1');
 
+  app.enableCors({ origin: 'http://localhost:3040', credentials: true });
   const server = await app.listen(process.env.PORT || 3041, '0.0.0.0');
   server.setTimeout(30000);
 
