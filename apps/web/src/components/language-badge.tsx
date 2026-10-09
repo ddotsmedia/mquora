@@ -4,13 +4,13 @@ interface LanguageBadgeProps {
 
 export function LanguageBadge({ language }: LanguageBadgeProps) {
   const badges: Record<string, { text: string; className: string }> = {
-    MALAYALAM: { text: 'മലയാളം', className: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' },
-    MANGLISH: { text: 'Manglish', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100' },
-    ENGLISH: { text: 'English', className: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100' },
-    MIXED: { text: 'Mixed', className: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100' },
+    MALAYALAM: { text: 'മലയാളം', className: 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-100 border border-emerald-200 dark:border-emerald-800' },
+    MANGLISH: { text: 'Manglish', className: 'bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-100 border border-orange-200 dark:border-orange-800' },
+    ENGLISH: { text: 'English', className: 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-100 border border-blue-200 dark:border-blue-800' },
+    MIXED: { text: 'Mixed', className: 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-100 border border-purple-200 dark:border-purple-800' },
   };
 
   const badge = badges[language] || badges.ENGLISH;
 
-  return <span className={`text-xs px-2 py-1 rounded ${badge.className}`}>{badge.text}</span>;
+  return <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${badge.className}`}>{badge.text}</span>;
 }

@@ -20,10 +20,10 @@ async function bootstrap() {
   );
   app.setGlobalPrefix('api/v1');
 
-  const server = await app.listen(process.env.API_PORT || 3100, '0.0.0.0');
+  const server = await app.listen(process.env.PORT || 3041, '0.0.0.0');
   server.setTimeout(30000);
 
-  console.log(`API listening on port ${process.env.API_PORT || 3100}`);
+  console.log(`API listening on port ${process.env.PORT || 3041}`);
 }
 
 bootstrap();

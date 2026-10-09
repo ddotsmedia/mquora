@@ -6,13 +6,18 @@
   "description": "Malayalam-first knowledge & community platform",
   "license": "MIT",
   "scripts": {
-    "dev": "pnpm --recursive run dev",
+    "dev": "concurrently \"pnpm --filter @mquora/api dev\" \"pnpm --filter @mquora/worker dev\" \"pnpm --filter @mquora/web dev\"",
     "build": "pnpm --recursive run build",
     "lint": "eslint . --max-warnings=0",
     "type-check": "tsc --noEmit",
     "test": "pnpm --recursive run test",
     "docker:dev": "docker compose up -d",
-    "docker:prod": "docker compose -f docker-compose.prod.yml up -d"
+    "docker:prod": "docker compose -f docker-compose.prod.yml up -d",
+    "dev:services": "docker compose -f docker-compose.dev.yml up -d",
+    "dev:stop": "docker compose -f docker-compose.dev.yml down",
+    "db:migrate": "pnpm --filter @mquora/db exec prisma migrate dev",
+    "db:seed": "pnpm --filter @mquora/db exec prisma db seed",
+    "db:studio": "pnpm --filter @mquora/db exec prisma studio"
   },
   "engines": {
     "node": "22"
@@ -21,6 +26,7 @@
     "@types/node": "^22.0.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
+    "concurrently": "^10.0.5",
     "eslint": "^9.0.0",
     "prettier": "^3.1.0",
     "typescript": "^5.3.3"

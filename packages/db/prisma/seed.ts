@@ -264,27 +264,28 @@ async function main() {
     }
 
     // Create 3 upvotes per post from admin
-    for (let i = 0; i < 3; i++) {
-      const voter = i === 0 ? adminUser : users[i % users.length];
-      await prisma.vote.create({
-        data: {
-          authorId: voter.id,
-          targetId: post.id,
-          targetType: 'post',
-          type: 'UP',
-        },
-      });
+    // NOTE: Temporarily disabled due to Postgres polymorphic FK constraint
+    // for (let i = 0; i < 3; i++) {
+    //   const voter = i === 0 ? adminUser : users[i % users.length];
+    //   await prisma.vote.create({
+    //     data: {
+    //       authorId: voter.id,
+    //       targetId: post.id,
+    //       targetType: 'post',
+    //       type: 'UP',
+    //     },
+    //   });
 
-      // Create reputation event for upvote
-      await prisma.reputationEvent.create({
-        data: {
-          userId: post.author.id,
-          event: 'POST_UPVOTED',
-          delta: 1,
-          sourceId: post.id,
-        },
-      });
-    }
+    //   // Create reputation event for upvote
+    //   await prisma.reputationEvent.create({
+    //     data: {
+    //       userId: post.author.id,
+    //       event: 'POST_UPVOTED',
+    //       delta: 1,
+    //       sourceId: post.id,
+    //     },
+    //   });
+    // }
 
     // Update post vote score
     await prisma.post.update({

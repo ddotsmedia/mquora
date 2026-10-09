@@ -21,7 +21,9 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "argon2": "^0.45.1",
     "prisma": "^6.0.0",
+    "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
   }
 }
