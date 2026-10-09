@@ -1,110 +1,75 @@
-version: '3.8'
+# Production stack for the VPS. Images are built on GitHub Actions and pulled here.
+# Host ports are fixed per the VPS port plan: web 3022, api 3024, worker 3023.
+# Postgres and Redis are private to this project's network; they are not published.
+name: mquora
 
 services:
   web:
-    image: ghcr.io/${GITHUB_REPOSITORY}/web:${IMAGE_TAG:-latest}
+    image: ghcr.io/${GITHUB_REPOSITORY}/web:${IMAGE_TAG}
     ports:
       - '3022:3000'
-    networks:
-      - mquora_net
     environment:
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
       - NEXTAUTH_URL=${NEXTAUTH_URL}
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+    networks: [mquora_net]
     deploy:
       resources:
-        limits:
-          memory: 512m
-          cpus: '0.5'
-    healthcheck:
-      test: ['CMD', 'wget', '-qO-', 'http://localhost:3000/api/health']
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
+        limits: {memory: 512m, cpus: '0.5'}
     restart: unless-stopped
 
   api:
-    image: ghcr.io/${GITHUB_REPOSITORY}/api:${IMAGE_TAG:-latest}
-    expose:
-      - '3100'
-    networks:
-      - mquora_net
+    image: ghcr.io/${GITHUB_REPOSITORY}/api:${IMAGE_TAG}
+    ports:
+      - '3024:3100'
     environment:
+      - PORT=3100
       - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=${REDIS_URL}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
       - JWT_SECRET=${JWT_SECRET}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
       - AI_GATEWAY_URL=${AI_GATEWAY_URL}
       - WORKER_HOST=worker
+    networks: [mquora_net]
     deploy:
       resources:
-        limits:
-          memory: 512m
-          cpus: '0.5'
-    healthcheck:
-      test: ['CMD', 'wget', '-qO-', 'http://localhost:3100/health']
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-    depends_on:
-      - postgres
-      - redis
+        limits: {memory: 512m, cpus: '0.5'}
+    depends_on: [postgres, redis]
     restart: unless-stopped
 
   worker:
-    image: ghcr.io/${GITHUB_REPOSITORY}/worker:${IMAGE_TAG:-latest}
-    expose:
-      - '3023'
-    networks:
-      - mquora_net
+    image: ghcr.io/${GITHUB_REPOSITORY}/worker:${IMAGE_TAG}
     environment:
+      - PORT=3023
       - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=${REDIS_URL}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
       - AI_GATEWAY_URL=${AI_GATEWAY_URL}
+    networks: [mquora_net]
     deploy:
       resources:
-        limits:
-          memory: 1g
-          cpus: '1.0'
-    healthcheck:
-      test: ['CMD', 'wget', '-qO-', 'http://localhost:3023/health']
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-    depends_on:
-      - postgres
-      - redis
+        limits: {memory: 1g, cpus: '1.0'}
+    depends_on: [postgres, redis]
     restart: unless-stopped
 
   postgres:
     image: pgvector/pgvector:pg16
-    volumes:
-      - mquora_postgres:/var/lib/postgresql/data
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-    networks:
-      - mquora_net
-    deploy:
-      resources:
-        limits:
-          memory: 2g
+    volumes:
+      - mquora_postgres:/var/lib/postgresql/data
+    networks: [mquora_net]
     healthcheck:
-      test: ['CMD', 'pg_isready', '-U', '${POSTGRES_USER}']
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+    deploy:
+      resources:
+        limits: {memory: 2g}
     restart: unless-stopped
 
   redis:
@@ -112,12 +77,10 @@ services:
     command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --save ""
     volumes:
       - mquora_redis:/data
-    networks:
-      - mquora_net
+    networks: [mquora_net]
     deploy:
       resources:
-        limits:
-          memory: 256m
+        limits: {memory: 256m}
     restart: unless-stopped
 
 volumes:
@@ -126,4 +89,5 @@ volumes:
 
 networks:
   mquora_net:
+    name: mquora_net
     driver: bridge
