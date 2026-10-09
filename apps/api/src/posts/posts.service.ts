@@ -1,4 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
 import { PrismaClient } from '@prisma/client';
 import { LanguageService } from '../shared/language.service';
 import slug from 'slug';
@@ -9,7 +11,11 @@ export class PostsService {
   private prisma = new PrismaClient();
   private nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 10);
 
-  constructor(private languageService: LanguageService) {}
+  constructor(
+    private languageService: LanguageService,
+    @InjectQueue('generate-embedding') private embeddingQueue: Queue,
+    @InjectQueue('duplicate-detection') private duplicateQueue: Queue,
+  ) {}
 
   async create(dto: Record<string, unknown>, authorId: string) {
     const { body, title, type, communityId, tags } = dto;
@@ -41,6 +47,15 @@ export class PostsService {
         await this.prisma.postTag.create({ data: { postId: post.id, tagId: tag.id } });
       }
     }
+
+    await this.embeddingQueue.add(
+      { type: 'POST', id: post.id, text: `${title} ${body}` },
+      { removeOnComplete: true, removeOnFail: false },
+    );
+    await this.duplicateQueue.add(
+      { postId: post.id },
+      { removeOnComplete: true, removeOnFail: false, delay: 5000 },
+    );
 
     return post;
   }
@@ -141,5 +156,38 @@ export class PostsService {
       data: { deletedAt: new Date(), status: 'DELETED' },
       select: { id: true },
     });
+  }
+
+  async getSimilarPosts(postId: string, limit = 5) {
+    const candidates = await this.prisma.duplicateCandidate.findMany({
+      where: { sourcePostId: postId, status: 'PENDING' },
+      orderBy: { score: 'desc' },
+      take: limit,
+      select: { targetPostId: true, score: true },
+    });
+
+    if (!candidates.length) return [];
+
+    const posts = await this.prisma.post.findMany({
+      where: { id: { in: candidates.map((c) => c.targetPostId) }, deletedAt: null },
+      select: {
+        id: true,
+        seoSlug: true,
+        title: true,
+        body: true,
+        language: true,
+        voteScore: true,
+        answerCount: true,
+        viewCount: true,
+        createdAt: true,
+        author: { select: { id: true, username: true, displayName: true } },
+        community: { select: { id: true, slug: true, name: true } },
+      },
+    });
+
+    return posts.map((p) => ({
+      ...p,
+      similarity: candidates.find((c) => c.targetPostId === p.id)?.score || 0,
+    }));
   }
 }

@@ -1,4 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
 import { PrismaClient } from '@prisma/client';
 import { LanguageService } from '../shared/language.service';
 
@@ -6,7 +8,11 @@ import { LanguageService } from '../shared/language.service';
 export class AnswersService {
   private prisma = new PrismaClient();
 
-  constructor(private languageService: LanguageService) {}
+  constructor(
+    private languageService: LanguageService,
+    @InjectQueue('generate-embedding') private embeddingQueue: Queue,
+    @InjectQueue('answer-quality') private qualityQueue: Queue,
+  ) {}
 
   async create(postId: string, dto: Record<string, unknown>, authorId: string) {
     const { body } = dto;
@@ -22,6 +28,15 @@ export class AnswersService {
         data: { answerCount: { increment: 1 } },
       }),
     ]);
+
+    await this.embeddingQueue.add(
+      { type: 'ANSWER', id: answer.id, text: body as string },
+      { removeOnComplete: true, removeOnFail: false },
+    );
+    await this.qualityQueue.add(
+      { answerId: answer.id },
+      { removeOnComplete: true, removeOnFail: false, delay: 2000 },
+    );
 
     return answer;
   }

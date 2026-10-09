@@ -36,6 +36,9 @@ services:
       NODE_ENV: production
       DATABASE_URL: postgresql://mquora:${DB_PASSWORD}@postgres:5432/mquora
       REDIS_URL: redis://redis:6379
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      AI_GATEWAY_URL: ${AI_GATEWAY_URL:-http://ai-gateway:8000}
       API_PORT: 3100
       JWT_SECRET: ${JWT_SECRET}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
@@ -68,6 +71,9 @@ services:
       NODE_ENV: production
       DATABASE_URL: postgresql://mquora:${DB_PASSWORD}@postgres:5432/mquora
       REDIS_URL: redis://redis:6379
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      AI_GATEWAY_URL: ${AI_GATEWAY_URL:-http://ai-gateway:8000}
       WORKER_PORT: 3023
     networks:
       - mquora_net

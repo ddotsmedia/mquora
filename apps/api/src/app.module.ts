@@ -1,5 +1,6 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { BullModule } from '@nestjs/bull';
 import cookieParser from 'cookie-parser';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -15,10 +16,22 @@ import { ReputationModule } from './reputation/reputation.module';
 import { ModerationModule } from './moderation/moderation.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { AdminModule } from './admin/admin.module';
+import { SearchModule } from './search/search.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
+    BullModule.forRoot({
+      redis: {
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT || '6379'),
+      },
+    }),
+    BullModule.registerQueue(
+      { name: 'generate-embedding' },
+      { name: 'duplicate-detection' },
+      { name: 'answer-quality' },
+    ),
     AuthModule,
     CommunitiesModule,
     PostsModule,
@@ -31,6 +44,7 @@ import { AdminModule } from './admin/admin.module';
     ModerationModule,
     NotificationsModule,
     AdminModule,
+    SearchModule,
   ],
   controllers: [AppController],
   providers: [AppService],
