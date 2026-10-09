@@ -1,6 +1,5 @@
 import { ReactNode } from 'react';
 import { Metadata } from 'next';
-import { auth } from '@/auth';
 import { sansFont, malayalamFont } from '@/lib/fonts';
 import { Navbar } from '@/components/navbar';
 import { Toaster } from 'sonner';
@@ -18,14 +17,12 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({ children }: { children: ReactNode }) {
-  const session = await auth();
-
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head />
       <body className={`${sansFont.variable} ${malayalamFont.variable} font-sans bg-[var(--bg)] text-[var(--text)] min-h-screen`}>
-        <SessionProvider session={session}>
+        <SessionProvider>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <Navbar />
             <main>{children}</main>
