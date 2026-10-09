@@ -2,6 +2,7 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "dist",
+    "rootDir": "../../",
     "module": "ES2022",
     "moduleResolution": "bundler",
     "lib": ["ES2020"],
@@ -9,11 +10,10 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "baseUrl": "../../",
     "paths": {
-      "@api/*": ["apps/api/src/*"],
-      "@ai": ["packages/ai/src"],
-      "@ai/*": ["packages/ai/src/*"]
+      "@api/*": ["./apps/api/src/*"],
+      "@ai": ["./packages/ai/src"],
+      "@ai/*": ["./packages/ai/src/*"]
     }
   },
   "include": ["src"],

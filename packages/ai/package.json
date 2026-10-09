@@ -10,10 +10,10 @@
   },
   "dependencies": {
     "@mquora/types": "workspace:*",
-    "axios": "^1.6.0"
+    "axios": "^1.20.0"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "typescript": "^5.3.3"
+    "@types/node": "^26.6.4",
+    "typescript": "^7.0.2"
   }
 }

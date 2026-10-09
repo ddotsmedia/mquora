@@ -10,24 +10,24 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@nestjs/common": "^11.0.0",
-    "@nestjs/core": "^11.0.0",
-    "@nestjs/config": "^3.1.0",
-    "@nestjs/bull": "^11.0.0",
-    "bull": "^4.11.4",
-    "@prisma/client": "^6.0.0",
-    "redis": "^4.6.11",
-    "ioredis": "^5.3.0",
-    "@mquora/db": "workspace:*",
-    "@mquora/types": "workspace:*",
-    "@mquora/config": "workspace:*",
     "@mquora/ai": "workspace:*",
-    "@mquora/security": "workspace:*"
+    "@mquora/config": "workspace:*",
+    "@mquora/db": "workspace:*",
+    "@mquora/security": "workspace:*",
+    "@mquora/types": "workspace:*",
+    "@nestjs/bull": "^12.0.0",
+    "@nestjs/common": "^12.1.2",
+    "@nestjs/config": "^12.0.1",
+    "@nestjs/core": "^12.1.2",
+    "@prisma/client": "^5.17.0",
+    "bull": "^4.16.5",
+    "ioredis": "^6.0.0",
+    "redis": "^6.3.0"
   },
   "devDependencies": {
-    "@nestjs/cli": "^11.0.0",
-    "@types/node": "^22.0.0",
-    "typescript": "^5.3.3",
-    "ts-loader": "^9.5.1"
+    "@nestjs/cli": "^12.0.8",
+    "@types/node": "^26.6.4",
+    "ts-loader": "^9.6.2",
+    "typescript": "^6.0.3"
   }
 }

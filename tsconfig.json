@@ -27,18 +27,17 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["apps/web/src/*"],
-      "@web/*": ["apps/web/src/*"],
-      "@api/*": ["apps/api/src/*"],
-      "@worker/*": ["apps/worker/src/*"],
-      "@db/*": ["packages/db/*"],
-      "@types/*": ["packages/types/*"],
-      "@config/*": ["packages/config/*"],
-      "@ui/*": ["packages/ui/*"],
-      "@ai/*": ["packages/ai/*"],
-      "@security/*": ["packages/security/*"]
+      "@/*": ["./apps/web/src/*"],
+      "@web/*": ["./apps/web/src/*"],
+      "@api/*": ["./apps/api/src/*"],
+      "@worker/*": ["./apps/worker/src/*"],
+      "@db/*": ["./packages/db/*"],
+      "@types/*": ["./packages/types/*"],
+      "@config/*": ["./packages/config/*"],
+      "@ui/*": ["./packages/ui/*"],
+      "@ai/*": ["./packages/ai/*"],
+      "@security/*": ["./packages/security/*"]
     }
   },
   "include": ["apps", "packages"],
