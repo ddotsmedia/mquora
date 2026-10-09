@@ -24,6 +24,6 @@
     "argon2": "^0.45.1",
     "prisma": "^5.17.0",
     "ts-node": "^10.9.2",
-    "typescript": "6.0.0-beta"
+    "typescript": "^6.0.3"
   }
 }

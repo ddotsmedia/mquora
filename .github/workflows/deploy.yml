@@ -2,43 +2,42 @@ name: CI/CD
 
 on:
   push:
-    branches: [main, master]
+    branches: [main]
   pull_request:
-    branches: [main, master]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-mquora
+  cancel-in-progress: false
 
 env:
-  REGISTRY: ghcr.io
   IMAGE_PREFIX: ghcr.io/${{ github.repository }}
 
 jobs:
-  lint-typecheck:
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: pnpm/action-setup@v4
         with:
-          version: 9
-
+          version: 10.28.0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
-
       - run: pnpm install --frozen-lockfile
-
-      - name: Type check API
-        run: pnpm --filter @mquora/api typecheck
-
-      - name: Type check Web
-        run: pnpm --filter @mquora/web typecheck
-
-      - name: Type check Worker
-        run: pnpm --filter @mquora/worker typecheck
+      - name: Prisma client
+        run: pnpm --filter @mquora/db exec prisma generate
+      - name: Type check
+        run: |
+          pnpm --filter @mquora/api type-check
+          pnpm --filter @mquora/worker type-check
+          pnpm --filter @mquora/web type-check
 
   build-push:
-    needs: lint-typecheck
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    needs: check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -48,47 +47,81 @@ jobs:
         service: [web, api, worker]
     steps:
       - uses: actions/checkout@v4
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push ${{ matrix.service }}
-        uses: docker/build-push-action@v5
+      - uses: docker/build-push-action@v6
         with:
           context: .
           file: apps/${{ matrix.service }}/Dockerfile
           push: true
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
           tags: |
             ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:${{ github.sha }}
             ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:latest
-          cache-from: type=registry,ref=${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:buildcache
-          cache-to: type=registry,ref=${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:buildcache,mode=max
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
 
   deploy:
     needs: build-push
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    environment: production
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy to VPS
+      - name: Build production env file (kept out of git)
+        env:
+          PROD_ENV: ${{ secrets.PROD_ENV }}
+        run: |
+          mkdir -p .deploy
+          printf '%s\n' "$PROD_ENV" > .deploy/prod.env
+          printf 'GITHUB_REPOSITORY=%s\nIMAGE_TAG=%s\n' "$GITHUB_REPOSITORY" "$GITHUB_SHA" >> .deploy/prod.env
+          chmod 600 .deploy/prod.env
+
+      - name: Prepare VPS directory
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: GHCR_TOKEN,GITHUB_ACTOR,IMAGE_TAG
-          script: |
-            export GHCR_TOKEN=${{ secrets.GITHUB_TOKEN }}
-            export GITHUB_ACTOR=${{ github.actor }}
-            export IMAGE_TAG=${{ github.sha }}
-            bash /opt/mquora/scripts/deploy.sh
+          port: ${{ secrets.VPS_PORT || 22 }}
+          script: mkdir -p /opt/mquora/scripts
 
-      - name: Health check
+      - name: Copy compose file, deploy script and env to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          source: 'docker-compose.prod.yml,scripts/deploy.sh,.deploy/prod.env'
+          target: /opt/mquora
+          strip_components: 0
+
+      - name: Deploy on VPS (pull images only, no builds)
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          envs: GITHUB_ACTOR,GHCR_TOKEN
+          script_stop: true
+          script: |
+            export GITHUB_ACTOR GHCR_TOKEN
+            bash /opt/mquora/scripts/deploy.sh
+        env:
+          GHCR_TOKEN: ${{ secrets.GHCR_PULL_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Smoke test (API and web)
         run: |
-          sleep 15
-          curl -f http://${{ secrets.VPS_HOST }}:3022/api/health || exit 1
+          sleep 20
+          curl -fsS --max-time 15 "http://${{ secrets.VPS_HOST }}:3024/health"
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "http://${{ secrets.VPS_HOST }}:3022/")
+          echo "web status: $code"
+          [ "$code" -lt 500 ]

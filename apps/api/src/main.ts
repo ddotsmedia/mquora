@@ -19,7 +19,11 @@ async function bootstrap() {
     }),
   );
 
-  app.enableCors({ origin: 'http://localhost:3040', credentials: true });
+  const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3040')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+  app.enableCors({ origin: allowedOrigins, credentials: true });
   const server = await app.listen(process.env.PORT || 3041, '0.0.0.0');
   server.setTimeout(30000);
 
