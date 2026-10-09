@@ -34,7 +34,8 @@
     "@mquora/db": "workspace:*",
     "@mquora/types": "workspace:*",
     "@mquora/config": "workspace:*",
-    "@mquora/security": "workspace:*"
+    "@mquora/security": "workspace:*",
+    "@mquora/ai": "workspace:*"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.0",

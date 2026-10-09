@@ -17,6 +17,7 @@
     "bull": "^4.11.4",
     "@prisma/client": "^6.0.0",
     "redis": "^4.6.11",
+    "ioredis": "^5.3.0",
     "@mquora/db": "workspace:*",
     "@mquora/types": "workspace:*",
     "@mquora/config": "workspace:*",

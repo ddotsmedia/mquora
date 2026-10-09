@@ -2,16 +2,18 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "dist",
-    "module": "commonjs",
-    "moduleResolution": "node",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
     "lib": ["ES2020"],
     "jsx": "react",
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "baseUrl": ".",
+    "baseUrl": "../../",
     "paths": {
-      "@worker/*": ["src/*"]
+      "@worker/*": ["apps/worker/src/*"],
+      "@ai": ["packages/ai/src"],
+      "@ai/*": ["packages/ai/src/*"]
     }
   },
   "include": ["src"],
