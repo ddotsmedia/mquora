@@ -9,11 +9,12 @@
     "type-check": "tsc --noEmit",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
-    "db:seed": "node -r esbuild-register src/seed.ts",
+    "db:seed": "node -r esbuild-register prisma/seed.ts",
+    "seed": "ts-node --transpile-only prisma/seed.ts",
     "db:studio": "prisma studio"
   },
   "prisma": {
-    "seed": "ts-node src/seed.ts"
+    "seed": "ts-node --transpile-only prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.0.0"

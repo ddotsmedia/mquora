@@ -1,6 +1,7 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { BullModule } from '@nestjs/bull';
+import { ThrottlerModule } from '@nestjs/throttler';
 import cookieParser from 'cookie-parser';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -17,10 +18,18 @@ import { ModerationModule } from './moderation/moderation.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { AdminModule } from './admin/admin.module';
 import { SearchModule } from './search/search.module';
+import { HealthModule } from './health/health.module';
+import { MetricsModule } from './metrics/metrics.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 100,
+      },
+    ]),
     BullModule.forRoot({
       redis: {
         host: process.env.REDIS_HOST || 'localhost',
@@ -45,6 +54,8 @@ import { SearchModule } from './search/search.module';
     NotificationsModule,
     AdminModule,
     SearchModule,
+    HealthModule,
+    MetricsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
