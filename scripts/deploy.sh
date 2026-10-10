@@ -23,7 +23,7 @@ for i in $(seq 1 30); do
 done
 
 echo "Applying database migrations..."
-$COMPOSE run --rm --no-deps api sh -c 'npx --no-install prisma migrate deploy --schema=packages/db/prisma/schema.prisma'
+$COMPOSE run --rm --no-deps api sh -c 'pnpm --filter @mquora/db exec prisma migrate deploy --schema=prisma/schema.prisma'
 
 echo "Starting application services..."
 $COMPOSE up -d --remove-orphans web api worker
