@@ -18,15 +18,15 @@ export default function RegisterPage() {
     setError('');
 
     try {
-      const res = await fetch('/api/v1/auth/register', {
+      const res = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, displayName, username }),
       });
 
       if (!res.ok) {
-        const data = await res.json();
-        setError(data.message || 'Registration failed');
+        const data = await res.json().catch(() => ({}));
+        setError(Array.isArray(data.message) ? data.message.join(', ') : data.message || 'Registration failed');
         return;
       }
 
