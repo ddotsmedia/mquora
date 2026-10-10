@@ -1,130 +1,74 @@
-'use client';
+import Link from 'next/link';
+import { adminFetch } from '@/lib/admin-server';
+import { Badge, DataTable, EmptyState, PageHeader, Panel, formatDate } from '@/components/admin/ui';
+import Pagination from '@/components/admin/Pagination';
+import SearchInput from '@/components/admin/SearchInput';
+import FilterSelect from '@/components/admin/FilterSelect';
 
-import { useEffect, useState } from 'react';
-import { adminApi } from '@/lib/admin-api';
-import { Ban, Check } from 'lucide-react';
+type UserRow = {
+  id: string;
+  username: string;
+  displayName: string;
+  email: string;
+  role: string;
+  status: string;
+  reputationScore: number;
+  createdAt: string;
+};
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export default function UsersPage() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [users, setUsers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'active' | 'banned' | 'expert'>('all');
+const LIMIT = 20;
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      setLoading(true);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const data = (await adminApi.getUsers(filter === 'all' ? undefined : filter)) as any;
-      setUsers((data && data.data) || []);
-      setLoading(false);
-    };
-    fetchUsers();
-  }, [filter]);
-
-  const handleBan = async (userId: string) => {
-    const reason = prompt('Ban reason:');
-    if (reason) {
-      await adminApi.banUser(userId, reason);
-      setUsers(users.filter(u => u.id !== userId));
-    }
-  };
-
-  const handleUnban = async (userId: string) => {
-    await adminApi.unbanUser(userId);
-    setUsers(users.map(u => (u.id === userId ? { ...u, bannedAt: null } : u)));
-  };
+export default async function UsersPage({ searchParams }: { searchParams: Promise<{ q?: string; role?: string; page?: string }> }) {
+  const sp = await searchParams;
+  const page = Math.max(1, Number(sp.page) || 1);
+  const res = await adminFetch<{ data: UserRow[]; total: number }>('/users', {
+    query: { q: sp.q, role: sp.role, page, limit: LIMIT },
+  });
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-[var(--text)]">Users</h2>
-      </div>
+      <PageHeader title="Users" description="Search, review and moderate accounts." />
+      <Panel>
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <SearchInput placeholder="Search name, username or email…" />
+          <FilterSelect
+            name="role"
+            label="Role"
+            options={[
+              { value: '', label: 'All roles' },
+              { value: 'USER', label: 'User' },
+              { value: 'TRUSTED_CONTRIBUTOR', label: 'Trusted contributor' },
+              { value: 'VERIFIED_EXPERT', label: 'Verified expert' },
+              { value: 'COMMUNITY_MODERATOR', label: 'Community moderator' },
+              { value: 'ADMIN', label: 'Admin' },
+            ]}
+          />
+        </div>
 
-      {/* Filters */}
-      <div className="flex gap-2">
-        {['all', 'active', 'banned', 'expert'].map(f => (
-          <button
-            key={f}
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            onClick={() => setFilter(f as any)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              filter === f
-                ? 'bg-[var(--primary)] text-white'
-                : 'bg-[var(--surface-2)] text-[var(--text-secondary)] hover:bg-[var(--border)]'
-            }`}
-          >
-            {f.charAt(0).toUpperCase() + f.slice(1)}
-          </button>
-        ))}
-      </div>
-
-      {/* Table */}
-      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl overflow-hidden">
-        {loading ? (
-          <div className="p-6 text-center text-[var(--text-muted)]">Loading...</div>
+        {res.data.length ? (
+          <DataTable head={['User', 'Role', 'Status', 'Reputation', 'Joined', '']}>
+            {res.data.map((u) => (
+              <tr key={u.id} className="hover:bg-[var(--surface-2)]/60">
+                <td className="px-3 py-3">
+                  <p className="font-medium">{u.displayName}</p>
+                  <p className="text-xs text-[var(--text-muted)]">@{u.username} · {u.email}</p>
+                </td>
+                <td className="px-3 py-3"><Badge value={u.role} /></td>
+                <td className="px-3 py-3"><Badge value={u.status} /></td>
+                <td className="px-3 py-3 tabular-nums">{u.reputationScore}</td>
+                <td className="px-3 py-3 text-[var(--text-secondary)]">{formatDate(u.createdAt)}</td>
+                <td className="px-3 py-3 text-right">
+                  <Link href={`/admin/users/${u.id}`} className="text-[var(--accent)] hover:underline">Open →</Link>
+                </td>
+              </tr>
+            ))}
+          </DataTable>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-[var(--surface-2)] border-b border-[var(--border)]">
-                <tr>
-                  <th className="text-left py-3 px-4">Username</th>
-                  <th className="text-left py-3 px-4">Email</th>
-                  <th className="text-left py-3 px-4">Role</th>
-                  <th className="text-left py-3 px-4">Reputation</th>
-                  <th className="text-left py-3 px-4">Status</th>
-                  <th className="text-right py-3 px-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--border)]">
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                {users.map((user: any) => (
-                  <tr key={user.id} className="hover:bg-[var(--surface-2)] transition-colors">
-                    <td className="py-3 px-4 font-medium">{user.username}</td>
-                    <td className="py-3 px-4 text-[var(--text-secondary)]">{user.email}</td>
-                    <td className="py-3 px-4">
-                      <span className="text-xs px-2 py-1 rounded-full bg-[var(--primary)]/10 text-[var(--primary)]">
-                        {user.role}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">{user.reputationScore}</td>
-                    <td className="py-3 px-4">
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        user.bannedAt
-                          ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                          : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                      }`}>
-                        {user.bannedAt ? 'Banned' : 'Active'}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <div className="flex justify-end gap-2">
-                        {user.bannedAt ? (
-                          <button
-                            onClick={() => handleUnban(user.id)}
-                            className="p-1.5 hover:bg-green-100 dark:hover:bg-green-900/20 rounded transition-colors"
-                            title="Unban"
-                          >
-                            <Check className="w-4 h-4 text-green-600" />
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handleBan(user.id)}
-                            className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/20 rounded transition-colors"
-                            title="Ban"
-                          >
-                            <Ban className="w-4 h-4 text-red-600" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <EmptyState title="No users match" description="Try a different search or role filter." />
         )}
-      </div>
+
+        <Pagination basePath="/admin/users" params={{ q: sp.q, role: sp.role }} page={page} limit={LIMIT} total={res.total} />
+      </Panel>
     </div>
   );
 }

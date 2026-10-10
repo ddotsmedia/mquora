@@ -1,112 +1,123 @@
-import { Controller, Get, Post, Body, Param, Query, UseGuards, Delete } from '@nestjs/common';
-import { UserRole, ReportStatus } from '@prisma/client';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { UserRole } from '@prisma/client';
+import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { AdminGuard } from '../guards/admin.guard';
-import { AdminService } from './admin.service';
-
-interface ChangeRoleDto {
-  role: UserRole;
-}
-
-interface SetFlagDto {
-  key: string;
-  enabled: boolean;
-}
+import { AdminService, Actor } from './admin.service';
+import {
+  AuditQueryDto,
+  BanDto,
+  ContentQueryDto,
+  DaysQueryDto,
+  FlagDto,
+  PageQueryDto,
+  ReportsQueryDto,
+  ResolveDto,
+  RoleDto,
+  UsersQueryDto,
+} from './admin.dto';
 
 @Controller('api/v1/admin')
-@UseGuards(AdminGuard)
+@UseGuards(JwtAuthGuard, AdminGuard)
 export class AdminController {
-  constructor(private adminService: AdminService) {}
+  constructor(private readonly admin: AdminService) {}
+
+  private actor(req: { user: Actor }): Actor {
+    return { id: req.user.id, role: req.user.role };
+  }
 
   @Get('stats')
-  async getStats() {
-    return this.adminService.getStats();
+  getStats() {
+    return this.admin.getStats();
+  }
+
+  @Get('timeseries')
+  getTimeseries(@Query() q: DaysQueryDto) {
+    return this.admin.getTimeseries(q.days);
   }
 
   @Get('users')
-  async getUsers(@Query('cursor') cursor?: string, @Query('limit') limit?: string) {
-    return this.adminService.getUsers(cursor, limit ? parseInt(limit, 10) : 20);
+  getUsers(@Query() q: UsersQueryDto) {
+    return this.admin.getUsers({ q: q.q, role: q.role, page: q.page, limit: q.limit });
+  }
+
+  @Get('users/:id')
+  getUser(@Param('id') id: string) {
+    return this.admin.getUserDetail(id);
   }
 
   @Post('users/:id/ban')
-  async banUser(@Param('id') id: string) {
-    return this.adminService.banUser(id);
+  banUser(@Req() req: { user: Actor }, @Param('id') id: string, @Body() dto: BanDto) {
+    return this.admin.banUser(this.actor(req), id, dto.days);
   }
 
   @Post('users/:id/unban')
-  async unbanUser(@Param('id') id: string) {
-    return this.adminService.unbanUser(id);
+  unbanUser(@Req() req: { user: Actor }, @Param('id') id: string) {
+    return this.admin.unbanUser(this.actor(req), id);
   }
 
   @Post('users/:id/role')
-  async changeUserRole(@Param('id') id: string, @Body() dto: ChangeRoleDto) {
-    return this.adminService.changeUserRole(id, dto.role);
+  changeUserRole(@Req() req: { user: Actor }, @Param('id') id: string, @Body() dto: RoleDto) {
+    return this.admin.changeUserRole(this.actor(req), id, dto.role as UserRole);
+  }
+
+  @Get('content')
+  getContent(@Query() q: ContentQueryDto) {
+    return this.admin.getContent({ filter: q.filter, status: q.status, q: q.q, page: q.page, limit: q.limit });
+  }
+
+  @Post('content/:id/remove')
+  removeContent(@Req() req: { user: Actor }, @Param('id') id: string) {
+    return this.admin.setPostStatus(this.actor(req), id, 'REMOVED');
+  }
+
+  @Post('content/:id/restore')
+  restoreContent(@Req() req: { user: Actor }, @Param('id') id: string) {
+    return this.admin.setPostStatus(this.actor(req), id, 'PUBLISHED');
+  }
+
+  @Delete('content/:id')
+  deleteContent(@Req() req: { user: Actor }, @Param('id') id: string) {
+    return this.admin.setPostStatus(this.actor(req), id, 'REMOVED');
+  }
+
+  @Get('reports')
+  getReports(@Query() q: ReportsQueryDto) {
+    return this.admin.getReports({ status: q.status, page: q.page, limit: q.limit });
+  }
+
+  @Post('reports/:id/resolve')
+  resolveReport(@Req() req: { user: Actor }, @Param('id') id: string, @Body() dto: ResolveDto) {
+    return this.admin.resolveReport(this.actor(req), id, dto.action);
+  }
+
+  @Get('communities')
+  getCommunities(@Query() q: PageQueryDto) {
+    return this.admin.getCommunities({ page: q.page, limit: q.limit });
   }
 
   @Get('audit-log')
-  async getAuditLog(@Query('cursor') cursor?: string, @Query('limit') limit?: string) {
-    return this.adminService.getAuditLog(cursor, limit ? parseInt(limit, 10) : 20);
+  getAuditLog(@Query() q: AuditQueryDto) {
+    return this.admin.getAuditLog({ action: q.action, page: q.page, limit: q.limit });
   }
 
   @Get('queues')
-  async getQueues() {
-    return this.adminService.getQueueStats();
+  getQueues() {
+    return this.admin.getQueueStats();
   }
 
   @Get('flags')
-  async getFlags() {
-    return this.adminService.getFeatureFlags();
+  getFlags() {
+    return this.admin.getFeatureFlags();
   }
 
-  @Post('flags')
-  async setFlag(@Body() dto: SetFlagDto) {
-    await this.adminService.setFeatureFlag(dto.key, dto.enabled);
+  @Patch('flags')
+  async setFlag(@Req() req: { user: Actor }, @Body() dto: FlagDto) {
+    await this.admin.setFeatureFlag(this.actor(req), dto.key, dto.enabled);
     return { success: true };
   }
 
   @Get('analytics')
-  async getAnalytics() {
-    return this.adminService.getAnalytics();
-  }
-
-  @Get('content')
-  async getContent(
-    @Query('filter') filter?: 'all' | 'flagged' | 'low-quality',
-    @Query('cursor') cursor?: string,
-    @Query('limit') limit?: string,
-  ) {
-    return this.adminService.getContent(filter, cursor, limit ? parseInt(limit, 10) : 20);
-  }
-
-  @Delete('content/:id')
-  async removeContent(@Param('id') id: string) {
-    return this.adminService.removeContent(id);
-  }
-
-  @Get('reports')
-  async getReports(
-    @Query('status') status?: string,
-    @Query('limit') limit?: string,
-  ) {
-    return this.adminService.getReports(status as ReportStatus | undefined, limit ? parseInt(limit, 10) : 20);
-  }
-
-  @Post('reports/:id/dismiss')
-  async dismissReport(@Param('id') id: string) {
-    return this.adminService.dismissReport(id);
-  }
-
-  @Post('reports/:id/remove-content')
-  async removeReportedContent(@Param('id') id: string) {
-    return this.adminService.removeReportedContent(id);
-  }
-
-  @Post('reports/:id/warn-user')
-  async warnReportUser(@Param('id') id: string) {
-    return this.adminService.warnReportUser(id);
-  }
-
-  @Get('communities')
-  async getCommunities() {
-    return this.adminService.getCommunities();
+  getAnalytics() {
+    return this.admin.getAnalytics();
   }
 }
