@@ -5,11 +5,12 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from '../strategies/jwt.strategy';
+import { getJwtSecret } from '../shared/jwt-secret';
 
 @Module({
   imports: [
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'dev-secret',
+      secret: getJwtSecret(),
       signOptions: { expiresIn: '15m' },
     }),
     PassportModule,

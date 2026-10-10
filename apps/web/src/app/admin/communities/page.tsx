@@ -1,61 +1,39 @@
-'use client';
+import { adminFetch } from '@/lib/admin-server';
+import { DataTable, EmptyState, PageHeader, Panel, formatDate } from '@/components/admin/ui';
+import Pagination from '@/components/admin/Pagination';
 
-import { useEffect, useState } from 'react';
-import { adminApi } from '@/lib/admin-api';
+type Community = { id: string; name: string; slug: string; isPublic: boolean; memberCount: number; postCount: number; createdAt: string };
+const LIMIT = 20;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export default function CommunitiesPage() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [communities, setCommunities] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchCommunities = async () => {
-      setLoading(true);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const data = (await adminApi.getCommunities()) as any[];
-      setCommunities(data || []);
-      setLoading(false);
-    };
-    fetchCommunities();
-  }, []);
+export default async function CommunitiesPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
+  const sp = await searchParams;
+  const page = Math.max(1, Number(sp.page) || 1);
+  const res = await adminFetch<{ data: Community[]; total: number }>('/communities', { query: { page, limit: LIMIT } });
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-[var(--text)]">Communities</h2>
-
-      <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl overflow-hidden">
-        {loading ? (
-          <div className="p-6 text-center text-[var(--text-muted)]">Loading...</div>
+      <PageHeader title="Communities" description="All active communities, largest first." />
+      <Panel>
+        {res.data.length ? (
+          <DataTable head={['Community', 'Visibility', 'Members', 'Posts', 'Created']}>
+            {res.data.map((c) => (
+              <tr key={c.id} className="hover:bg-[var(--surface-2)]/60">
+                <td className="px-3 py-3">
+                  <p className="font-medium">{c.name}</p>
+                  <p className="text-xs text-[var(--text-muted)]">/c/{c.slug}</p>
+                </td>
+                <td className="px-3 py-3 text-[var(--text-secondary)]">{c.isPublic ? 'Public' : 'Private'}</td>
+                <td className="px-3 py-3 tabular-nums">{c.memberCount.toLocaleString()}</td>
+                <td className="px-3 py-3 tabular-nums">{c.postCount.toLocaleString()}</td>
+                <td className="px-3 py-3 text-[var(--text-secondary)]">{formatDate(c.createdAt)}</td>
+              </tr>
+            ))}
+          </DataTable>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-[var(--surface-2)] border-b border-[var(--border)]">
-                <tr>
-                  <th className="text-left py-3 px-4">Name</th>
-                  <th className="text-left py-3 px-4">Slug</th>
-                  <th className="text-left py-3 px-4">Members</th>
-                  <th className="text-left py-3 px-4">Posts</th>
-                  <th className="text-left py-3 px-4">Created</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--border)]">
-                {communities.map(c => (
-                  <tr key={c.id} className="hover:bg-[var(--surface-2)]">
-                    <td className="py-3 px-4 font-medium">{c.name}</td>
-                    <td className="py-3 px-4 text-[var(--text-secondary)]">{c.slug}</td>
-                    <td className="py-3 px-4">{c.memberCount}</td>
-                    <td className="py-3 px-4">{c.postCount}</td>
-                    <td className="py-3 px-4 text-[var(--text-muted)]">
-                      {new Date(c.createdAt).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <EmptyState title="No communities yet" />
         )}
-      </div>
+        <Pagination basePath="/admin/communities" params={{}} page={page} limit={LIMIT} total={res.total} />
+      </Panel>
     </div>
   );
 }

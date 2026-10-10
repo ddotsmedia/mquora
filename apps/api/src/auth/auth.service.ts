@@ -1,10 +1,11 @@
-import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, BadRequestException, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaClient } from '@prisma/client';
 import * as argon2 from 'argon2';
 import { randomBytes } from 'crypto';
 import { RegisterDto } from '../dto/register.dto';
 import { LoginDto } from '../dto/login.dto';
+import { isBanned } from '../shared/ban';
 
 @Injectable()
 export class AuthService {
@@ -41,6 +42,10 @@ export class AuthService {
 
     const valid = await argon2.verify(user.passwordHash, dto.password);
     if (!valid) throw new UnauthorizedException('Invalid credentials');
+    if (isBanned(user)) {
+      const until = user.bannedUntil ? ` until ${user.bannedUntil.toISOString().slice(0, 10)}` : ' permanently';
+      throw new ForbiddenException(`Account is suspended${until}`);
+    }
 
     const tokens = await this.generateTokens(user.id);
     return {
