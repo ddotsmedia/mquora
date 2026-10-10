@@ -9,6 +9,8 @@ services:
     ports:
       - '3022:3000'
     environment:
+      - AUTH_SECRET=${NEXTAUTH_SECRET}
+      - AUTH_TRUST_HOST=true
       - NEXTAUTH_URL=${NEXTAUTH_URL}
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
