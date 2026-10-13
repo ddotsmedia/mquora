@@ -28,6 +28,7 @@ services:
       - PORT=3100
       - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=${REDIS_URL}
+      - REDIS_HOST=redis
       - JWT_SECRET=${JWT_SECRET}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
@@ -47,6 +48,7 @@ services:
       - PORT=3023
       - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=${REDIS_URL}
+      - REDIS_HOST=redis
       - AI_GATEWAY_URL=${AI_GATEWAY_URL}
     networks: [mquora_net]
     deploy:
