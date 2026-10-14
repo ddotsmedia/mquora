@@ -21,7 +21,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const res = await fetch(`${process.env.API_INTERNAL_URL || 'http://localhost:3041'}/api/v1/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(credentials),
+          // API rejects unknown fields (csrfToken etc.), so send only these two
+          body: JSON.stringify({ email: credentials.email, password: credentials.password }),
         });
 
         if (!res.ok) return null;
