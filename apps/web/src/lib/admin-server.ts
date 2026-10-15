@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
 
 // NEXT_PUBLIC_API_URL may be the origin or the origin plus /api/v1; normalise to origin.
-const ORIGIN = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3024')
+const ORIGIN = (process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3024')
   .replace(/\/api\/v1\/?$/, '')
   .replace(/\/$/, '');
 

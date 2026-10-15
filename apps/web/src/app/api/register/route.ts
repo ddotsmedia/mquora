@@ -1,5 +1,5 @@
 // Proxies sign-up to the API so the browser never calls the API origin directly (no CORS needed).
-const API_ORIGIN = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3024')
+const API_ORIGIN = (process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3024')
   .replace(/\/api\/v1\/?$/, '')
   .replace(/\/$/, '');
 
