@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { signIn, getSession } from 'next-auth/react';
 import Link from 'next/link';
 
@@ -9,7 +8,6 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -22,7 +20,8 @@ export default function LoginPage() {
         const role = (await getSession())?.user?.role;
         const cb = new URLSearchParams(window.location.search).get('callbackUrl');
         const staff = role === 'ADMIN' || role === 'COMMUNITY_MODERATOR';
-        router.push(cb?.startsWith('/') && !cb.startsWith('//') ? cb : staff ? '/admin/dashboard' : '/');
+        // Full page load so the new session is picked up everywhere (no stale client state).
+        window.location.assign(cb?.startsWith('/') && !cb.startsWith('//') ? cb : staff ? '/admin/dashboard' : '/');
       } else {
         setError('Invalid email or password');
       }
