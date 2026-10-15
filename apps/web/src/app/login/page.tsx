@@ -22,7 +22,7 @@ export default function LoginPage() {
         const role = (await getSession())?.user?.role;
         const cb = new URLSearchParams(window.location.search).get('callbackUrl');
         const staff = role === 'ADMIN' || role === 'COMMUNITY_MODERATOR';
-        router.push(cb?.startsWith('/') ? cb : staff ? '/admin/dashboard' : '/');
+        router.push(cb?.startsWith('/') && !cb.startsWith('//') ? cb : staff ? '/admin/dashboard' : '/');
       } else {
         setError('Invalid email or password');
       }
