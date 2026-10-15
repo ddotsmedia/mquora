@@ -6,7 +6,11 @@ export class ApiError extends Error {
 }
 
 export function createApiUrl(path: string): string {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3041';
+  // Server side can't reach the public IP from inside Docker; use the internal URL there.
+  const baseUrl =
+    (typeof window === 'undefined' && process.env.API_INTERNAL_URL) ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    'http://localhost:3041';
   return `${baseUrl}${path}`;
 }
 
