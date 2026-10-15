@@ -35,6 +35,7 @@ function ThemeToggle() {
 
 export function Navbar() {
   const { data: session } = useSession();
+  const isStaff = ['ADMIN', 'COMMUNITY_MODERATOR'].includes(session?.user?.role ?? '');
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -82,6 +83,11 @@ export function Navbar() {
 
           {session ? (
             <div className="hidden sm:flex items-center gap-3">
+              {isStaff && (
+                <Link href="/admin/dashboard" className="text-sm font-medium text-[var(--primary)] hover:underline">
+                  Admin
+                </Link>
+              )}
               <Link
                 href={`/profile/${session.user?.name}`}
                 className="text-sm text-[var(--text-secondary)] hover:text-[var(--text)] transition-colors"
@@ -151,6 +157,14 @@ export function Navbar() {
           </Link>
           {session ? (
             <>
+              {isStaff && (
+                <Link
+                  href="/admin/dashboard"
+                  className="block px-3 py-2 text-sm font-medium text-[var(--primary)] hover:bg-[var(--surface-2)] rounded-lg transition-colors"
+                >
+                  Admin
+                </Link>
+              )}
               <Link
                 href={`/profile/${session.user?.name}`}
                 className="block px-3 py-2 text-sm text-[var(--text)] hover:bg-[var(--surface-2)] rounded-lg transition-colors"
