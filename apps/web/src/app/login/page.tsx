@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { signIn } from 'next-auth/react';
+import { signIn, getSession } from 'next-auth/react';
 import Link from 'next/link';
 
 export default function LoginPage() {
@@ -18,7 +18,11 @@ export default function LoginPage() {
     try {
       const result = await signIn('credentials', { email, password, redirect: false });
       if (result?.ok) {
-        router.push('/');
+        // Staff go to the admin panel; others to callbackUrl or home.
+        const role = (await getSession())?.user?.role;
+        const cb = new URLSearchParams(window.location.search).get('callbackUrl');
+        const staff = role === 'ADMIN' || role === 'COMMUNITY_MODERATOR';
+        router.push(cb?.startsWith('/') ? cb : staff ? '/admin/dashboard' : '/');
       } else {
         setError('Invalid email or password');
       }
