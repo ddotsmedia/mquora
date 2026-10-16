@@ -12,9 +12,12 @@ import {
   Users,
   Building2,
   Layers,
+  Tags,
+  Megaphone,
+  Activity,
 } from 'lucide-react';
 
-const sections = [
+export const sections = [
   {
     title: 'Overview',
     items: [
@@ -27,6 +30,7 @@ const sections = [
     items: [
       { href: '/admin/users', label: 'Users', icon: Users },
       { href: '/admin/communities', label: 'Communities', icon: Building2 },
+      { href: '/admin/announcements', label: 'Announcements', icon: Megaphone },
     ],
   },
   {
@@ -34,11 +38,13 @@ const sections = [
     items: [
       { href: '/admin/content', label: 'Content', icon: Newspaper },
       { href: '/admin/moderation', label: 'Moderation', icon: Shield },
+      { href: '/admin/tags', label: 'Tags', icon: Tags },
     ],
   },
   {
     title: 'System',
     items: [
+      { href: '/admin/system', label: 'System health', icon: Activity },
       { href: '/admin/audit', label: 'Audit log', icon: ScrollText },
       { href: '/admin/ai', label: 'Queues', icon: Layers },
       { href: '/admin/config', label: 'Feature flags', icon: Flag },

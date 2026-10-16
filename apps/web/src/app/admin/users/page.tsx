@@ -27,7 +27,18 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Users" description="Search, review and moderate accounts." />
+      <PageHeader
+        title="Users"
+        description="Search, review and moderate accounts."
+        actions={
+          <a
+            href="/admin/export/users"
+            className="inline-flex items-center gap-2 rounded-lg border border-[var(--border)] px-3 py-2 text-sm hover:bg-[var(--surface-2)]"
+          >
+            Export CSV
+          </a>
+        }
+      />
       <Panel>
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <SearchInput placeholder="Search name, username or email…" />

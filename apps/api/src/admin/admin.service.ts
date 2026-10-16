@@ -350,13 +350,15 @@ export class AdminService {
 
   // ---------- communities ----------
 
-  async getCommunities(opts: { page?: number; limit?: number }) {
+  async getCommunities(opts: { q?: string; page?: number; limit?: number }) {
     const where: Prisma.CommunityWhereInput = { deletedAt: null };
+    const q = opts.q?.trim();
+    if (q) where.OR = [{ name: { contains: q, mode: 'insensitive' } }, { slug: { contains: q } }];
     const [rows, total] = await this.prisma.$transaction([
       this.prisma.community.findMany({
         where,
         select: {
-          id: true, name: true, slug: true, isPublic: true, memberCount: true, postCount: true, createdAt: true,
+          id: true, name: true, slug: true, description: true, isPublic: true, memberCount: true, postCount: true, createdAt: true,
         },
         orderBy: { memberCount: 'desc' },
         ...this.paging(opts.page, opts.limit),
@@ -444,5 +446,193 @@ export class AdminService {
       topCommunities,
       languageBreakdown: languageBreakdown.map((item) => ({ name: item.language, count: item._count.id })),
     };
+  }
+
+  // ---------- communities (manage) ----------
+
+  private dupGuard(e: unknown, what: string): never {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+      throw new BadRequestException(`A ${what} with that slug or name already exists`);
+    }
+    throw e;
+  }
+
+  async createCommunity(actor: Actor, dto: { name: string; slug: string; description?: string; isPublic?: boolean }) {
+    this.requireAdmin(actor);
+    try {
+      const c = await this.prisma.community.create({
+        data: { name: dto.name.trim(), slug: dto.slug, description: dto.description?.trim() || null, isPublic: dto.isPublic ?? true, createdBy: actor.id },
+        select: { id: true, slug: true, name: true },
+      });
+      await this.audit(actor.id, 'COMMUNITY_CREATE', 'COMMUNITY', c.id, { slug: c.slug });
+      return c;
+    } catch (e) {
+      this.dupGuard(e, 'community');
+    }
+  }
+
+  async updateCommunity(actor: Actor, id: string, dto: { name?: string; description?: string; isPublic?: boolean }) {
+    this.requireAdmin(actor);
+    const found = await this.prisma.community.findFirst({ where: { id, deletedAt: null }, select: { id: true } });
+    if (!found) throw new NotFoundException('Community not found');
+    const data: Prisma.CommunityUpdateInput = {};
+    if (dto.name !== undefined) data.name = dto.name.trim();
+    if (dto.description !== undefined) data.description = dto.description.trim() || null;
+    if (dto.isPublic !== undefined) data.isPublic = dto.isPublic;
+    const c = await this.prisma.community.update({ where: { id }, data, select: { id: true, name: true, isPublic: true } });
+    await this.audit(actor.id, 'COMMUNITY_UPDATE', 'COMMUNITY', id, { ...dto });
+    return c;
+  }
+
+  async deleteCommunity(actor: Actor, id: string) {
+    this.requireAdmin(actor);
+    const found = await this.prisma.community.findFirst({ where: { id, deletedAt: null }, select: { id: true, slug: true } });
+    if (!found) throw new NotFoundException('Community not found');
+    await this.prisma.community.update({ where: { id }, data: { deletedAt: new Date() } });
+    await this.audit(actor.id, 'COMMUNITY_DELETE', 'COMMUNITY', id, { slug: found.slug });
+    return { id, deleted: true };
+  }
+
+  // ---------- tags ----------
+
+  async getTags(opts: { q?: string; page?: number; limit?: number }) {
+    const q = opts.q?.trim();
+    const where: Prisma.TagWhereInput = q ? { OR: [{ name: { contains: q, mode: 'insensitive' } }, { slug: { contains: q } }] } : {};
+    const [rows, total] = await this.prisma.$transaction([
+      this.prisma.tag.findMany({
+        where,
+        select: { id: true, name: true, slug: true, postCount: true, createdAt: true },
+        orderBy: [{ postCount: 'desc' }, { name: 'asc' }],
+        ...this.paging(opts.page, opts.limit),
+      }),
+      this.prisma.tag.count({ where }),
+    ]);
+    return { data: rows, total, page: opts.page ?? 1, limit: opts.limit ?? 20 };
+  }
+
+  async createTag(actor: Actor, dto: { name: string; slug: string }) {
+    this.requireAdmin(actor);
+    try {
+      const t = await this.prisma.tag.create({ data: { name: dto.name.trim(), slug: dto.slug }, select: { id: true, name: true, slug: true } });
+      await this.audit(actor.id, 'TAG_CREATE', 'TAG', t.id, { slug: t.slug });
+      return t;
+    } catch (e) {
+      this.dupGuard(e, 'tag');
+    }
+  }
+
+  async renameTag(actor: Actor, id: string, name: string) {
+    this.requireAdmin(actor);
+    const found = await this.prisma.tag.findUnique({ where: { id }, select: { name: true } });
+    if (!found) throw new NotFoundException('Tag not found');
+    try {
+      const t = await this.prisma.tag.update({ where: { id }, data: { name: name.trim() }, select: { id: true, name: true } });
+      await this.audit(actor.id, 'TAG_RENAME', 'TAG', id, { from: found.name, to: t.name });
+      return t;
+    } catch (e) {
+      this.dupGuard(e, 'tag');
+    }
+  }
+
+  async deleteTag(actor: Actor, id: string) {
+    this.requireAdmin(actor);
+    const found = await this.prisma.tag.findUnique({ where: { id }, select: { slug: true, postCount: true } });
+    if (!found) throw new NotFoundException('Tag not found');
+    await this.prisma.tag.delete({ where: { id } }); // PostTag rows cascade
+    await this.audit(actor.id, 'TAG_DELETE', 'TAG', id, { slug: found.slug, postCount: found.postCount });
+    return { id, deleted: true };
+  }
+
+  // ---------- announcements ----------
+
+  async sendAnnouncement(actor: Actor, dto: { title: string; body: string; link?: string; audience: 'ALL' | 'STAFF' }) {
+    this.requireAdmin(actor);
+    const where: Prisma.UserWhereInput = { deletedAt: null };
+    if (dto.audience === 'STAFF') where.role = { in: [...STAFF_ROLES] as UserRole[] };
+    const users = await this.prisma.user.findMany({ where, select: { id: true } });
+    const title = dto.title.trim();
+    const body = dto.body.trim();
+    for (let i = 0; i < users.length; i += 1000) {
+      await this.prisma.notification.createMany({
+        data: users.slice(i, i + 1000).map((u) => ({ userId: u.id, type: 'SYSTEM' as const, title, body, link: dto.link || null })),
+      });
+    }
+    const id = `ann_${Date.now()}`;
+    await this.audit(actor.id, 'ANNOUNCEMENT_SEND', 'ANNOUNCEMENT', id, { title, body, link: dto.link ?? null, audience: dto.audience, recipients: users.length });
+    return { id, recipients: users.length };
+  }
+
+  async getAnnouncements() {
+    const rows = await this.prisma.auditLog.findMany({
+      where: { action: 'ANNOUNCEMENT_SEND' },
+      select: { id: true, metadata: true, createdAt: true, actor: { select: { username: true } } },
+      orderBy: { createdAt: 'desc' },
+      take: 25,
+    });
+    return { data: rows };
+  }
+
+  // ---------- system health & export ----------
+
+  private async timed<T>(fn: () => Promise<T>, ms = 2000): Promise<{ ok: boolean; latencyMs: number; value?: T; error?: string }> {
+    const t0 = Date.now();
+    try {
+      const value = await Promise.race([fn(), new Promise<never>((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
+      return { ok: true, latencyMs: Date.now() - t0, value };
+    } catch (e) {
+      return { ok: false, latencyMs: Date.now() - t0, error: e instanceof Error ? e.message : 'error' };
+    }
+  }
+
+  async getSystemHealth() {
+    const [db, dbSize, redis, redisMem, queues, counts] = await Promise.all([
+      this.timed(() => this.prisma.$queryRaw`SELECT 1`),
+      this.timed(() => this.prisma.$queryRaw<{ size: bigint }[]>`SELECT pg_database_size(current_database()) AS size`),
+      this.timed(() => this.redis.ping()),
+      this.timed(() => this.redis.info('memory')),
+      this.timed(() => this.getQueueStats(), 3000),
+      Promise.all([
+        this.prisma.user.count({ where: { deletedAt: null } }),
+        this.prisma.post.count({ where: { deletedAt: null } }),
+        this.prisma.answer.count(),
+        this.prisma.comment.count(),
+        this.prisma.community.count({ where: { deletedAt: null } }),
+        this.prisma.tag.count(),
+        this.prisma.notification.count(),
+      ]),
+    ]);
+    const mem = process.memoryUsage();
+    const usedMem = /used_memory:(\d+)/.exec(redisMem.value ?? '')?.[1];
+    const [users, posts, answers, comments, communities, tags, notifications] = counts;
+    return {
+      checkedAt: new Date().toISOString(),
+      database: { ok: db.ok, latencyMs: db.latencyMs, error: db.error, sizeBytes: dbSize.value ? Number(dbSize.value[0]?.size ?? 0) : null },
+      redis: { ok: redis.ok, latencyMs: redis.latencyMs, error: redis.error, usedMemoryBytes: usedMem ? Number(usedMem) : null },
+      queues: { ok: queues.ok, error: queues.error, stats: queues.value ?? {} },
+      api: { uptimeSec: Math.round(process.uptime()), rssBytes: mem.rss, heapUsedBytes: mem.heapUsed, node: process.version, env: process.env.NODE_ENV ?? 'development' },
+      counts: { users, posts, answers, comments, communities, tags, notifications },
+    };
+  }
+
+  async exportUsersCsv(actor: Actor): Promise<string> {
+    this.requireAdmin(actor);
+    const rows = await this.prisma.user.findMany({
+      where: { deletedAt: null },
+      select: { id: true, username: true, displayName: true, email: true, role: true, reputationScore: true, bannedAt: true, bannedUntil: true, createdAt: true },
+      orderBy: { createdAt: 'desc' },
+      take: 50_000,
+    });
+    // Quote every cell; neutralise spreadsheet formula injection.
+    const cell = (v: unknown) => {
+      let s = v === null || v === undefined ? '' : v instanceof Date ? v.toISOString() : String(v);
+      if (/^[=+\-@]/.test(s)) s = `'${s}`;
+      return `"${s.replace(/"/g, '""')}"`;
+    };
+    const head = ['id', 'username', 'displayName', 'email', 'role', 'status', 'reputation', 'createdAt'];
+    const lines = rows.map((u) =>
+      [u.id, u.username, u.displayName, u.email, u.role, this.userStatus(u), u.reputationScore, u.createdAt].map(cell).join(','),
+    );
+    await this.audit(actor.id, 'USERS_EXPORT', 'USER', 'all', { rows: rows.length });
+    return [head.join(','), ...lines].join('\n');
   }
 }

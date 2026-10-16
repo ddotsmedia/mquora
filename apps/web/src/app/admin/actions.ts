@@ -70,3 +70,53 @@ export async function setFlagAction(key: string, enabled: boolean): Promise<Acti
     ['/admin/config', '/admin/audit'],
   );
 }
+
+// ---------- communities ----------
+
+export type CommunityInput = { name: string; slug: string; description?: string; isPublic: boolean };
+
+export async function createCommunityAction(input: CommunityInput): Promise<ActionResult> {
+  return run(
+    () => adminFetch('/communities', { method: 'POST', body: input }),
+    `Community "${input.name}" created`,
+    ['/admin/communities', '/admin/dashboard'],
+  );
+}
+
+export async function updateCommunityAction(id: string, input: Partial<Omit<CommunityInput, 'slug'>>): Promise<ActionResult> {
+  return run(() => adminFetch(`/communities/${id}`, { method: 'PATCH', body: input }), 'Community updated', ['/admin/communities']);
+}
+
+export async function deleteCommunityAction(id: string): Promise<ActionResult> {
+  return run(() => adminFetch(`/communities/${id}`, { method: 'DELETE' }), 'Community deleted', ['/admin/communities', '/admin/dashboard']);
+}
+
+// ---------- tags ----------
+
+export async function createTagAction(name: string, slug: string): Promise<ActionResult> {
+  return run(() => adminFetch('/tags', { method: 'POST', body: { name, slug } }), `Tag "${name}" created`, ['/admin/tags']);
+}
+
+export async function renameTagAction(id: string, name: string): Promise<ActionResult> {
+  return run(() => adminFetch(`/tags/${id}`, { method: 'PATCH', body: { name } }), 'Tag renamed', ['/admin/tags']);
+}
+
+export async function deleteTagAction(id: string): Promise<ActionResult> {
+  return run(() => adminFetch(`/tags/${id}`, { method: 'DELETE' }), 'Tag deleted', ['/admin/tags']);
+}
+
+// ---------- announcements ----------
+
+export type AnnouncementInput = { title: string; body: string; link?: string; audience: 'ALL' | 'STAFF' };
+
+export async function sendAnnouncementAction(input: AnnouncementInput): Promise<ActionResult> {
+  try {
+    const res = await adminFetch<{ recipients: number }>('/announcements', { method: 'POST', body: input });
+    revalidatePath('/admin/announcements', 'page');
+    revalidatePath('/admin/audit', 'page');
+    return { ok: true, message: `Announcement sent to ${res.recipients.toLocaleString()} user(s)` };
+  } catch (err) {
+    if (err instanceof AdminApiError) return { ok: false, message: err.message };
+    throw err;
+  }
+}
