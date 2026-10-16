@@ -59,7 +59,7 @@ jobs:
           file: apps/${{ matrix.service }}/Dockerfile
           push: true
           build-args: |
-            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
+            NEXT_PUBLIC_API_URL=${{ vars.PUBLIC_DOMAIN && format('https://{0}', vars.PUBLIC_DOMAIN) || vars.NEXT_PUBLIC_API_URL }}
           tags: |
             ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:${{ github.sha }}
             ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:latest
@@ -80,10 +80,21 @@ jobs:
       - name: Build production env file (kept out of git)
         env:
           PROD_ENV: ${{ secrets.PROD_ENV }}
+          PUBLIC_DOMAIN: ${{ vars.PUBLIC_DOMAIN }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
         run: |
           mkdir -p .deploy
           printf '%s\n' "$PROD_ENV" > .deploy/prod.env
           printf 'GITHUB_REPOSITORY=%s\nIMAGE_TAG=%s\n' "$GITHUB_REPOSITORY" "$GITHUB_SHA" >> .deploy/prod.env
+          # Public domain (repo variable PUBLIC_DOMAIN, e.g. gayathi.ae) overrides the URL settings in PROD_ENV.
+          if [ -n "$PUBLIC_DOMAIN" ]; then
+            {
+              echo "PUBLIC_DOMAIN=$PUBLIC_DOMAIN"
+              echo "NEXTAUTH_URL=https://$PUBLIC_DOMAIN"
+              echo "NEXT_PUBLIC_API_URL=https://$PUBLIC_DOMAIN"
+              echo "ALLOWED_ORIGINS=https://$PUBLIC_DOMAIN,https://www.$PUBLIC_DOMAIN,http://${VPS_HOST}:3022"
+            } >> .deploy/prod.env
+          fi
           chmod 600 .deploy/prod.env
 
       - name: Prepare VPS directory
@@ -108,7 +119,7 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           SSH_OPTS=(-i ~/.ssh/deploy_key -P "$VPS_PORT" -o StrictHostKeyChecking=accept-new)
           SSH_BASE=(-i ~/.ssh/deploy_key -p "$VPS_PORT" -o StrictHostKeyChecking=accept-new)
-          scp "${SSH_OPTS[@]}" docker-compose.prod.yml .deploy/prod.env "$VPS_USER@$VPS_HOST:/opt/mquora/"
+          scp "${SSH_OPTS[@]}" docker-compose.prod.yml deploy/Caddyfile .deploy/prod.env "$VPS_USER@$VPS_HOST:/opt/mquora/"
           scp "${SSH_OPTS[@]}" scripts/deploy.sh "$VPS_USER@$VPS_HOST:/opt/mquora/scripts/deploy.sh"
           ssh "${SSH_BASE[@]}" "$VPS_USER@$VPS_HOST" "chmod +x /opt/mquora/scripts/deploy.sh && ls -la /opt/mquora"
 

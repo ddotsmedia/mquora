@@ -58,6 +58,28 @@ services:
     depends_on: [postgres, redis]
     restart: unless-stopped
 
+  # HTTPS reverse proxy for the public domain. Only started when PUBLIC_DOMAIN is set
+  # and ports 80/443 are free (see scripts/deploy.sh).
+  caddy:
+    image: caddy:2.8-alpine
+    profiles: [proxy]
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    environment:
+      - PUBLIC_DOMAIN=${PUBLIC_DOMAIN:-}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - mquora_caddy_data:/data
+      - mquora_caddy_config:/config
+    networks: [mquora_net]
+    depends_on: [web, api]
+    deploy:
+      resources:
+        limits: {memory: 128m}
+    restart: unless-stopped
+
   postgres:
     image: pgvector/pgvector:pg16
     environment:
@@ -91,6 +113,8 @@ services:
 volumes:
   mquora_postgres: {}
   mquora_redis: {}
+  mquora_caddy_data: {}
+  mquora_caddy_config: {}
 
 networks:
   mquora_net:
