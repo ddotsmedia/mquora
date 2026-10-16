@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { auth } from '@/auth';
 import AdminNav from '@/components/admin/AdminNav';
+import CommandPalette from '@/components/admin/CommandPalette';
 
 const STAFF = ['ADMIN', 'COMMUNITY_MODERATOR'];
 
@@ -33,9 +34,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <Link href="/admin/users" className="whitespace-nowrap text-[var(--text-secondary)]">Users</Link>
             <Link href="/admin/moderation" className="whitespace-nowrap text-[var(--text-secondary)]">Moderation</Link>
             <Link href="/admin/config" className="whitespace-nowrap text-[var(--text-secondary)]">Flags</Link>
+            <Link href="/admin/communities" className="whitespace-nowrap text-[var(--text-secondary)]">Communities</Link>
+            <Link href="/admin/announcements" className="whitespace-nowrap text-[var(--text-secondary)]">Announce</Link>
+            <Link href="/admin/system" className="whitespace-nowrap text-[var(--text-secondary)]">System</Link>
           </nav>
           <div className="hidden text-sm text-[var(--text-secondary)] md:block">Malayalam-first community · Admin</div>
           <div className="flex items-center gap-3">
+            <CommandPalette />
             <span className="rounded-full border border-[var(--accent)]/40 bg-[var(--accent)]/10 px-3 py-1 text-xs font-medium text-[var(--accent)]">
               {role === 'ADMIN' ? 'Admin' : 'Moderator'}
             </span>

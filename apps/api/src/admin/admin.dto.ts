@@ -47,3 +47,40 @@ export class FlagDto {
 export class ResolveDto {
   @IsIn(['DISMISS', 'REMOVE', 'WARN']) action!: 'DISMISS' | 'REMOVE' | 'WARN';
 }
+
+// ---------- communities / tags / announcements ----------
+
+const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+export class CommunityCreateDto {
+  @IsString() @MaxLength(80) name!: string;
+  @IsString() @Matches(SLUG) @MaxLength(50) slug!: string;
+  @IsOptional() @IsString() @MaxLength(500) description?: string;
+  @IsOptional() @IsBoolean() isPublic?: boolean;
+}
+
+export class CommunityUpdateDto {
+  @IsOptional() @IsString() @MaxLength(80) name?: string;
+  @IsOptional() @IsString() @MaxLength(500) description?: string;
+  @IsOptional() @IsBoolean() isPublic?: boolean;
+}
+
+export class SearchPageQueryDto extends PageQueryDto {
+  @IsOptional() @IsString() @MaxLength(100) q?: string;
+}
+
+export class TagCreateDto {
+  @IsString() @MaxLength(50) name!: string;
+  @IsString() @Matches(SLUG) @MaxLength(50) slug!: string;
+}
+
+export class TagUpdateDto {
+  @IsString() @MaxLength(50) name!: string;
+}
+
+export class AnnouncementDto {
+  @IsString() @MaxLength(120) title!: string;
+  @IsString() @MaxLength(1000) body!: string;
+  @IsOptional() @IsString() @Matches(/^\/[^\s]*$/) @MaxLength(200) link?: string;
+  @IsIn(['ALL', 'STAFF']) audience!: 'ALL' | 'STAFF';
+}

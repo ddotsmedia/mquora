@@ -1,15 +1,20 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Header, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { AdminGuard } from '../guards/admin.guard';
 import { AdminService, Actor } from './admin.service';
 import {
+  AnnouncementDto,
   AuditQueryDto,
+  CommunityCreateDto,
+  CommunityUpdateDto,
+  SearchPageQueryDto,
+  TagCreateDto,
+  TagUpdateDto,
   BanDto,
   ContentQueryDto,
   DaysQueryDto,
   FlagDto,
-  PageQueryDto,
   ReportsQueryDto,
   ResolveDto,
   RoleDto,
@@ -38,6 +43,14 @@ export class AdminController {
   @Get('users')
   getUsers(@Query() q: UsersQueryDto) {
     return this.admin.getUsers({ q: q.q, role: q.role, page: q.page, limit: q.limit });
+  }
+
+  // Declared before users/:id so "export" is not treated as an id.
+  @Get('users/export')
+  @Header('Content-Type', 'text/csv; charset=utf-8')
+  @Header('Content-Disposition', 'attachment; filename="mquora-users.csv"')
+  exportUsers(@Req() req: { user: Actor }) {
+    return this.admin.exportUsersCsv(this.actor(req));
   }
 
   @Get('users/:id')
@@ -91,8 +104,58 @@ export class AdminController {
   }
 
   @Get('communities')
-  getCommunities(@Query() q: PageQueryDto) {
-    return this.admin.getCommunities({ page: q.page, limit: q.limit });
+  getCommunities(@Query() q: SearchPageQueryDto) {
+    return this.admin.getCommunities({ q: q.q, page: q.page, limit: q.limit });
+  }
+
+  @Post('communities')
+  createCommunity(@Req() req: { user: Actor }, @Body() dto: CommunityCreateDto) {
+    return this.admin.createCommunity(this.actor(req), dto);
+  }
+
+  @Patch('communities/:id')
+  updateCommunity(@Req() req: { user: Actor }, @Param('id') id: string, @Body() dto: CommunityUpdateDto) {
+    return this.admin.updateCommunity(this.actor(req), id, dto);
+  }
+
+  @Delete('communities/:id')
+  deleteCommunity(@Req() req: { user: Actor }, @Param('id') id: string) {
+    return this.admin.deleteCommunity(this.actor(req), id);
+  }
+
+  @Get('tags')
+  getTags(@Query() q: SearchPageQueryDto) {
+    return this.admin.getTags({ q: q.q, page: q.page, limit: q.limit });
+  }
+
+  @Post('tags')
+  createTag(@Req() req: { user: Actor }, @Body() dto: TagCreateDto) {
+    return this.admin.createTag(this.actor(req), dto);
+  }
+
+  @Patch('tags/:id')
+  renameTag(@Req() req: { user: Actor }, @Param('id') id: string, @Body() dto: TagUpdateDto) {
+    return this.admin.renameTag(this.actor(req), id, dto.name);
+  }
+
+  @Delete('tags/:id')
+  deleteTag(@Req() req: { user: Actor }, @Param('id') id: string) {
+    return this.admin.deleteTag(this.actor(req), id);
+  }
+
+  @Get('announcements')
+  getAnnouncements() {
+    return this.admin.getAnnouncements();
+  }
+
+  @Post('announcements')
+  sendAnnouncement(@Req() req: { user: Actor }, @Body() dto: AnnouncementDto) {
+    return this.admin.sendAnnouncement(this.actor(req), dto);
+  }
+
+  @Get('system')
+  getSystem() {
+    return this.admin.getSystemHealth();
   }
 
   @Get('audit-log')
