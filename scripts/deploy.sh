@@ -27,7 +27,20 @@ $COMPOSE run --rm --no-deps api sh -c 'pnpm --filter @mquora/db exec prisma migr
 
 echo "Starting application services..."
 $COMPOSE up -d --remove-orphans web api worker
-$COMPOSE ps
+
+# Public HTTPS proxy: only when a domain is configured. Never takes 80/443 from another project.
+if [ -n "${PUBLIC_DOMAIN:-}" ]; then
+  caddy_running=$(docker ps -q --filter 'name=^mquora-caddy-1$')
+  if [ -n "$caddy_running" ]; then
+    $COMPOSE --profile proxy up -d caddy
+  elif ss -ltnH '( sport = :80 or sport = :443 )' | grep -q .; then
+    echo "WARNING: ports 80/443 are used by another service; HTTPS proxy for ${PUBLIC_DOMAIN} NOT started."
+    ss -ltnp '( sport = :80 or sport = :443 )' || true
+  else
+    $COMPOSE --profile proxy up -d caddy
+  fi
+fi
+$COMPOSE --profile proxy ps
 
 # Remove older mquora image tags only (never system-wide prune: the VPS hosts other projects).
 docker image ls --format '{{.Repository}}:{{.Tag}}' \

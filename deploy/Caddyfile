@@ -1,0 +1,16 @@
+# Public HTTPS entry point for mquora. Certificates are issued automatically by Let's Encrypt
+# once DNS for PUBLIC_DOMAIN points at this server.
+{$PUBLIC_DOMAIN} {
+	encode zstd gzip
+	# The NestJS API lives under /api/v1; everything else (pages, /api/auth, /api/register) is Next.js.
+	handle /api/v1/* {
+		reverse_proxy api:3100
+	}
+	handle {
+		reverse_proxy web:3000
+	}
+}
+
+www.{$PUBLIC_DOMAIN} {
+	redir https://{$PUBLIC_DOMAIN}{uri} permanent
+}
