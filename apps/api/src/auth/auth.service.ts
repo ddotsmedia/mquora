@@ -2,10 +2,13 @@ import { Injectable, BadRequestException, ForbiddenException, UnauthorizedExcept
 import { JwtService } from '@nestjs/jwt';
 import { PrismaClient } from '@prisma/client';
 import * as argon2 from 'argon2';
-import { randomBytes } from 'crypto';
+import { createHash, randomBytes } from 'crypto';
 import { RegisterDto } from '../dto/register.dto';
 import { LoginDto } from '../dto/login.dto';
 import { isBanned } from '../shared/ban';
+
+// Refresh tokens are 256-bit random values; a fast deterministic hash is enough to look them up.
+const hashToken = (raw: string) => createHash('sha256').update(raw).digest('hex');
 
 @Injectable()
 export class AuthService {
@@ -54,24 +57,27 @@ export class AuthService {
     };
   }
 
-  async refresh(tokenHash: string) {
-    const session = await this.prisma.session.findUnique({ where: { tokenHash } });
+  // Issues a new access token for a valid refresh token. The refresh token is not rotated, so
+  // concurrent server renders that refresh at the same time all succeed.
+  async refresh(rawToken: string) {
+    const session = await this.prisma.session.findUnique({ where: { tokenHash: hashToken(rawToken) } });
     if (!session || new Date() > session.expiresAt) throw new UnauthorizedException('Invalid refresh token');
-
-    await this.prisma.session.delete({ where: { id: session.id } });
-    const tokens = await this.generateTokens(session.userId);
-    return tokens;
+    const user = await this.prisma.user.findUnique({
+      where: { id: session.userId },
+      select: { deletedAt: true, bannedAt: true, bannedUntil: true },
+    });
+    if (!user || user.deletedAt || isBanned(user)) throw new UnauthorizedException('Session no longer valid');
+    return { accessToken: this.jwtService.sign({ sub: session.userId }, { expiresIn: '15m' }) };
   }
 
-  async logout(tokenHash: string) {
-    const session = await this.prisma.session.findUnique({ where: { tokenHash } });
-    if (session) await this.prisma.session.delete({ where: { id: session.id } });
+  async logout(rawToken: string) {
+    await this.prisma.session.deleteMany({ where: { tokenHash: hashToken(rawToken) } });
   }
 
   async generateTokens(userId: string) {
     const accessToken = this.jwtService.sign({ sub: userId }, { expiresIn: '15m' });
     const refreshTokenRaw = randomBytes(32).toString('hex');
-    const tokenHash = await argon2.hash(refreshTokenRaw);
+    const tokenHash = hashToken(refreshTokenRaw);
 
     const session = await this.prisma.session.create({
       data: {

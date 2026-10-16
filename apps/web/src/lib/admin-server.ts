@@ -26,7 +26,7 @@ export async function adminFetch<T>(
 ): Promise<T> {
   const session = await auth();
   const token = session?.user?.accessToken;
-  if (!token) redirect('/login?callbackUrl=/admin/dashboard');
+  if (!token) redirect('/login?expired=1&callbackUrl=/admin/dashboard');
 
   const params = new URLSearchParams();
   for (const [k, v] of Object.entries(opts.query ?? {})) {
@@ -44,7 +44,7 @@ export async function adminFetch<T>(
     cache: 'no-store',
   });
 
-  if (res.status === 401) redirect('/login?callbackUrl=/admin/dashboard');
+  if (res.status === 401) redirect('/login?expired=1&callbackUrl=/admin/dashboard'); // expired=1 stops a redirect loop
 
   if (!res.ok) {
     const data = (await res.json().catch(() => ({}))) as { message?: string | string[] };
