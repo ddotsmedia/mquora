@@ -27,17 +27,20 @@ async function login(formData: FormData) {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; callbackUrl?: string }>;
+  searchParams: Promise<{ error?: string; expired?: string; callbackUrl?: string }>;
 }) {
   const sp = await searchParams;
   const cb = safe(sp.callbackUrl);
-  if (await auth()) redirect(`/post-login${cb ? `?callbackUrl=${encodeURIComponent(cb)}` : ''}`);
+  const session = await auth();
+  // A session without a usable API token (expired/refresh failed) must log in again, not loop.
+  if (!sp.expired && session?.user?.accessToken && !session.error) redirect(`/post-login${cb ? `?callbackUrl=${encodeURIComponent(cb)}` : ''}`);
 
   return (
     <div className="flex items-center justify-center min-h-screen">
       <div className="w-full max-w-md p-8 bg-white rounded-lg shadow">
         <h1 className="text-2xl font-bold mb-6">Login</h1>
         {sp.error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">Invalid email or password</div>}
+        {sp.expired && !sp.error && <div className="mb-4 p-3 bg-amber-100 text-amber-800 rounded">Your session expired. Please log in again.</div>}
         <form action={login} className="space-y-4">
           <input type="hidden" name="callbackUrl" value={cb} />
           <input

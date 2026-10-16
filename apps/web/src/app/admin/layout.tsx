@@ -10,6 +10,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const session = await auth();
   const role = session?.user?.role;
   if (!session || !role || !STAFF.includes(role)) redirect('/login?callbackUrl=/admin/dashboard');
+  if (!session.user?.accessToken || session.error) redirect('/login?expired=1&callbackUrl=/admin/dashboard');
 
   return (
     <div className="min-h-screen bg-[var(--bg)] text-[var(--text)]">
