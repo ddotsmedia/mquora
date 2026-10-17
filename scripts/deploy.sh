@@ -28,8 +28,9 @@ $COMPOSE run --rm --no-deps api sh -c 'pnpm --filter @mquora/db exec prisma migr
 echo "Starting application services..."
 $COMPOSE up -d --remove-orphans web api worker
 
-# Public HTTPS proxy: only when a domain is configured. Never takes 80/443 from another project.
-if [ -n "${PUBLIC_DOMAIN:-}" ]; then
+# Optional built-in HTTPS proxy (USE_CADDY=1). On this VPS the host nginx owns 80/443 for other
+# live sites, so the domain is served by an nginx site file instead and Caddy stays off.
+if [ -n "${PUBLIC_DOMAIN:-}" ] && [ "${USE_CADDY:-0}" = "1" ]; then
   caddy_running=$(docker ps -q --filter 'name=^mquora-caddy-1$')
   if [ -n "$caddy_running" ]; then
     $COMPOSE --profile proxy up -d caddy
