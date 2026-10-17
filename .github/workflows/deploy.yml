@@ -59,7 +59,7 @@ jobs:
           file: apps/${{ matrix.service }}/Dockerfile
           push: true
           build-args: |
-            NEXT_PUBLIC_API_URL=${{ vars.PUBLIC_DOMAIN && format('https://{0}', vars.PUBLIC_DOMAIN) || vars.NEXT_PUBLIC_API_URL }}
+            NEXT_PUBLIC_API_URL=${{ (vars.PUBLIC_DOMAIN || secrets.PUBLIC_DOMAIN) && format('https://{0}', vars.PUBLIC_DOMAIN || secrets.PUBLIC_DOMAIN) || vars.NEXT_PUBLIC_API_URL }}
           tags: |
             ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:${{ github.sha }}
             ${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:latest
@@ -80,7 +80,7 @@ jobs:
       - name: Build production env file (kept out of git)
         env:
           PROD_ENV: ${{ secrets.PROD_ENV }}
-          PUBLIC_DOMAIN: ${{ vars.PUBLIC_DOMAIN }}
+          PUBLIC_DOMAIN: ${{ vars.PUBLIC_DOMAIN || secrets.PUBLIC_DOMAIN }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
         run: |
           mkdir -p .deploy
