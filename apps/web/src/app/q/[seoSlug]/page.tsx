@@ -5,6 +5,9 @@ import { LanguageBadge } from '@/components/language-badge';
 import { VoteButtons } from '@/components/vote-buttons';
 import { BookmarkButton } from '@/components/bookmark-button';
 import { AnswerForm } from '@/components/answer-form';
+import { Comments } from '@/components/comments';
+import { ReportButton } from '@/components/report-button';
+import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 
 interface Post {
@@ -37,6 +40,7 @@ interface Answer {
   body: string;
   voteScore: number;
   isAccepted: boolean;
+  commentCount?: number;
   createdAt: string;
   author: {
     id: string;
@@ -97,7 +101,7 @@ export default async function PostPage({ params }: { params: Promise<{ seoSlug: 
 
         <div className="flex items-center gap-4 mb-6 text-sm text-muted-foreground">
           <div>
-            <p className="font-semibold text-foreground">{post.author.displayName}</p>
+            <Link href={`/profile/${post.author.username}`} className="font-semibold text-foreground hover:underline">{post.author.displayName}</Link>
             <p>{formatDistanceToNow(new Date(post.createdAt), {addSuffix: true})}</p>
           </div>
           <span>in</span>
@@ -109,6 +113,7 @@ export default async function PostPage({ params }: { params: Promise<{ seoSlug: 
         <div className="flex gap-4 mb-6">
           <VoteButtons targetId={post.id} targetType="POST" initialScore={post.voteScore} />
           <BookmarkButton postId={post.id} />
+          <span className="ml-auto self-center"><ReportButton targetId={post.id} targetType="POST" /></span>
         </div>
 
         <div className="prose dark:prose-invert max-w-none mb-6">
@@ -128,6 +133,8 @@ export default async function PostPage({ params }: { params: Promise<{ seoSlug: 
             ))}
           </div>
         )}
+
+        <Comments postId={post.id} initialCount={post.commentCount} />
       </article>
 
       <div className="border-t border-border p-6">
@@ -144,9 +151,11 @@ export default async function PostPage({ params }: { params: Promise<{ seoSlug: 
                 <div className="flex-1">
                   <p className="text-foreground whitespace-pre-wrap">{answer.body}</p>
                   <div className="mt-4 text-sm text-muted-foreground">
-                    <p className="font-semibold text-foreground">{answer.author.displayName}</p>
+                    <Link href={`/profile/${answer.author.username}`} className="font-semibold text-foreground hover:underline">{answer.author.displayName}</Link>
                     <p>{formatDistanceToNow(new Date(answer.createdAt), {addSuffix: true})}</p>
+                    <ReportButton targetId={answer.id} targetType="ANSWER" />
                   </div>
+                  <Comments answerId={answer.id} initialCount={answer.commentCount ?? 0} />
                 </div>
               </div>
             </div>

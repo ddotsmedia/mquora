@@ -15,6 +15,13 @@ export class ModerationService {
     reason: string,
     details?: string,
   ) {
+    // One open report per user per item.
+    const existing = await this.prisma.report.findFirst({
+      where: { reporterId, targetId, targetType, status: { in: ['PENDING', 'UNDER_REVIEW'] } },
+      select: { id: true, status: true },
+    });
+    if (existing) return existing;
+
     const report = await this.prisma.report.create({
       data: {
         reporterId,
