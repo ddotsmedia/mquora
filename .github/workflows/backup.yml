@@ -1,0 +1,70 @@
+name: Database backup
+
+# Daily at 02:10 Dubai time (22:10 UTC), or run by hand from the Actions tab.
+on:
+  schedule:
+    - cron: '10 22 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: db-backup
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run backup on VPS and download it
+        id: dump
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || 22 }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          SSH=(-i ~/.ssh/deploy_key -p "$VPS_PORT" -o StrictHostKeyChecking=accept-new)
+          SCP=(-i ~/.ssh/deploy_key -P "$VPS_PORT" -o StrictHostKeyChecking=accept-new)
+          scp "${SCP[@]}" scripts/backup.sh "$VPS_USER@$VPS_HOST:/opt/mquora/scripts/backup.sh"
+          ssh "${SSH[@]}" "$VPS_USER@$VPS_HOST" "bash /opt/mquora/scripts/backup.sh" | tee out.txt
+          REMOTE=$(tail -n 1 out.txt)
+          case "$REMOTE" in /opt/mquora/backups/mquora-*.sql.gz) ;; *) echo "Unexpected backup path: $REMOTE"; exit 1;; esac
+          mkdir -p dump
+          scp "${SCP[@]}" "$VPS_USER@$VPS_HOST:$REMOTE" dump/
+          echo "file=dump/$(basename "$REMOTE")" >> "$GITHUB_OUTPUT"
+
+      # The repository is public, so the off-server copy is uploaded only when encrypted.
+      - name: Encrypt backup
+        id: enc
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+          FILE: ${{ steps.dump.outputs.file }}
+        run: |
+          set -euo pipefail
+          if [ -z "${BACKUP_PASSPHRASE:-}" ]; then
+            echo "::warning::BACKUP_PASSPHRASE secret is not set. The backup is kept on the server only (14 days); no off-server copy was uploaded."
+            rm -rf dump
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:BACKUP_PASSPHRASE -in "$FILE" -out "$FILE.enc"
+          rm -f "$FILE"
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+
+      - name: Upload encrypted off-server copy (kept 30 days)
+        if: steps.enc.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mquora-db-${{ github.run_id }}
+          path: dump/*.enc
+          retention-days: 30
+          if-no-files-found: error
