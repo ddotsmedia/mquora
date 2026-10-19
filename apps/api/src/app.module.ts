@@ -20,6 +20,7 @@ import { AdminModule } from './admin/admin.module';
 import { SearchModule } from './search/search.module';
 import { HealthModule } from './health/health.module';
 import { MetricsModule } from './metrics/metrics.module';
+import { TrendingModule } from './trending/trending.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { MetricsModule } from './metrics/metrics.module';
     SearchModule,
     HealthModule,
     MetricsModule,
+    TrendingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

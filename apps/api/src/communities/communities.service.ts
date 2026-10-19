@@ -52,24 +52,30 @@ export class CommunitiesService {
     return community;
   }
 
+  // Member counts change only when membership actually changes (idempotent join/leave).
   async join(communityId: string, userId: string) {
-    return this.prisma.communityMember.upsert({
-      where: { communityId_userId: { communityId, userId } },
-      create: { communityId, userId, role: 'MEMBER' },
-      update: {},
-      select: { id: true },
+    const community = await this.prisma.community.findFirst({ where: { id: communityId, deletedAt: null }, select: { id: true } });
+    if (!community) throw new NotFoundException('Community not found');
+    return this.prisma.$transaction(async (tx) => {
+      const existing = await tx.communityMember.findUnique({ where: { communityId_userId: { communityId, userId } }, select: { id: true } });
+      if (existing) return { joined: true };
+      await tx.communityMember.create({ data: { communityId, userId, role: 'MEMBER' } });
+      await tx.community.update({ where: { id: communityId }, data: { memberCount: { increment: 1 } } });
+      return { joined: true };
     });
   }
 
   async leave(communityId: string, userId: string) {
-    await this.prisma.communityMember.delete({
-      where: { communityId_userId: { communityId, userId } },
+    return this.prisma.$transaction(async (tx) => {
+      const { count } = await tx.communityMember.deleteMany({ where: { communityId, userId } });
+      if (count) await tx.community.update({ where: { id: communityId }, data: { memberCount: { decrement: count } } });
+      return { joined: false };
     });
+  }
 
-    await this.prisma.community.update({
-      where: { id: communityId },
-      data: { memberCount: { decrement: 1 } },
-    });
+  async myMemberships(userId: string) {
+    const rows = await this.prisma.communityMember.findMany({ where: { userId }, select: { communityId: true } });
+    return { communityIds: rows.map((r) => r.communityId) };
   }
 
   async update(id: string, dto: Record<string, unknown>, userId: string) {

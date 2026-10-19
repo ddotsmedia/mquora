@@ -13,6 +13,12 @@ export class CommunitiesController {
     return this.communitiesService.findAll(cursor, limit ? parseInt(limit, 10) : 20);
   }
 
+  @Get('memberships/me')
+  @UseGuards(JwtAuthGuard)
+  async myMemberships(@Req() req: Request) {
+    return this.communitiesService.myMemberships((req.user as Record<string, unknown>).id as string);
+  }
+
   @Get(':slug')
   async findBySlug(@Param('slug') slug: string) {
     return this.communitiesService.findBySlug(slug);
