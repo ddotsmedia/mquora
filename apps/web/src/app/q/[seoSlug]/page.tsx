@@ -125,7 +125,7 @@ export default async function PostPage({ params }: { params: Promise<{ seoSlug: 
             {post.tags.map((tag) => (
               <a
                 key={tag.tag.id}
-                href={`/search?q=${encodeURIComponent(tag.tag.name)}`}
+                href={`/t/${tag.tag.slug}`}
                 className="px-3 py-1 rounded-full bg-muted text-muted-foreground text-sm hover:bg-accent hover:text-accent-foreground"
               >
                 #{tag.tag.name}

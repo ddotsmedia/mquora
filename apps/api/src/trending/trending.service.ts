@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
 const DAY = 86_400_000;
@@ -56,5 +56,29 @@ export class TrendingService {
       take: clamp(limit, 10),
     });
     return { data: rows.map((c) => ({ ...c, _count: { members: c.memberCount } })) };
+  }
+
+  // All tags for the /tags directory, optionally filtered by name.
+  async allTags(q?: string, limit?: number) {
+    const rows = await this.prisma.tag.findMany({
+      where: { postCount: { gt: 0 }, ...(q ? { name: { contains: q, mode: 'insensitive' as const } } : {}) },
+      select: { id: true, name: true, slug: true, postCount: true },
+      orderBy: [{ postCount: 'desc' }, { name: 'asc' }],
+      take: Math.min(Math.max(Number(limit) || 200, 1), 500),
+    });
+    return { data: rows };
+  }
+
+  // One tag with its latest questions.
+  async tagBySlug(slugValue: string, limit?: number) {
+    const tag = await this.prisma.tag.findUnique({ where: { slug: slugValue }, select: { id: true, name: true, slug: true, postCount: true } });
+    if (!tag) throw new NotFoundException('Tag not found');
+    const posts = await this.prisma.post.findMany({
+      where: { status: 'PUBLISHED', deletedAt: null, tags: { some: { tagId: tag.id } } },
+      select: POST_CARD,
+      orderBy: { createdAt: 'desc' },
+      take: clamp(limit, 30),
+    });
+    return { ...tag, posts };
   }
 }

@@ -67,7 +67,7 @@ export default async function DiscoverPage() {
               {tags.map((t) => (
                 <Link
                   key={t.id}
-                  href={`/search?q=%23${encodeURIComponent(t.slug)}`}
+                  href={`/t/${t.slug}`}
                   className="rounded-full bg-[var(--surface-2)] px-3 py-1 text-sm text-[var(--text-secondary)] hover:text-[var(--text)]"
                 >
                   #{t.name} <span className="text-[var(--text-muted)]">{t.postCount}</span>

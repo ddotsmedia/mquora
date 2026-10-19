@@ -73,6 +73,7 @@ export function Navbar() {
           </NavLink>
           <NavLink href="/communities">Communities</NavLink>
           <NavLink href="/discover">Discover</NavLink>
+          <NavLink href="/tags">Topics</NavLink>
           <NavLink href="/leaderboard">Leaderboard</NavLink>
         </div>
 
@@ -161,6 +162,12 @@ export function Navbar() {
             className="block px-3 py-2 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-2)] rounded-lg transition-colors"
           >
             Discover
+          </Link>
+          <Link
+            href="/tags"
+            className="block px-3 py-2 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-2)] rounded-lg transition-colors"
+          >
+            Topics
           </Link>
           <Link
             href="/leaderboard"
