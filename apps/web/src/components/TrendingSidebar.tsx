@@ -74,7 +74,7 @@ export function TrendingSidebar() {
             tags.map((tag) => (
               <Link
                 key={tag.id}
-                href={`/search?q=%23${tag.slug}`}
+                href={`/t/${tag.slug}`}
                 className="px-2.5 py-1 bg-[var(--surface-2)] hover:bg-[var(--primary)]/10 hover:text-[var(--primary)] border border-[var(--border)] rounded-full text-xs transition-all font-medium"
               >
                 #{tag.name}
