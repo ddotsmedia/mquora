@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { serverApiFetch } from '@/lib/api';
 import { LanguageBadge } from '@/components/language-badge';
 import { VoteButtons } from '@/components/vote-buttons';
+import { BookmarkButton } from '@/components/bookmark-button';
 import { AnswerForm } from '@/components/answer-form';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -107,6 +108,7 @@ export default async function PostPage({ params }: { params: Promise<{ seoSlug: 
 
         <div className="flex gap-4 mb-6">
           <VoteButtons targetId={post.id} targetType="POST" initialScore={post.voteScore} />
+          <BookmarkButton postId={post.id} />
         </div>
 
         <div className="prose dark:prose-invert max-w-none mb-6">

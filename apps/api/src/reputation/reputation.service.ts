@@ -38,7 +38,7 @@ export class ReputationService {
   }
 
   async getLeaderboard(cursor?: string, limit = 20) {
-    const whereClause = cursor ? { reputationScore: { lt: parseInt(cursor, 10) } } : {};
+    const whereClause = { deletedAt: null, ...(cursor ? { reputationScore: { lt: parseInt(cursor, 10) } } : {}) };
 
     const users = await this.prisma.user.findMany({
       where: whereClause,

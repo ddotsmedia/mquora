@@ -14,6 +14,11 @@ export class BookmarksController {
     return this.bookmarksService.findByUser(userId, cursor, limit ? parseInt(limit, 10) : 20);
   }
 
+  @Get('status/:postId')
+  async status(@Param('postId') postId: string, @Req() req: Request) {
+    return this.bookmarksService.status((req.user as Record<string, unknown>).id as string, postId);
+  }
+
   @Post()
   async upsert(@Body() dto: Record<string, unknown>, @Req() req: Request) {
     const userId = (req.user as Record<string, unknown>).id as string;

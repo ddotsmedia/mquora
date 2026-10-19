@@ -15,9 +15,13 @@ export class BookmarksService {
   }
 
   async remove(userId: string, postId: string) {
-    await this.prisma.bookmark.delete({
-      where: { userId_postId: { userId, postId } },
-    });
+    await this.prisma.bookmark.deleteMany({ where: { userId, postId } });
+    return { bookmarked: false };
+  }
+
+  async status(userId: string, postId: string) {
+    const b = await this.prisma.bookmark.findUnique({ where: { userId_postId: { userId, postId } }, select: { id: true } });
+    return { bookmarked: !!b };
   }
 
   async findByUser(userId: string, cursor?: string, limit = 20) {
@@ -25,7 +29,17 @@ export class BookmarksService {
 
     const bookmarks = await this.prisma.bookmark.findMany({
       where: whereClause,
-      select: { post: { select: { id: true, seoSlug: true, title: true, body: true } }, createdAt: true },
+      select: {
+        createdAt: true,
+        post: {
+          select: {
+            id: true, seoSlug: true, title: true, body: true, language: true, voteScore: true, answerCount: true,
+            viewCount: true, createdAt: true, status: true, deletedAt: true,
+            author: { select: { id: true, username: true, displayName: true } },
+            community: { select: { id: true, slug: true, name: true } },
+          },
+        },
+      },
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
     });
