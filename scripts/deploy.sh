@@ -22,6 +22,12 @@ for i in $(seq 1 30); do
   sleep 2
 done
 
+# Safety copy of the database before any migration (failure here does not block the deploy).
+if [ -x /opt/mquora/scripts/backup.sh ]; then
+  echo "Backing up database before migrations..."
+  bash /opt/mquora/scripts/backup.sh | tail -n 1 || echo "WARNING: pre-deploy backup failed"
+fi
+
 echo "Applying database migrations..."
 $COMPOSE run --rm --no-deps api sh -c 'pnpm --filter @mquora/db exec prisma migrate deploy --schema=prisma/schema.prisma'
 

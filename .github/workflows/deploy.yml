@@ -120,8 +120,8 @@ jobs:
           SSH_OPTS=(-i ~/.ssh/deploy_key -P "$VPS_PORT" -o StrictHostKeyChecking=accept-new)
           SSH_BASE=(-i ~/.ssh/deploy_key -p "$VPS_PORT" -o StrictHostKeyChecking=accept-new)
           scp "${SSH_OPTS[@]}" docker-compose.prod.yml deploy/Caddyfile .deploy/prod.env "$VPS_USER@$VPS_HOST:/opt/mquora/"
-          scp "${SSH_OPTS[@]}" scripts/deploy.sh "$VPS_USER@$VPS_HOST:/opt/mquora/scripts/deploy.sh"
-          ssh "${SSH_BASE[@]}" "$VPS_USER@$VPS_HOST" "chmod +x /opt/mquora/scripts/deploy.sh && ls -la /opt/mquora"
+          scp "${SSH_OPTS[@]}" scripts/deploy.sh scripts/backup.sh "$VPS_USER@$VPS_HOST:/opt/mquora/scripts/"
+          ssh "${SSH_BASE[@]}" "$VPS_USER@$VPS_HOST" "chmod +x /opt/mquora/scripts/deploy.sh /opt/mquora/scripts/backup.sh && ls -la /opt/mquora"
 
       - name: Deploy on VPS (pull images only, no builds)
         uses: appleboy/ssh-action@v1
