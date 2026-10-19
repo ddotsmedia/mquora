@@ -28,7 +28,7 @@ export function TrendingSidebar() {
       try {
         const [tagsRes, commRes] = await Promise.all([
           apiFetch<{ data: Tag[] }>('/api/v1/trending/tags?limit=5'),
-          apiFetch<{ data: Community[] }>('/api/v1/communities?limit=5'),
+          apiFetch<{ data: Community[] }>('/api/v1/trending/communities?limit=5'),
         ]);
         setTags(tagsRes.data || []);
         setCommunities(commRes.data || []);

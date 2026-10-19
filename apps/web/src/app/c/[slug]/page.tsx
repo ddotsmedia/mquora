@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { serverApiFetch } from '@/lib/api';
 import { PostCard } from '@/components/post-card';
+import { JoinButton } from '@/components/join-button';
 
 interface Community {
   id: string;
@@ -83,9 +84,7 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
           <span className="text-muted-foreground">{community.memberCount} members</span>
           <span className="text-muted-foreground">{community.postCount} posts</span>
         </div>
-        <button className="mt-4 px-4 py-2 rounded bg-accent text-accent-foreground hover:bg-accent/90">
-          Join
-        </button>
+        <JoinButton communityId={community.id} className="mt-4" />
       </div>
 
       <div className="divide-y divide-border">
