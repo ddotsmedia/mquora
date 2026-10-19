@@ -1,7 +1,14 @@
 import { Controller, Post, Delete, Get, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
 import { Request } from 'express';
+import { IsString, MinLength } from 'class-validator';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { FollowsService } from './follows.service';
+
+class FollowDto {
+  @IsString() @MinLength(1) followingId!: string;
+}
+
+const uid = (req: Request) => (req.user as { id: string }).id;
 
 @Controller('api/v1')
 export class FollowsController {
@@ -17,17 +24,21 @@ export class FollowsController {
     return this.followsService.findFollowing(userId, cursor, limit ? parseInt(limit, 10) : 20);
   }
 
+  @Get('follows/status/:userId')
+  @UseGuards(JwtAuthGuard)
+  async status(@Param('userId') userId: string, @Req() req: Request) {
+    return this.followsService.status(uid(req), userId);
+  }
+
   @Post('follows')
   @UseGuards(JwtAuthGuard)
-  async follow(@Body() dto: Record<string, unknown>, @Req() req: Request) {
-    const followerId = (req.user as Record<string, unknown>).id as string;
-    return this.followsService.follow(followerId, dto.followingId as string);
+  async follow(@Body() dto: FollowDto, @Req() req: Request) {
+    return this.followsService.follow(uid(req), dto.followingId);
   }
 
   @Delete('follows/:followingId')
   @UseGuards(JwtAuthGuard)
   async unfollow(@Param('followingId') followingId: string, @Req() req: Request) {
-    const followerId = (req.user as Record<string, unknown>).id as string;
-    return this.followsService.unfollow(followerId, followingId);
+    return this.followsService.unfollow(uid(req), followingId);
   }
 }

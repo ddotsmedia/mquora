@@ -4,6 +4,7 @@ declare module 'next-auth' {
   interface Session extends DefaultSession {
     error?: string; // 'RefreshFailed' when the API session can no longer be renewed
     user: DefaultSession['user'] & {
+      id?: string;
       accessToken?: string;
       role?: string;
     };
