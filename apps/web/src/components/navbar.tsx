@@ -98,8 +98,11 @@ export function Navbar() {
               <Link href="/bookmarks" className="text-sm text-[var(--text-secondary)] hover:text-[var(--text)] transition-colors">
                 Saved
               </Link>
+              <Link href="/settings" className="text-sm text-[var(--text-secondary)] hover:text-[var(--text)] transition-colors">
+                Settings
+              </Link>
               <Link
-                href={`/profile/${session.user?.name}`}
+                href="/me"
                 className="text-sm text-[var(--text-secondary)] hover:text-[var(--text)] transition-colors"
               >
                 {session.user?.name}
@@ -188,10 +191,13 @@ export function Navbar() {
                 Saved
               </Link>
               <Link
-                href={`/profile/${session.user?.name}`}
+                href="/me"
                 className="block px-3 py-2 text-sm text-[var(--text)] hover:bg-[var(--surface-2)] rounded-lg transition-colors"
               >
                 Profile
+              </Link>
+              <Link href="/settings" className="block px-3 py-2 text-sm text-[var(--text)] hover:bg-[var(--surface-2)] rounded-lg transition-colors">
+                Settings
               </Link>
               <button
                 onClick={() => signOut()}
