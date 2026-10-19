@@ -1,14 +1,15 @@
 import { Controller, Get, Post, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
 import { Request } from 'express';
-import { OptionalJwtGuard } from '../guards/optional-jwt.guard';
+import { IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { AdminGuard } from '../guards/admin.guard';
 import { ModerationService } from './moderation.service';
 
-interface SubmitReportDto {
-  targetType: 'POST' | 'ANSWER' | 'COMMENT' | 'USER';
-  targetId: string;
-  reason: string;
-  details?: string;
+class SubmitReportDto {
+  @IsIn(['POST', 'ANSWER', 'COMMENT', 'USER']) targetType!: 'POST' | 'ANSWER' | 'COMMENT' | 'USER';
+  @IsString() @MinLength(1) targetId!: string;
+  @IsString() @MinLength(2) @MaxLength(100) reason!: string;
+  @IsOptional() @IsString() @MaxLength(1000) details?: string;
 }
 
 interface ResolveReportDto {
@@ -21,9 +22,9 @@ export class ModerationController {
   constructor(private moderationService: ModerationService) {}
 
   @Post('report')
-  @UseGuards(OptionalJwtGuard)
+  @UseGuards(JwtAuthGuard) // reporter must be a real user (Report.reporterId is a foreign key)
   async submitReport(@Body() dto: SubmitReportDto, @Req() req: Request) {
-    const reporterId = (req.user as Record<string, unknown>)?.id as string | undefined || 'anonymous';
+    const reporterId = (req.user as { id: string }).id;
     return this.moderationService.submitReport(reporterId, dto.targetType, dto.targetId, dto.reason, dto.details);
   }
 

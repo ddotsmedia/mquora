@@ -46,7 +46,7 @@ export class AnswersService {
 
     const answers = await this.prisma.answer.findMany({
       where: whereClause,
-      select: { id: true, body: true, language: true, voteScore: true, isAccepted: true, createdAt: true, author: { select: { id: true, username: true, displayName: true } } },
+      select: { id: true, body: true, language: true, voteScore: true, isAccepted: true, commentCount: true, createdAt: true, author: { select: { id: true, username: true, displayName: true } } },
       orderBy: { createdAt: 'asc' },
       take: limit + 1,
     });

@@ -1,7 +1,18 @@
 import { Controller, Get, Post, Delete, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
 import { Request } from 'express';
+import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { CommentsService } from './comments.service';
+
+class CreateCommentDto {
+  @IsString() @MinLength(1) @MaxLength(1000) body!: string;
+  @IsOptional() @IsString() postId?: string;
+  @IsOptional() @IsString() answerId?: string;
+  @IsOptional() @IsString() parentId?: string;
+}
+
+const actor = (req: Request) => req.user as { id: string; role?: string };
 
 @Controller('api/v1')
 export class CommentsController {
@@ -19,15 +30,14 @@ export class CommentsController {
 
   @Post('comments')
   @UseGuards(JwtAuthGuard)
-  async create(@Body() dto: Record<string, unknown>, @Req() req: Request) {
-    const authorId = (req.user as Record<string, unknown>).id as string;
-    return this.commentsService.create(dto, authorId);
+  @Throttle({ default: { limit: 10, ttl: 60_000 } }) // anti-spam: 10 comments a minute
+  async create(@Body() dto: CreateCommentDto, @Req() req: Request) {
+    return this.commentsService.create(dto, actor(req).id);
   }
 
   @Delete('comments/:id')
   @UseGuards(JwtAuthGuard)
   async delete(@Param('id') id: string, @Req() req: Request) {
-    const authorId = (req.user as Record<string, unknown>).id as string;
-    return this.commentsService.softDelete(id, authorId);
+    return this.commentsService.softDelete(id, actor(req).id, actor(req).role);
   }
 }
