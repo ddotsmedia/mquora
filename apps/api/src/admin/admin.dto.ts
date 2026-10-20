@@ -35,6 +35,10 @@ export class BanDto {
   @IsInt() @Min(0) @Max(3650) days!: number;
 }
 
+export class VerifyDto {
+  @IsBoolean() verified!: boolean;
+}
+
 export class RoleDto {
   @IsEnum(UserRole) role!: UserRole;
 }

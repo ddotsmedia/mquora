@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { apiFetch, ApiError } from '@/lib/api';
 import { ThumbsUp, ThumbsDown } from 'lucide-react';
@@ -17,6 +17,16 @@ export function VoteButtons({ targetId, targetType, initialScore, accessToken }:
   const { data: session } = useSession();
   const [score, setScore] = useState(initialScore);
   const [userVote, setUserVote] = useState<'UP' | 'DOWN' | null>(null);
+  const token = accessToken || session?.user?.accessToken;
+
+  useEffect(() => {
+    if (!token) return;
+    apiFetch<{ votes: Record<string, 'UP' | 'DOWN'> }>(`/api/v1/votes/mine?ids=${targetId}`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => setUserVote(r.votes[targetId] ?? null))
+      .catch(() => undefined);
+  }, [token, targetId]);
+
+  const value = (v: 'UP' | 'DOWN' | null) => (v === 'UP' ? 1 : v === 'DOWN' ? -1 : 0);
 
   const handleVote = async (voteType: 'UP' | 'DOWN') => {
     if (!session) {
@@ -33,13 +43,13 @@ export function VoteButtons({ targetId, targetType, initialScore, accessToken }:
           headers: { Authorization: `Bearer ${accessToken || session.user?.accessToken}` },
           body: JSON.stringify({ targetId, targetType, voteType }),
         });
-        setScore(voteType === 'UP' ? score + 1 : score - 1);
+        setScore(score - value(userVote) + value(voteType));
       } else {
-        await apiFetch(`/api/v1/votes/${targetId}`, {
+        await apiFetch(`/api/v1/votes/${targetType}/${targetId}`, {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${accessToken || session.user?.accessToken}` },
         });
-        setScore(userVote === 'UP' ? score - 1 : score + 1);
+        setScore(score - value(userVote));
       }
 
       setUserVote(newVote);

@@ -17,7 +17,7 @@ import {
   FlagDto,
   ReportsQueryDto,
   ResolveDto,
-  RoleDto,
+  RoleDto, VerifyDto,
   UsersQueryDto,
 } from './admin.dto';
 
@@ -73,6 +73,11 @@ export class AdminController {
     return this.admin.changeUserRole(this.actor(req), id, dto.role as UserRole);
   }
 
+  @Post('users/:id/verify')
+  setVerified(@Req() req: { user: Actor }, @Param('id') id: string, @Body() dto: VerifyDto) {
+    return this.admin.setVerified(this.actor(req), id, dto.verified);
+  }
+
   @Get('content')
   getContent(@Query() q: ContentQueryDto) {
     return this.admin.getContent({ filter: q.filter, status: q.status, q: q.q, page: q.page, limit: q.limit });
@@ -106,6 +111,12 @@ export class AdminController {
   @Get('communities')
   getCommunities(@Query() q: SearchPageQueryDto) {
     return this.admin.getCommunities({ q: q.q, page: q.page, limit: q.limit });
+  }
+
+  // Declared before communities/:id routes.
+  @Post('communities/starter')
+  createStarterCommunities(@Req() req: { user: Actor }) {
+    return this.admin.createStarterCommunities(this.actor(req));
   }
 
   @Post('communities')

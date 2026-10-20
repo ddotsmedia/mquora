@@ -228,6 +228,20 @@ export class AdminService {
     return updated;
   }
 
+  // Verified expert badge (plan: expert verification).
+  async setVerified(actor: Actor, userId: string, verified: boolean) {
+    this.requireAdmin(actor);
+    await this.loadUser(userId);
+    const updated = await this.prisma.user.update({ where: { id: userId }, data: { isVerified: verified }, select: { id: true, isVerified: true } });
+    await this.audit(actor.id, verified ? 'USER_VERIFY' : 'USER_UNVERIFY', 'USER', userId);
+    if (verified) {
+      await this.prisma.notification
+        .create({ data: { userId, type: 'SYSTEM', title: 'You are now verified ✔', body: 'Your profile now shows the verified badge.', link: '/me' } })
+        .catch(() => undefined);
+    }
+    return updated;
+  }
+
   // ---------- content ----------
 
   async getContent(opts: { filter?: 'all' | 'flagged'; status?: ContentStatus; q?: string; page?: number; limit?: number }) {
@@ -469,6 +483,37 @@ export class AdminService {
     } catch (e) {
       this.dupGuard(e, 'community');
     }
+  }
+
+  // Creates a starter set of communities, skipping any slug that already exists.
+  async createStarterCommunities(actor: Actor) {
+    this.requireAdmin(actor);
+    const starters = [
+      ['kerala', 'Kerala', 'കേരളം — places, culture, news and everyday life in Kerala.'],
+      ['gulf-life', 'Gulf Life', 'ഗൾഫ് ജീവിതം — living and working in the UAE and GCC.'],
+      ['jobs-careers', 'Jobs & Careers', 'ജോലി — job search, interviews, visas and career advice.'],
+      ['health-ayurveda', 'Health & Ayurveda', 'ആരോഗ്യം — health, Ayurveda and wellbeing.'],
+      ['technology', 'Technology', 'സാങ്കേതികം — phones, computers, apps and the internet.'],
+      ['education', 'Education', 'വിദ്യാഭ്യാസം — schools, colleges, exams and studying abroad.'],
+      ['money-business', 'Money & Business', 'പണം — savings, banking, NRI finance and small business.'],
+      ['food-recipes', 'Food & Recipes', 'ഭക്ഷണം — Kerala recipes and cooking tips.'],
+      ['travel', 'Travel', 'യാത്ര — trips, tickets, places to visit.'],
+      ['malayalam-language', 'Malayalam Language', 'മലയാളം — words, grammar, literature and translation.'],
+      ['movies-entertainment', 'Movies & Entertainment', 'സിനിമ — Malayalam cinema, music and shows.'],
+      ['law-documents', 'Law & Documents', 'നിയമം — passports, Emirates ID, attestations and legal questions.'],
+    ] as const;
+    const existing = new Set(
+      (await this.prisma.community.findMany({ where: { slug: { in: starters.map((s) => s[0]) } }, select: { slug: true } })).map((c) => c.slug),
+    );
+    const toCreate = starters.filter(([slug]) => !existing.has(slug));
+    if (toCreate.length) {
+      await this.prisma.community.createMany({
+        data: toCreate.map(([slug, name, description]) => ({ slug, name, description, isPublic: true, createdBy: actor.id })),
+        skipDuplicates: true,
+      });
+      await this.audit(actor.id, 'COMMUNITY_CREATE_STARTERS', 'COMMUNITY', 'starter', { slugs: toCreate.map((s) => s[0]) });
+    }
+    return { created: toCreate.length, skipped: starters.length - toCreate.length };
   }
 
   async updateCommunity(actor: Actor, id: string, dto: { name?: string; description?: string; isPublic?: boolean }) {
