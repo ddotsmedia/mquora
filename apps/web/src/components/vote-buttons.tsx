@@ -56,14 +56,14 @@ export function VoteButtons({ targetId, targetType, initialScore, accessToken }:
     <div className="flex gap-2">
       <button
         onClick={() => handleVote('UP')}
-        className={`p-2 rounded hover:bg-muted ${userVote === 'UP' ? 'bg-green-100 dark:bg-green-900' : ''}`}
+        className={`p-2 rounded hover:bg-[var(--surface-2)] ${userVote === 'UP' ? 'bg-green-100 dark:bg-green-900' : ''}`}
       >
         <ThumbsUp size={16} />
       </button>
       <span className="text-sm font-semibold min-w-8">{score}</span>
       <button
         onClick={() => handleVote('DOWN')}
-        className={`p-2 rounded hover:bg-muted ${userVote === 'DOWN' ? 'bg-red-100 dark:bg-red-900' : ''}`}
+        className={`p-2 rounded hover:bg-[var(--surface-2)] ${userVote === 'DOWN' ? 'bg-red-100 dark:bg-red-900' : ''}`}
       >
         <ThumbsDown size={16} />
       </button>

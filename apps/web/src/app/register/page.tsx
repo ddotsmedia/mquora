@@ -1,96 +1,59 @@
-'use client';
-
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { signIn } from '@/auth';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { AuthError } from 'next-auth';
+import { auth, signIn } from '@/auth';
+import { AuthCard, authButton, authInput } from '@/components/auth-card';
 
-export default function RegisterPage() {
-  const [displayName, setDisplayName] = useState('');
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const router = useRouter();
+export const dynamic = 'force-dynamic';
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError('');
+const API = process.env.API_INTERNAL_URL || 'http://localhost:3041';
 
-    try {
-      const res = await fetch('/api/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, displayName, username }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setError(Array.isArray(data.message) ? data.message.join(', ') : data.message || 'Registration failed');
-        return;
-      }
-
-      const result = await signIn('credentials', { email, password, redirect: false });
-      if (result?.ok) {
-        router.push('/');
-      }
-    } catch (err) {
-      setError('Registration failed');
-    }
+// Server-side sign-up, then sign in. (The old client page imported server-only auth code.)
+async function register(formData: FormData) {
+  'use server';
+  const field = (k: string) => String(formData.get(k) ?? '').trim();
+  const email = field('email');
+  const password = String(formData.get('password') ?? '');
+  const res = await fetch(`${API}/api/v1/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password, displayName: field('displayName'), username: field('username').toLowerCase() }),
+    cache: 'no-store',
+  });
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as { message?: string | string[] };
+    const msg = Array.isArray(data.message) ? data.message.join(', ') : data.message || 'Registration failed';
+    redirect(`/register?error=${encodeURIComponent(msg)}`);
   }
+  try {
+    await signIn('credentials', { email, password, redirectTo: '/post-login' });
+  } catch (e) {
+    if (e instanceof AuthError) redirect('/login?registered=1');
+    throw e; // NEXT_REDIRECT on success
+  }
+}
+
+export default async function RegisterPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+  const [sp, session] = await Promise.all([searchParams, auth()]);
+  if (session?.user?.accessToken && !session.error) redirect('/');
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="w-full max-w-md p-8 bg-white rounded-lg shadow">
-        <h1 className="text-2xl font-bold mb-6">Register</h1>
-        {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">{error}</div>}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="text"
-            placeholder="Display Name"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-          <input
-            type="text"
-            placeholder="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-          <input
-            type="password"
-            placeholder="Password (min 8 chars)"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-          <button
-            type="submit"
-            className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-          >
-            Register
-          </button>
-        </form>
-        <p className="mt-4 text-center">
-          Already have an account?{' '}
-          <Link href="/login" className="text-blue-500 hover:underline">
-            Login
-          </Link>
-        </p>
-      </div>
-    </div>
+    <AuthCard
+      title="Create your account"
+      subtitle="Join the Malayalam knowledge community."
+      footer={<>Already have an account? <Link href="/login" className="font-medium text-[var(--primary)] hover:underline">Log in</Link></>}
+    >
+      {sp.error && <div className="mb-4 rounded-xl bg-red-500/10 p-3 text-sm text-red-600">{sp.error}</div>}
+      <form action={register} className="space-y-4">
+        <input name="displayName" placeholder="Your name" minLength={2} maxLength={100} autoComplete="name" className={authInput} required />
+        <input name="username" placeholder="Username (letters, numbers, _)" minLength={2} maxLength={50} pattern="[A-Za-z0-9_]+" autoComplete="username" className={authInput} required />
+        <input type="email" name="email" placeholder="Email" autoComplete="email" className={authInput} required />
+        <input type="password" name="password" placeholder="Password (min 8 characters)" minLength={8} maxLength={100} autoComplete="new-password" className={authInput} required />
+        <button type="submit" className={authButton}>Create account</button>
+      </form>
+      <p className="mt-4 text-xs text-[var(--text-muted)]">
+        By joining you agree to our <Link href="/terms" className="underline">Terms</Link> and <Link href="/guidelines" className="underline">Guidelines</Link>.
+      </p>
+    </AuthCard>
   );
 }

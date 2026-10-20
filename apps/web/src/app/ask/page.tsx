@@ -127,7 +127,7 @@ export default function AskPage() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="നിങ്ങളുടെ ചോദ്യം ഇവിടെ എഴുതൂ..."
-              className="w-full px-4 py-3 rounded-lg bg-muted border border-border text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 rounded-lg bg-[var(--surface)] border border-border text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:border-[var(--primary)]"
               required
             />
             <div className="mt-2 flex items-center gap-2">
@@ -141,7 +141,7 @@ export default function AskPage() {
             <select
               value={communityId}
               onChange={(e) => setCommunityId(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg bg-muted border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 rounded-lg bg-[var(--surface)] border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:border-[var(--primary)]"
               required
             >
               <option value="">Select a community</option>
@@ -160,7 +160,7 @@ export default function AskPage() {
               onChange={(e) => setBody(e.target.value)}
               placeholder="Add more details about your question..."
               rows={8}
-              className="w-full px-4 py-3 rounded-lg bg-muted border border-border text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 rounded-lg bg-[var(--surface)] border border-border text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:border-[var(--primary)]"
             />
             <p className="text-xs text-muted-foreground mt-2">Markdown formatting is supported</p>
           </div>
@@ -172,7 +172,7 @@ export default function AskPage() {
               value={tags}
               onChange={(e) => setTags(e.target.value)}
               placeholder="javascript, react, debugging"
-              className="w-full px-4 py-3 rounded-lg bg-muted border border-border text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 rounded-lg bg-[var(--surface)] border border-border text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:border-[var(--primary)]"
             />
             <p className="text-xs text-muted-foreground mt-2">Add relevant tags to help others find your question</p>
           </div>
@@ -180,7 +180,7 @@ export default function AskPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold rounded-lg transition-colors"
+            className="w-full px-6 py-3 bg-[var(--primary)] hover:bg-[var(--primary-light)] disabled:opacity-50 text-white font-semibold rounded-lg transition-colors"
           >
             {loading ? 'ചോദ്യം സൃഷ്ടിക്കുന്നത്...' : 'ചോദ്യം പോസ്റ്റ് ചെയ്യൂ'}
           </button>

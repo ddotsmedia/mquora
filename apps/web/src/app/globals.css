@@ -31,14 +31,54 @@
   --color-accent-900: #78350f;
 }
 
+/* Semantic utility colours (text-foreground, bg-card, border-border, text-muted …) mapped to the theme tokens. */
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
+  --color-card: var(--surface);
+  --color-muted: var(--text-muted);
+  --color-muted-foreground: var(--text-muted);
+  --color-secondary: var(--text-secondary);
+  --color-border: var(--border);
+  --color-accent-foreground: #17231C;
+}
+
+/* Dark mode follows the .dark class (set by next-themes; the admin console always uses it). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Theme "Kerala Green & Gold": banana-leaf green, temple gold, warm ivory. */
+:root {
+  --bg: #F7F5EE;
+  --surface: #FFFFFF;
+  --surface-2: #F1EEE4;
+  --border: #E3DED0;
+  --text: #17231C;
+  --text-secondary: #46574C;
+  --text-muted: #7A887F;
+  --primary: #1F6B45;
+  --primary-light: #2D8A5B;
+  --accent: #D4A017;
+  --accent-light: #E8BC45;
+  --ring: rgba(31, 107, 69, 0.25);
+  --shadow: 0 1px 2px rgba(23, 35, 28, 0.04), 0 4px 16px rgba(23, 35, 28, 0.06);
+  color-scheme: light;
+}
+
 .dark {
-  --bg: #0F1A14;
-  --surface: #1A2E20;
-  --surface-2: #243B2A;
-  --border: #2D4A35;
-  --text: #F0F0EB;
-  --text-secondary: #A3B8A8;
-  --text-muted: #6B8A72;
+  --bg: #0D1712;
+  --surface: #14231A;
+  --surface-2: #1C3024;
+  --border: #29412F;
+  --text: #EEF2EC;
+  --text-secondary: #A9BDAF;
+  --text-muted: #6F8C78;
+  --primary: #2E9160;
+  --primary-light: #3AA872;
+  --accent: #D4A017;
+  --accent-light: #E8BC45;
+  --ring: rgba(58, 168, 114, 0.35);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.25);
+  color-scheme: dark;
 }
 
 body {
@@ -52,6 +92,22 @@ body {
 
 .font-malayalam {
   font-family: 'Noto Sans Malayalam', sans-serif;
+}
+
+::selection {
+  background: var(--ring);
+}
+
+/* Consistent keyboard focus ring across buttons, links and inputs. */
+:where(a, button, input, textarea, select):focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Cards: any rounded surface panel gets the soft theme shadow. */
+.rounded-xl.bg-\[var\(--surface\)\],
+.rounded-2xl.bg-\[var\(--surface\)\] {
+  box-shadow: var(--shadow);
 }
 
 ::-webkit-scrollbar {

@@ -1,138 +1,118 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { PostCard } from '@/components/post-card';
 import { TrendingSidebar } from '@/components/TrendingSidebar';
 import { apiFetch } from '@/lib/api';
 
-interface Post {
-  id: string;
-  seoSlug: string;
-  title: string;
-  body?: string;
-  language: string;
-  voteScore: number;
-  answerCount: number;
-  viewCount: number;
-  createdAt: string;
-  author: {
-    id: string;
-    username: string;
-    displayName: string;
-  };
-  community?: {
-    id: string;
-    slug: string;
-    name: string;
-  };
-}
+type Post = Parameters<typeof PostCard>[0] & { id: string };
+type Stats = { communities: number; questions: number; answers: number; topics: number; members: number };
+type Tab = 'latest' | 'top' | 'unanswered';
 
-interface FeedResponse {
-  data: Post[];
-  nextCursor: string | null;
-}
+const TABS: { id: Tab; label: string; path: string }[] = [
+  { id: 'latest', label: 'Latest', path: '/api/v1/posts?limit=20' },
+  { id: 'top', label: 'Top this week', path: '/api/v1/trending/posts?limit=20' },
+  { id: 'unanswered', label: 'Unanswered', path: '/api/v1/trending/unanswered?limit=20' },
+];
 
 export default function Home() {
   const { data: session } = useSession();
+  const [tab, setTab] = useState<Tab>('latest');
   const [posts, setPosts] = useState<Post[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<Stats | null>(null);
 
   useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const response = await apiFetch<FeedResponse>('/api/v1/posts?limit=20');
-        setPosts(response.data || []);
-        setNextCursor(response.nextCursor || null);
-      } catch (error) {
-        console.error('Failed to fetch posts:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchPosts();
+    apiFetch<Stats>('/api/v1/trending/stats').then(setStats).catch(() => setStats(null));
   }, []);
 
-  return (
-    <main className="bg-[var(--bg)] min-h-screen">
-      {/* Hero Banner */}
-      {!session && (
-        <div className="relative overflow-hidden bg-gradient-to-br from-[#1B4332] via-[#2D6A4F] to-[#1B4332]">
-          {/* Decorative circles */}
-          <div className="absolute -top-8 -right-8 w-48 h-48 rounded-full bg-white/5" />
-          <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-[var(--accent)]/10" />
+  const load = useCallback(async (which: Tab, cursor?: string) => {
+    const base = TABS.find((t) => t.id === which)!.path;
+    const res = await apiFetch<{ data: Post[]; nextCursor?: string | null }>(cursor ? `${base}&cursor=${encodeURIComponent(cursor)}` : base);
+    setPosts((prev) => (cursor ? [...prev, ...(res.data ?? [])] : res.data ?? []));
+    setNextCursor(which === 'latest' ? res.nextCursor ?? null : null);
+  }, []);
 
-          <div className="relative z-10 max-w-7xl mx-auto px-4 py-12">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-[var(--accent)]/20 rounded-full text-[var(--accent-light)] text-xs font-medium mb-4">
-                🌿 Malayalam-first community
-              </div>
-              <h1 className="text-3xl md:text-4xl font-bold text-white font-malayalam mb-2 leading-tight">
-                അറിവ് പങ്കുവെക്കൂ
-              </h1>
-              <p className="text-white/70 mb-6 max-w-2xl">
-                Kerala's first knowledge community platform
-              </p>
-              <div className="flex gap-3 flex-wrap mb-6">
-                <Link
-                  href="/ask"
-                  className="px-5 py-2.5 bg-[var(--accent)] hover:bg-[var(--accent-light)] text-white font-semibold rounded-full text-sm transition-all shadow-md"
-                >
-                  ചോദ്യം ചോദിക്കൂ →
-                </Link>
-                <Link
-                  href="/discover"
-                  className="px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white font-medium rounded-full text-sm transition-all backdrop-blur border border-white/20"
-                >
-                  Explore Communities
-                </Link>
-              </div>
-              <div className="flex gap-6 text-sm text-white/60">
-                <span>
-                  <strong className="text-white">10</strong> Communities
-                </span>
-                <span>
-                  <strong className="text-white">5</strong> Questions
-                </span>
-                <span>
-                  <strong className="text-white">15</strong> Topics
-                </span>
-              </div>
+  useEffect(() => {
+    setLoading(true);
+    load(tab)
+      .catch(() => setPosts([]))
+      .finally(() => setLoading(false));
+  }, [tab, load]);
+
+  const statItems = stats
+    ? [
+        [stats.questions, 'Questions'],
+        [stats.answers, 'Answers'],
+        [stats.communities, 'Communities'],
+        [stats.members, 'Members'],
+      ]
+    : [];
+
+  return (
+    <div className="min-h-screen bg-[var(--bg)]">
+      {!session && (
+        <section className="relative overflow-hidden bg-gradient-to-br from-[#123D28] via-[#1F6B45] to-[#14482F]">
+          {/* Soft decorative glow, gold for the temple-lamp accent */}
+          <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-[#D4A017]/15 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-32 left-1/3 h-72 w-72 rounded-full bg-white/5 blur-3xl" />
+          <div className="relative z-10 mx-auto max-w-7xl px-4 py-14 md:py-20">
+            <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#D4A017]/30 bg-[#D4A017]/15 px-3 py-1 text-xs font-medium text-[#F3D57A]">
+              🌿 Malayalam-first community
+            </span>
+            <h1 className="mb-3 font-malayalam text-4xl font-bold leading-tight text-white md:text-5xl">അറിവ് പങ്കുവെക്കൂ</h1>
+            <p className="mb-8 max-w-2xl text-lg text-white/75">
+              Ask questions, share what you know, and learn from Malayalis everywhere — in Malayalam, English or Manglish.
+            </p>
+            <div className="mb-10 flex flex-wrap gap-3">
+              <Link href="/ask" className="rounded-full bg-[#D4A017] px-6 py-3 text-sm font-semibold text-[#17231C] shadow-lg shadow-black/20 transition hover:bg-[#E8BC45]">
+                ചോദ്യം ചോദിക്കൂ →
+              </Link>
+              <Link href="/communities" className="rounded-full border border-white/25 bg-white/10 px-6 py-3 text-sm font-medium text-white backdrop-blur transition hover:bg-white/20">
+                Explore communities
+              </Link>
             </div>
+            {statItems.length > 0 && (
+              <dl className="grid max-w-xl grid-cols-2 gap-4 sm:grid-cols-4">
+                {statItems.map(([n, label]) => (
+                  <div key={label as string} className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur">
+                    <dd className="text-2xl font-bold text-white">{(n as number).toLocaleString()}</dd>
+                    <dt className="text-xs text-white/60">{label}</dt>
+                  </div>
+                ))}
+              </dl>
+            )}
           </div>
-        </div>
+        </section>
       )}
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Feed */}
-          <div className="lg:col-span-2 space-y-4">
-            {/* Feed header */}
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="font-semibold text-lg text-[var(--text)]">Latest Questions</h2>
-              <div className="flex gap-1 text-xs">
-                {['Latest', 'Top', 'Unanswered'].map((tab) => (
+      <div className="mx-auto max-w-7xl px-4 py-8">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="space-y-4 lg:col-span-2">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold text-[var(--text)]">Questions</h2>
+              <div className="flex gap-1 rounded-full border border-[var(--border)] bg-[var(--surface)] p-1">
+                {TABS.map((t) => (
                   <button
-                    key={tab}
-                    className="px-3 py-1.5 rounded-full bg-[var(--surface-2)] hover:bg-[var(--primary)]/10 hover:text-[var(--primary)] text-[var(--text-secondary)] transition-all text-xs font-medium"
+                    key={t.id}
+                    onClick={() => setTab(t.id)}
+                    className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                      tab === t.id ? 'bg-[var(--primary)] text-white shadow-sm' : 'text-[var(--text-secondary)] hover:text-[var(--text)]'
+                    }`}
                   >
-                    {tab}
+                    {t.label}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Loading state */}
             {loading ? (
               <div className="space-y-4">
-                {[...Array(3)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="h-28 bg-[var(--surface-2)] rounded-xl border border-[var(--border)] animate-pulse"
-                  ></div>
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="h-28 animate-pulse rounded-xl border border-[var(--border)] bg-[var(--surface-2)]" />
                 ))}
               </div>
             ) : posts.length > 0 ? (
@@ -142,37 +122,37 @@ export default function Home() {
                 ))}
               </div>
             ) : (
-              <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-12 text-center">
-                <div className="text-4xl mb-4">🤔</div>
-                <h3 className="text-xl font-semibold text-[var(--text)] mb-2 font-malayalam">
-                  ഇനിയും ചോദ്യങ്ങളില്ല
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-12 text-center">
+                <div className="mb-4 text-4xl">🌱</div>
+                <h3 className="mb-2 font-malayalam text-xl font-semibold text-[var(--text)]">
+                  {tab === 'unanswered' ? 'എല്ലാ ചോദ്യങ്ങൾക്കും ഉത്തരമുണ്ട്' : 'ഇനിയും ചോദ്യങ്ങളില്ല'}
                 </h3>
-                <p className="text-[var(--text-secondary)] mb-6">Be the first to ask in this community!</p>
-                <Link
-                  href="/ask"
-                  className="inline-block px-6 py-3 bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white font-semibold rounded-full transition-all"
-                >
+                <p className="mb-6 text-[var(--text-secondary)]">
+                  {tab === 'unanswered' ? 'Every question has an answer. Nice!' : 'Be the first to ask a question.'}
+                </p>
+                <Link href="/ask" className="inline-block rounded-full bg-[var(--primary)] px-6 py-3 font-semibold text-white transition hover:bg-[var(--primary-light)]">
                   ചോദ്യം ചോദിക്കൂ
                 </Link>
               </div>
             )}
 
-            {/* Load more */}
-            {nextCursor && (
-              <div className="text-center pt-4">
-                <button className="px-6 py-3 rounded-full border border-[var(--border)] hover:bg-[var(--surface-2)] font-medium text-sm transition-all">
+            {nextCursor && !loading && (
+              <div className="pt-4 text-center">
+                <button
+                  onClick={() => load('latest', nextCursor)}
+                  className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-6 py-3 text-sm font-medium transition hover:bg-[var(--surface-2)]"
+                >
                   കൂടുതൽ കാണുക
                 </button>
               </div>
             )}
           </div>
 
-          {/* Sidebar */}
-          <div className="hidden lg:block">
+          <aside className="hidden lg:block">
             <TrendingSidebar />
-          </div>
+          </aside>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

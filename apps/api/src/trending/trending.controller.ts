@@ -5,6 +5,11 @@ import { TrendingService } from './trending.service';
 export class TrendingController {
   constructor(private readonly trending: TrendingService) {}
 
+  @Get('stats')
+  stats() {
+    return this.trending.stats();
+  }
+
   @Get('tags')
   tags(@Query('limit') limit?: string) {
     return this.trending.tags(Number(limit));

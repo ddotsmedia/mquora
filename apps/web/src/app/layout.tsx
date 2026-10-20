@@ -3,6 +3,7 @@ import { Metadata } from "next";
 import { sansFont, malayalamFont } from "@/lib/fonts";
 import { Navbar } from "@/components/navbar";
 import { SiteFooter } from "@/components/site-footer";
+import { PublicOnly } from "@/components/public-only";
 import { Toaster } from "sonner";
 import { Providers } from "@/components/providers";
 import "./globals.css";
@@ -23,10 +24,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <head />
       <body className={`${sansFont.variable} ${malayalamFont.variable} font-sans bg-[var(--bg)] text-[var(--text)] min-h-screen`}>
         <Providers>
-          <Navbar />
+          <PublicOnly><Navbar /></PublicOnly>
           <main>{children}</main>
-          <SiteFooter />
-          <Toaster />
+          <PublicOnly><SiteFooter /></PublicOnly>
+          <Toaster richColors position="top-center" />
         </Providers>
       </body>
     </html>

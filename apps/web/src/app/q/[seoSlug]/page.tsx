@@ -126,7 +126,7 @@ export default async function PostPage({ params }: { params: Promise<{ seoSlug: 
               <a
                 key={tag.tag.id}
                 href={`/t/${tag.tag.slug}`}
-                className="px-3 py-1 rounded-full bg-muted text-muted-foreground text-sm hover:bg-accent hover:text-accent-foreground"
+                className="px-3 py-1 rounded-full bg-[var(--surface-2)] text-[var(--text-secondary)] text-sm hover:bg-[var(--primary)] hover:text-white transition-colors"
               >
                 #{tag.tag.name}
               </a>
