@@ -2,6 +2,7 @@ import { IsOptional, IsString, IsUrl, MaxLength, MinLength, ValidateIf } from 'c
 
 export class UpdateMeDto {
   @IsOptional() @IsString() @MinLength(2) @MaxLength(60) displayName?: string;
+  @IsOptional() @IsString() @MaxLength(80) credential?: string;
   @IsOptional() @IsString() @MaxLength(500) bio?: string;
   @IsOptional() @IsString() @MaxLength(100) location?: string;
   // Empty string clears the website.

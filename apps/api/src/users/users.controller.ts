@@ -23,6 +23,11 @@ export class UsersController {
     return this.users.updateMe(uid(req), dto);
   }
 
+  @Get(':username/answers')
+  answers(@Param('username') username: string) {
+    return this.users.answersOf(username);
+  }
+
   @Get(':username')
   profile(@Param('username') username: string) {
     return this.users.publicProfile(username);

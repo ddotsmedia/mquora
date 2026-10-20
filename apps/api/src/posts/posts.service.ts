@@ -37,16 +37,22 @@ export class PostsService {
     });
 
     if (tags && Array.isArray(tags) && tags.length > 0) {
-      for (const tagName of tags.slice(0, 5)) {
+      const names = [...new Set((tags as unknown[]).map((t) => String(t).trim()).filter(Boolean))].slice(0, 5);
+      for (const tagName of names) {
         const tag = await this.prisma.tag.upsert({
-          where: { name: tagName as string },
-          create: { name: tagName as string, slug: slug(tagName as string, { lower: true }) },
+          where: { name: tagName },
+          create: { name: tagName, slug: slug(tagName, { lower: true }) || this.nanoid() },
           update: {},
           select: { id: true },
         });
         await this.prisma.postTag.create({ data: { postId: post.id, tagId: tag.id } });
+        await this.prisma.tag.update({ where: { id: tag.id }, data: { postCount: { increment: 1 } } });
       }
     }
+    // Keep community counters right and let the asker follow their own question.
+    if (communityId) await this.prisma.community.update({ where: { id: communityId as string }, data: { postCount: { increment: 1 } } }).catch(() => undefined);
+    await this.prisma.questionFollow.create({ data: { userId: authorId, postId: post.id } }).catch(() => undefined);
+    await this.prisma.post.update({ where: { id: post.id }, data: { followerCount: 1 } }).catch(() => undefined);
 
     await this.embeddingQueue.add(
       { type: 'POST', id: post.id, text: `${title} ${body}` },
@@ -108,6 +114,7 @@ export class PostsService {
         answerCount: true,
         commentCount: true,
         viewCount: true,
+        followerCount: true,
         createdAt: true,
         deletedAt: true,
         author: { select: { id: true, username: true, displayName: true, isVerified: true } },
@@ -118,6 +125,8 @@ export class PostsService {
     });
 
     if (!post || post.deletedAt) throw new NotFoundException('Post not found');
+    // Count the view without slowing the response.
+    void this.prisma.post.update({ where: { id: post.id }, data: { viewCount: { increment: 1 } } }).catch(() => undefined);
     return post;
   }
 

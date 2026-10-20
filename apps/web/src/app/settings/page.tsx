@@ -7,7 +7,7 @@ import { ApiError } from '@/lib/api';
 export const metadata: Metadata = { title: 'Profile settings — mquora', robots: { index: false } };
 export const dynamic = 'force-dynamic';
 
-type Me = { id: string; email: string; username: string; displayName: string; bio: string; location: string; website: string };
+type Me = { id: string; email: string; username: string; displayName: string; bio: string; location: string; website: string; profile?: { credential: string | null } | null };
 
 async function save(formData: FormData) {
   'use server';
@@ -17,7 +17,7 @@ async function save(formData: FormData) {
   try {
     await userFetch('/api/v1/users/me', '/settings', {
       method: 'PATCH',
-      body: JSON.stringify({ displayName: field('displayName'), bio: field('bio'), location: field('location'), website }),
+      body: JSON.stringify({ displayName: field('displayName'), bio: field('bio'), location: field('location'), website, credential: field('credential') || null }),
     });
   } catch (e) {
     if (e instanceof ApiError) redirect(`/settings?error=${encodeURIComponent(e.message)}`);
@@ -49,6 +49,10 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-[var(--text)]">Display name</span>
           <input name="displayName" defaultValue={me.displayName} required minLength={2} maxLength={60} className={input} />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium text-[var(--text)]">Credential</span>
+          <input name="credential" defaultValue={me.profile?.credential ?? ''} maxLength={80} className={input} placeholder="e.g. Senior Software Engineer at X" />
         </label>
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-[var(--text)]">Bio</span>

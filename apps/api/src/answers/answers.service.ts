@@ -16,6 +16,9 @@ export class AnswersService {
 
   async create(postId: string, dto: Record<string, unknown>, authorId: string) {
     const { body } = dto;
+    if (typeof body !== 'string' || body.trim().length < 2) throw new BadRequestException('Answer is too short');
+    const post = await this.prisma.post.findFirst({ where: { id: postId, status: 'PUBLISHED', deletedAt: null }, select: { title: true, seoSlug: true } });
+    if (!post) throw new NotFoundException('Question not found');
     const contentProcessed = this.languageService.processContent(body as string);
 
     const [answer] = await this.prisma.$transaction([
@@ -29,6 +32,25 @@ export class AnswersService {
       }),
     ]);
 
+    // Notify everyone following the question (the asker follows automatically), except the answerer.
+    const [followers, author] = await Promise.all([
+      this.prisma.questionFollow.findMany({ where: { postId, userId: { not: authorId } }, select: { userId: true }, take: 1000 }),
+      this.prisma.user.findUnique({ where: { id: authorId }, select: { displayName: true } }),
+    ]);
+    if (followers.length) {
+      await this.prisma.notification
+        .createMany({
+          data: followers.map((f) => ({
+            userId: f.userId,
+            type: 'ANSWER' as const,
+            title: 'New answer to a question you follow',
+            body: `${author?.displayName ?? 'Someone'} answered: ${post.title.slice(0, 120)}`,
+            link: `/q/${post.seoSlug}#answer-${answer.id}`,
+          })),
+        })
+        .catch(() => undefined);
+    }
+
     await this.embeddingQueue.add(
       { type: 'ANSWER', id: answer.id, text: body as string },
       { removeOnComplete: true, removeOnFail: false },
@@ -41,13 +63,19 @@ export class AnswersService {
     return answer;
   }
 
-  async findByPost(postId: string, cursor?: string, limit = 20) {
-    const whereClause = { postId, status: 'PUBLISHED' as const, deletedAt: null, ...(cursor && { createdAt: { gt: new Date(cursor) } }) };
+  // sort: 'suggested' (accepted, then most votes) or 'recent'.
+  async findByPost(postId: string, cursor?: string, limit = 20, sort = 'suggested') {
+    const recent = sort === 'recent';
+    limit = Math.min(Math.max(limit || 20, 1), 50);
+    const whereClause = { postId, status: 'PUBLISHED' as const, deletedAt: null, ...(cursor && !recent ? {} : cursor ? { createdAt: { lt: new Date(cursor) } } : {}) };
 
     const answers = await this.prisma.answer.findMany({
       where: whereClause,
-      select: { id: true, body: true, language: true, voteScore: true, isAccepted: true, commentCount: true, createdAt: true, author: { select: { id: true, username: true, displayName: true, isVerified: true } } },
-      orderBy: { createdAt: 'asc' },
+      select: {
+        id: true, body: true, language: true, voteScore: true, isAccepted: true, commentCount: true, createdAt: true, updatedAt: true,
+        author: { select: { id: true, username: true, displayName: true, isVerified: true, profile: { select: { credential: true } } } },
+      },
+      orderBy: recent ? [{ createdAt: 'desc' }] : [{ isAccepted: 'desc' }, { voteScore: 'desc' }, { createdAt: 'asc' }],
       take: limit + 1,
     });
 
