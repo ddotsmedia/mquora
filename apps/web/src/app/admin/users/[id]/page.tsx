@@ -4,6 +4,8 @@ import { adminFetch, AdminApiError } from '@/lib/admin-server';
 import { Badge, DataTable, PageHeader, Panel, formatDate } from '@/components/admin/ui';
 import BanControls from '@/components/admin/BanControls';
 import RoleSelect from '@/components/admin/RoleSelect';
+import ActionButton from '@/components/admin/ActionButton';
+import { setVerifiedAction } from '@/app/admin/actions';
 
 type Detail = {
   id: string;
@@ -82,6 +84,16 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
               <div>
                 <p className="mb-2 text-sm font-medium">Role</p>
                 <RoleSelect userId={u.id} current={u.role} />
+              </div>
+            )}
+            {viewerIsAdmin && (
+              <div>
+                <p className="mb-2 text-sm font-medium">Verified expert badge</p>
+                <ActionButton
+                  label={u.isVerified ? 'Remove verified badge' : 'Mark as verified expert ✓'}
+                  variant={u.isVerified ? 'ghost' : 'primary'}
+                  run={setVerifiedAction.bind(null, u.id, !u.isVerified)}
+                />
               </div>
             )}
             {!viewerIsAdmin && <p className="text-xs text-[var(--text-muted)]">Only admins can change roles.</p>}

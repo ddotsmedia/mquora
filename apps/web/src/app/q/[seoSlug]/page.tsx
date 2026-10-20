@@ -8,6 +8,9 @@ import { AnswerForm } from '@/components/answer-form';
 import { Comments } from '@/components/comments';
 import { ReportButton } from '@/components/report-button';
 import Link from 'next/link';
+import { ShareButtons } from '@/components/share-buttons';
+import { AcceptButton } from '@/components/accept-button';
+import { VerifiedBadge } from '@/components/verified-badge';
 import { formatDistanceToNow } from 'date-fns';
 
 interface Post {
@@ -26,6 +29,7 @@ interface Post {
     id: string;
     username: string;
     displayName: string;
+    isVerified?: boolean;
   };
   community: {
     id: string;
@@ -46,6 +50,7 @@ interface Answer {
     id: string;
     username: string;
     displayName: string;
+    isVerified?: boolean;
   };
 }
 
@@ -75,6 +80,7 @@ export default async function PostPage({ params }: { params: Promise<{ seoSlug: 
   const { seoSlug } = await params;
   let post: Post | null = null;
   let answers: Answer[] = [];
+  let related: Array<{ id: string; seoSlug: string; title: string; answerCount: number }> = [];
 
   try {
     post = await serverApiFetch<Post>(`/api/v1/posts/${seoSlug}`);
@@ -82,6 +88,7 @@ export default async function PostPage({ params }: { params: Promise<{ seoSlug: 
       `/api/v1/posts/${post.id}/answers`,
     );
     answers = response.data;
+    related = await serverApiFetch<typeof related>(`/api/v1/posts/${post.id}/related?limit=5`).catch(() => []);
   } catch (error) {
     console.error('Failed to fetch post:', error);
     notFound();
@@ -89,8 +96,35 @@ export default async function PostPage({ params }: { params: Promise<{ seoSlug: 
 
   if (!post || post.deletedAt) notFound();
 
+  // Structured data so Google can show this as a Q&A rich result.
+  const accepted = answers.find((a) => a.isAccepted);
+  const toAnswer = (a: Answer) => ({
+    '@type': 'Answer',
+    text: a.body.slice(0, 2000),
+    upvoteCount: a.voteScore,
+    dateCreated: a.createdAt,
+    url: `/q/${post!.seoSlug}#answer-${a.id}`,
+    author: { '@type': 'Person', name: a.author.displayName },
+  });
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'QAPage',
+    mainEntity: {
+      '@type': 'Question',
+      name: post.title,
+      text: post.body.slice(0, 2000),
+      answerCount: answers.length,
+      upvoteCount: post.voteScore,
+      dateCreated: post.createdAt,
+      author: { '@type': 'Person', name: post.author.displayName },
+      ...(accepted ? { acceptedAnswer: toAnswer(accepted) } : {}),
+      suggestedAnswer: answers.filter((a) => !a.isAccepted).slice(0, 10).map(toAnswer),
+    },
+  };
+
   return (
     <div className="max-w-3xl mx-auto">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
       <article className="p-6">
         <div className="mb-4 flex items-center gap-2">
           <LanguageBadge language={post.language} />
@@ -102,6 +136,7 @@ export default async function PostPage({ params }: { params: Promise<{ seoSlug: 
         <div className="flex items-center gap-4 mb-6 text-sm text-muted-foreground">
           <div>
             <Link href={`/profile/${post.author.username}`} className="font-semibold text-foreground hover:underline">{post.author.displayName}</Link>
+            <VerifiedBadge show={post.author.isVerified} />
             <p>{formatDistanceToNow(new Date(post.createdAt), {addSuffix: true})}</p>
           </div>
           <span>in</span>
@@ -134,6 +169,8 @@ export default async function PostPage({ params }: { params: Promise<{ seoSlug: 
           </div>
         )}
 
+        <div className="mb-2"><ShareButtons title={post.title} path={`/q/${post.seoSlug}`} /></div>
+
         <Comments postId={post.id} initialCount={post.commentCount} />
       </article>
 
@@ -141,8 +178,8 @@ export default async function PostPage({ params }: { params: Promise<{ seoSlug: 
         <h2 className="text-2xl font-bold text-foreground mb-6">{answers.length} Answers</h2>
 
         <div className="space-y-6 mb-8">
-          {answers.map((answer) => (
-            <div key={answer.id} className="border border-border rounded-lg p-4">
+          {[...answers].sort((a, b) => Number(b.isAccepted) - Number(a.isAccepted)).map((answer) => (
+            <div key={answer.id} id={`answer-${answer.id}`} className={`rounded-xl border p-4 bg-[var(--surface)] ${answer.isAccepted ? 'border-green-600/50 ring-1 ring-green-600/20' : 'border-border'}`}>
               {answer.isAccepted && (
                 <p className="text-sm text-green-600 dark:text-green-400 mb-2 font-semibold">✓ Accepted Answer</p>
               )}
@@ -152,8 +189,12 @@ export default async function PostPage({ params }: { params: Promise<{ seoSlug: 
                   <p className="text-foreground whitespace-pre-wrap">{answer.body}</p>
                   <div className="mt-4 text-sm text-muted-foreground">
                     <Link href={`/profile/${answer.author.username}`} className="font-semibold text-foreground hover:underline">{answer.author.displayName}</Link>
+                    <VerifiedBadge show={answer.author.isVerified} />
                     <p>{formatDistanceToNow(new Date(answer.createdAt), {addSuffix: true})}</p>
-                    <ReportButton targetId={answer.id} targetType="ANSWER" />
+                    <div className="mt-2 flex items-center gap-3">
+                      <AcceptButton answerId={answer.id} questionAuthorId={post.author.id} accepted={answer.isAccepted} />
+                      <ReportButton targetId={answer.id} targetType="ANSWER" />
+                    </div>
                   </div>
                   <Comments answerId={answer.id} initialCount={answer.commentCount ?? 0} />
                 </div>
@@ -167,6 +208,20 @@ export default async function PostPage({ params }: { params: Promise<{ seoSlug: 
           <AnswerForm postId={post.id} />
         </div>
       </div>
+
+      {related.length > 0 && (
+        <section className="mx-6 mb-10 rounded-xl border border-border bg-[var(--surface)] p-5">
+          <h2 className="mb-3 font-semibold text-foreground">Related questions</h2>
+          <ul className="space-y-2">
+            {related.map((r) => (
+              <li key={r.id} className="flex items-start justify-between gap-3">
+                <Link href={`/q/${r.seoSlug}`} className="text-sm text-[var(--primary)] hover:underline">{r.title}</Link>
+                <span className="shrink-0 rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-xs text-[var(--text-muted)]">{r.answerCount} answers</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }

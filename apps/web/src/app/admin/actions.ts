@@ -42,6 +42,26 @@ export async function changeRoleAction(userId: string, role: string): Promise<Ac
   );
 }
 
+export async function setVerifiedAction(userId: string, verified: boolean): Promise<ActionResult> {
+  return run(
+    () => adminFetch(`/users/${userId}/verify`, { method: 'POST', body: { verified } }),
+    verified ? 'User verified' : 'Verification removed',
+    ['/admin/users', `/admin/users/${userId}`],
+  );
+}
+
+export async function createStarterCommunitiesAction(): Promise<ActionResult> {
+  try {
+    const r = await adminFetch<{ created: number; skipped: number }>('/communities/starter', { method: 'POST' });
+    revalidatePath('/admin/communities', 'page');
+    revalidatePath('/admin/dashboard', 'page');
+    return { ok: true, message: r.created ? `Created ${r.created} communities` : 'Starter communities already exist' };
+  } catch (err) {
+    if (err instanceof AdminApiError) return { ok: false, message: err.message };
+    throw err;
+  }
+}
+
 export async function setPostStatusAction(postId: string, status: 'REMOVED' | 'PUBLISHED'): Promise<ActionResult> {
   const path = status === 'REMOVED' ? 'remove' : 'restore';
   return run(

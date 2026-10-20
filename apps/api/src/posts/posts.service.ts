@@ -110,7 +110,7 @@ export class PostsService {
         viewCount: true,
         createdAt: true,
         deletedAt: true,
-        author: { select: { id: true, username: true, displayName: true } },
+        author: { select: { id: true, username: true, displayName: true, isVerified: true } },
         community: { select: { id: true, slug: true, name: true } },
         tags: { select: { tag: { select: { id: true, name: true, slug: true } } } },
         _count: { select: { answers: true, comments: true } },
@@ -189,5 +189,28 @@ export class PostsService {
       ...p,
       similarity: candidates.find((c) => c.targetPostId === p.id)?.score || 0,
     }));
+  }
+
+  // Related questions: shared tags first, then same community. Always returns something useful.
+  async getRelated(postId: string, limit = 5) {
+    limit = Math.min(Math.max(limit || 5, 1), 10);
+    const post = await this.prisma.post.findUnique({ where: { id: postId }, select: { communityId: true, tags: { select: { tagId: true } } } });
+    if (!post) return [];
+    const select = {
+      id: true, seoSlug: true, title: true, answerCount: true, voteScore: true, createdAt: true,
+    } as const;
+    const base = { id: { not: postId }, status: 'PUBLISHED' as const, deletedAt: null };
+    const tagIds = post.tags.map((t) => t.tagId);
+    const byTag = tagIds.length
+      ? await this.prisma.post.findMany({ where: { ...base, tags: { some: { tagId: { in: tagIds } } } }, select, orderBy: [{ answerCount: 'desc' }, { createdAt: 'desc' }], take: limit })
+      : [];
+    if (byTag.length >= limit) return byTag;
+    const byCommunity = await this.prisma.post.findMany({
+      where: { ...base, communityId: post.communityId, id: { notIn: [postId, ...byTag.map((p) => p.id)] } },
+      select,
+      orderBy: { createdAt: 'desc' },
+      take: limit - byTag.length,
+    });
+    return [...byTag, ...byCommunity];
   }
 }

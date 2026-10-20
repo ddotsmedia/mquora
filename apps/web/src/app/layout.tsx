@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Metadata } from "next";
+import { Metadata, Viewport } from "next";
 import { sansFont, malayalamFont } from "@/lib/fonts";
 import { Navbar } from "@/components/navbar";
 import { SiteFooter } from "@/components/site-footer";
@@ -10,12 +10,20 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "mquora - Malayalam Knowledge Community",
+  appleWebApp: { capable: true, title: "mquora", statusBarStyle: "default" },
   description: "A Malayalam-first knowledge community for learning, sharing, and discovering",
   openGraph: {
     title: "mquora",
     description: "A Malayalam-first knowledge community",
     type: "website",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#1F6B45" },
+    { media: "(prefers-color-scheme: dark)", color: "#0D1712" },
+  ],
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

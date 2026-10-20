@@ -3,6 +3,8 @@ import { DataTable, EmptyState, PageHeader, Panel, formatDate } from '@/componen
 import Pagination from '@/components/admin/Pagination';
 import SearchInput from '@/components/admin/SearchInput';
 import { CommunityRowActions, NewCommunityForm } from '@/components/admin/CommunityManager';
+import ActionButton from '@/components/admin/ActionButton';
+import { createStarterCommunitiesAction } from '@/app/admin/actions';
 
 type Community = {
   id: string;
@@ -23,7 +25,7 @@ export default async function CommunitiesPage({ searchParams }: { searchParams: 
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Communities" description="Create, rename, change visibility or remove communities." actions={<NewCommunityForm />} />
+      <PageHeader title="Communities" description="Create, rename, change visibility or remove communities." actions={<><ActionButton label="Add 12 starter communities" run={createStarterCommunitiesAction} confirm="Create the starter set (Kerala, Gulf Life, Jobs, Health, Technology…)? Existing ones are skipped." /><NewCommunityForm /></>} />
       <Panel>
         <div className="mb-4">
           <SearchInput placeholder="Search by name or slug…" />

@@ -15,6 +15,11 @@ export class PostsController {
     return this.postsService.findFeed(cursor, communityId, limit ? parseInt(limit, 10) : 20);
   }
 
+  @Get(':id/related')
+  async findRelated(@Param('id') id: string, @Query('limit') limit?: string) {
+    return this.postsService.getRelated(id, limit ? parseInt(limit, 10) : 5);
+  }
+
   @Get(':id/similar')
   @UseGuards(OptionalJwtGuard)
   async findSimilar(@Param('id') id: string, @Query('limit') limit?: string) {
