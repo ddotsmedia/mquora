@@ -13,7 +13,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!session.user?.accessToken || session.error) redirect('/login?expired=1&callbackUrl=/admin/dashboard');
 
   return (
-    <div className="min-h-screen bg-[var(--bg)] text-[var(--text)]">
+    <div className="dark min-h-screen bg-[var(--bg)] text-[var(--text)]">
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-[var(--border)] bg-[var(--surface)] md:flex">
         <Link href="/admin/dashboard" className="flex items-center gap-3 border-b border-[var(--border)] px-5 py-4">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--primary)] to-emerald-600 font-bold text-white shadow-lg shadow-emerald-900/40">

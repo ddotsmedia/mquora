@@ -83,7 +83,7 @@ export function Navbar() {
           <ThemeToggle />
           <Link
             href="/ask"
-            className="hidden sm:flex items-center gap-1.5 px-4 py-2 bg-[var(--accent)] hover:bg-[var(--accent-light)] text-white font-semibold text-sm rounded-full transition-all shadow-sm"
+            className="hidden sm:flex items-center gap-1.5 px-4 py-2 bg-[var(--accent)] hover:bg-[var(--accent-light)] text-[#17231C] font-semibold text-sm rounded-full transition-all shadow-sm"
           >
             <Plus className="w-4 h-4" />
             Ask
@@ -177,7 +177,7 @@ export function Navbar() {
           </Link>
           <Link
             href="/ask"
-            className="block w-full px-3 py-2 text-sm font-semibold text-white bg-[var(--accent)] hover:bg-[var(--accent-light)] rounded-lg transition-colors text-center"
+            className="block w-full px-3 py-2 text-sm font-semibold text-[#17231C] bg-[var(--accent)] hover:bg-[var(--accent-light)] rounded-lg transition-colors text-center"
           >
             ചോദ്യം ചോദിക്കൂ
           </Link>

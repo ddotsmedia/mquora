@@ -58,7 +58,7 @@ export function TrendingSidebar() {
         <p className="text-xs text-white/70 mb-3">Share your question with the community</p>
         <Link
           href="/ask"
-          className="block text-center py-2 bg-[var(--accent)] hover:bg-[var(--accent-light)] rounded-lg text-sm font-semibold transition-all"
+          className="block text-center py-2 bg-[var(--accent)] hover:bg-[var(--accent-light)] text-[#17231C] rounded-lg text-sm font-semibold transition-all"
         >
           Ask a Question
         </Link>

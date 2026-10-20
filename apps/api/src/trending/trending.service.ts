@@ -81,4 +81,16 @@ export class TrendingService {
     });
     return { ...tag, posts };
   }
+
+  // Real totals for the home page hero.
+  async stats() {
+    const [communities, questions, answers, topics, members] = await Promise.all([
+      this.prisma.community.count({ where: { deletedAt: null, isPublic: true } }),
+      this.prisma.post.count({ where: { status: 'PUBLISHED', deletedAt: null } }),
+      this.prisma.answer.count({ where: { status: 'PUBLISHED', deletedAt: null } }),
+      this.prisma.tag.count({ where: { postCount: { gt: 0 } } }),
+      this.prisma.user.count({ where: { deletedAt: null } }),
+    ]);
+    return { communities, questions, answers, topics, members };
+  }
 }

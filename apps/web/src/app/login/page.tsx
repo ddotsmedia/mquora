@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { AuthError } from 'next-auth';
 import { auth, signIn } from '@/auth';
+import { AuthCard, authButton, authInput } from '@/components/auth-card';
 
 // Server-side sign-in: no client JS, never cached, so stale browser bundles can't break login.
 export const dynamic = 'force-dynamic';
@@ -27,7 +28,7 @@ async function login(formData: FormData) {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; expired?: string; callbackUrl?: string }>;
+  searchParams: Promise<{ error?: string; expired?: string; registered?: string; callbackUrl?: string }>;
 }) {
   const sp = await searchParams;
   const cb = safe(sp.callbackUrl);
@@ -36,40 +37,20 @@ export default async function LoginPage({
   if (!sp.expired && session?.user?.accessToken && !session.error) redirect(`/post-login${cb ? `?callbackUrl=${encodeURIComponent(cb)}` : ''}`);
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="w-full max-w-md p-8 bg-white rounded-lg shadow">
-        <h1 className="text-2xl font-bold mb-6">Login</h1>
-        {sp.error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">Invalid email or password</div>}
-        {sp.expired && !sp.error && <div className="mb-4 p-3 bg-amber-100 text-amber-800 rounded">Your session expired. Please log in again.</div>}
-        <form action={login} className="space-y-4">
-          <input type="hidden" name="callbackUrl" value={cb} />
-          <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            autoComplete="username"
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-          <input
-            type="password"
-            name="password"
-            placeholder="Password"
-            autoComplete="current-password"
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-          <button type="submit" className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
-            Login
-          </button>
-        </form>
-        <p className="mt-4 text-center">
-          Don&apos;t have an account?{' '}
-          <Link href="/register" className="text-blue-500 hover:underline">
-            Register
-          </Link>
-        </p>
-      </div>
-    </div>
+    <AuthCard
+      title="Welcome back"
+      subtitle="Log in to ask, answer and vote."
+      footer={<>Don&apos;t have an account? <Link href="/register" className="font-medium text-[var(--primary)] hover:underline">Create one</Link></>}
+    >
+      {sp.error && <div className="mb-4 rounded-xl bg-red-500/10 p-3 text-sm text-red-600">Invalid email or password</div>}
+      {sp.expired && !sp.error && <div className="mb-4 rounded-xl bg-amber-500/10 p-3 text-sm text-amber-700">Your session expired. Please log in again.</div>}
+      {sp.registered && <div className="mb-4 rounded-xl bg-green-500/10 p-3 text-sm text-green-700">Account created. Please log in.</div>}
+      <form action={login} className="space-y-4">
+        <input type="hidden" name="callbackUrl" value={cb} />
+        <input type="email" name="email" placeholder="Email" autoComplete="username" className={authInput} required />
+        <input type="password" name="password" placeholder="Password" autoComplete="current-password" className={authInput} required />
+        <button type="submit" className={authButton}>Log in</button>
+      </form>
+    </AuthCard>
   );
 }
