@@ -6,6 +6,7 @@ import { AdminService, Actor } from './admin.service';
 import {
   AnnouncementDto,
   AuditQueryDto,
+  BulkActionDto,
   CommunityCreateDto,
   CommunityUpdateDto,
   SearchPageQueryDto,
@@ -106,6 +107,11 @@ export class AdminController {
   @Post('reports/:id/resolve')
   resolveReport(@Req() req: { user: Actor }, @Param('id') id: string, @Body() dto: ResolveDto) {
     return this.admin.resolveReport(this.actor(req), id, dto.action);
+  }
+
+  @Post('reports/bulk-action')
+  bulkActionReports(@Req() req: { user: Actor }, @Body() dto: BulkActionDto) {
+    return this.admin.bulkResolveReports(this.actor(req), dto.ids, dto.action);
   }
 
   @Get('communities')

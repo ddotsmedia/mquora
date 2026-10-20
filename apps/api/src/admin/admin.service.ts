@@ -293,8 +293,9 @@ export class AdminService {
       this.prisma.report.findMany({
         where,
         select: {
-          id: true, targetType: true, targetId: true, reason: true, details: true, status: true, createdAt: true,
+          id: true, targetType: true, targetId: true, reason: true, details: true, status: true, createdAt: true, resolvedAt: true,
           reporter: { select: { username: true } },
+          resolver: { select: { username: true } },
         },
         orderBy: { createdAt: 'desc' },
         ...this.paging(opts.page, opts.limit),
@@ -342,6 +343,8 @@ export class AdminService {
           await tx.post.update({ where: { id: report.targetId }, data: { status: 'REMOVED' } });
         } else if (report.targetType === 'ANSWER') {
           await tx.answer.update({ where: { id: report.targetId }, data: { status: 'REMOVED' } });
+        } else if (report.targetType === 'COMMENT') {
+          await tx.comment.update({ where: { id: report.targetId }, data: { status: 'REMOVED' } });
         }
       }
       await tx.moderationLog.create({
@@ -352,7 +355,7 @@ export class AdminService {
           notes: `${action} by ${actor.role}`,
         },
       });
-      await tx.report.update({ where: { id: reportId }, data: { status: 'RESOLVED' } });
+      await tx.report.update({ where: { id: reportId }, data: { status: 'RESOLVED', resolvedBy: actor.id, resolvedAt: new Date() } });
     });
 
     await this.audit(actor.id, `REPORT_${action}`, 'REPORT', reportId, {
@@ -360,6 +363,53 @@ export class AdminService {
       targetId: report.targetId,
     });
     return { id: reportId, status: 'RESOLVED' as const };
+  }
+
+  async bulkResolveReports(actor: Actor, reportIds: string[], action: 'DISMISS' | 'REMOVE' | 'WARN') {
+    if (!reportIds.length) throw new BadRequestException('No reports selected');
+
+    const reports = await this.prisma.report.findMany({
+      where: { id: { in: reportIds } },
+    });
+
+    const unresolved = reports.filter((r) => r.status !== 'RESOLVED');
+    if (!unresolved.length) throw new BadRequestException('All selected reports are already resolved');
+
+    await this.prisma.$transaction(async (tx) => {
+      // Remove content if action is REMOVE
+      if (action === 'REMOVE') {
+        const postIds = unresolved.filter((r) => r.targetType === 'POST').map((r) => r.targetId);
+        const answerIds = unresolved.filter((r) => r.targetType === 'ANSWER').map((r) => r.targetId);
+        const commentIds = unresolved.filter((r) => r.targetType === 'COMMENT').map((r) => r.targetId);
+
+        if (postIds.length) await tx.post.updateMany({ where: { id: { in: postIds } }, data: { status: 'REMOVED' } });
+        if (answerIds.length) await tx.answer.updateMany({ where: { id: { in: answerIds } }, data: { status: 'REMOVED' } });
+        if (commentIds.length) await tx.comment.updateMany({ where: { id: { in: commentIds } }, data: { status: 'REMOVED' } });
+      }
+
+      // Create moderation logs
+      await tx.moderationLog.createMany({
+        data: unresolved.map((r) => ({
+          moderatorId: actor.id,
+          reportId: r.id,
+          action: action as ModerationAction,
+          notes: `Bulk ${action} by ${actor.role}`,
+        })),
+      });
+
+      // Mark reports as resolved
+      await tx.report.updateMany({
+        where: { id: { in: unresolved.map((r) => r.id) } },
+        data: { status: 'RESOLVED', resolvedBy: actor.id, resolvedAt: new Date() },
+      });
+    });
+
+    // Audit bulk action
+    await this.audit(actor.id, `REPORTS_BULK_${action}`, 'REPORT', reportIds.join(','), {
+      count: unresolved.length,
+    });
+
+    return { processed: unresolved.length };
   }
 
   // ---------- communities ----------

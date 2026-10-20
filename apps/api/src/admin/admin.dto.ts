@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsBoolean, IsEnum, IsIn, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class-validator';
+import { IsArray, IsBoolean, IsEnum, IsIn, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class-validator';
 import { ContentStatus, UserRole } from '@prisma/client';
 
 export class PageQueryDto {
@@ -49,6 +49,11 @@ export class FlagDto {
 }
 
 export class ResolveDto {
+  @IsIn(['DISMISS', 'REMOVE', 'WARN']) action!: 'DISMISS' | 'REMOVE' | 'WARN';
+}
+
+export class BulkActionDto {
+  @IsArray() ids!: string[];
   @IsIn(['DISMISS', 'REMOVE', 'WARN']) action!: 'DISMISS' | 'REMOVE' | 'WARN';
 }
 
