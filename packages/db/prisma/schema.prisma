@@ -97,6 +97,7 @@ model User {
   reputationEvents      ReputationEvent[]
   badges                UserBadge[]
   reports               Report[]        @relation("reporter")
+  resolvedReports       Report[]        @relation("resolver")
   moderationLogs        ModerationLog[]
   auditLogs             AuditLog[]      @relation("actor")
   mediaAssets           MediaAsset[]
@@ -488,10 +489,13 @@ model Report {
   reason            String
   details           String?
   status            ReportStatus  @default(PENDING)
+  resolvedBy        String?
+  resolvedAt        DateTime?
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 
   reporter          User          @relation("reporter", fields: [reporterId], references: [id])
+  resolver          User?         @relation("resolver", fields: [resolvedBy], references: [id])
   post              Post?         @relation("report_post", fields: [targetId], references: [id], onDelete: Cascade, map: "Report_post_fkey")
   answer            Answer?       @relation("report_answer", fields: [targetId], references: [id], onDelete: Cascade, map: "Report_answer_fkey")
   comment           Comment?      @relation("report_comment", fields: [targetId], references: [id], onDelete: Cascade, map: "Report_comment_fkey")
@@ -501,6 +505,7 @@ model Report {
   @@index([targetId])
   @@index([targetType])
   @@index([status])
+  @@index([resolvedBy])
 }
 
 model ModerationLog {
