@@ -102,6 +102,10 @@ model User {
   mediaAssets           MediaAsset[]
   communitiesCreated    Community[]     @relation("creator")
   communityMemberships  CommunityMember[]
+  tagFollows            TagFollow[]
+  questionFollows       QuestionFollow[]
+  questionPasses        QuestionPass[]
+  onboardedAt           DateTime?
 
   @@index([email])
   @@index([username])
@@ -117,6 +121,7 @@ model UserProfile {
   avatarUrl         String?
   location          String?
   website           String?
+  credential        String?
   socialLinks       Json?     @default("{}")
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
@@ -213,12 +218,15 @@ model Post {
   seoTitle          String?
   seoDesc           String?
   acceptedAnswerId  String?
+  followerCount     Int       @default(0)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   deletedAt         DateTime?
 
   author            User      @relation(fields: [authorId], references: [id])
   community         Community? @relation(fields: [communityId], references: [id])
+  followers         QuestionFollow[]
+  passes            QuestionPass[]
   answers           Answer[]
   comments          Comment[]
   votes             Vote[]    @relation("post")
@@ -354,8 +362,51 @@ model Tag {
   createdAt         DateTime  @default(now())
 
   posts             PostTag[]
+  followers         TagFollow[]
 
   @@index([slug])
+}
+
+// User follows a topic (tag) — feeds "Following" and "Questions for you".
+model TagFollow {
+  id                String    @id @default(cuid())
+  userId            String
+  tagId             String
+  createdAt         DateTime  @default(now())
+
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tag               Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tagId])
+  @@index([tagId])
+}
+
+// User follows a question — notified on new answers.
+model QuestionFollow {
+  id                String    @id @default(cuid())
+  userId            String
+  postId            String
+  createdAt         DateTime  @default(now())
+
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post              Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([postId])
+}
+
+// User hid a question from "Questions for you".
+model QuestionPass {
+  id                String    @id @default(cuid())
+  userId            String
+  postId            String
+  createdAt         DateTime  @default(now())
+
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post              Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([postId])
 }
 
 model PostTag {

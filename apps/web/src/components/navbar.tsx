@@ -2,6 +2,7 @@
 
 import { useTheme } from 'next-themes';
 import { useSession, signOut } from 'next-auth/react';
+import { usePathname } from 'next/navigation';
 import { NotificationBell } from './notification-bell';
 import { useState } from 'react';
 import Link from 'next/link';
@@ -36,8 +37,21 @@ function ThemeToggle() {
 
 export function Navbar() {
   const { data: session } = useSession();
+  const pathname = usePathname();
   const isStaff = ['ADMIN', 'COMMUNITY_MODERATOR'].includes(session?.user?.role ?? '');
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const navItems = [
+    { href: '/', label: 'Home' },
+    ...(session ? [
+      { href: '/following', label: 'Following' },
+      { href: '/answer', label: 'Answers' },
+    ] : []),
+    { href: '/communities', label: 'Communities' },
+    { href: '/discover', label: 'Discover' },
+    { href: '/tags', label: 'Topics' },
+    { href: '/leaderboard', label: 'Leaderboard' },
+  ];
 
   return (
     <nav className="sticky top-0 z-50 border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur-md">
@@ -68,13 +82,11 @@ export function Navbar() {
 
         {/* Nav links */}
         <div className="hidden md:flex items-center gap-6">
-          <NavLink href="/" active>
-            Home
-          </NavLink>
-          <NavLink href="/communities">Communities</NavLink>
-          <NavLink href="/discover">Discover</NavLink>
-          <NavLink href="/tags">Topics</NavLink>
-          <NavLink href="/leaderboard">Leaderboard</NavLink>
+          {navItems.map((item) => (
+            <NavLink key={item.href} href={item.href} active={pathname === item.href}>
+              {item.label}
+            </NavLink>
+          ))}
         </div>
 
         {/* Actions */}
@@ -145,41 +157,24 @@ export function Navbar() {
       {/* Mobile menu */}
       {mobileOpen && (
         <div className="md:hidden border-t border-[var(--border)] bg-[var(--surface)] p-4 space-y-3">
-          <Link
-            href="/"
-            className="block px-3 py-2 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-2)] rounded-lg transition-colors"
-          >
-            Home
-          </Link>
-          <Link
-            href="/communities"
-            className="block px-3 py-2 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-2)] rounded-lg transition-colors"
-          >
-            Communities
-          </Link>
-          <Link
-            href="/discover"
-            className="block px-3 py-2 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-2)] rounded-lg transition-colors"
-          >
-            Discover
-          </Link>
-          <Link
-            href="/tags"
-            className="block px-3 py-2 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-2)] rounded-lg transition-colors"
-          >
-            Topics
-          </Link>
-          <Link
-            href="/leaderboard"
-            className="block px-3 py-2 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-2)] rounded-lg transition-colors"
-          >
-            Leaderboard
-          </Link>
+          {navItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`block px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                pathname === item.href
+                  ? 'text-[var(--primary)] bg-[var(--surface-2)]'
+                  : 'text-[var(--text)] hover:bg-[var(--surface-2)]'
+              }`}
+            >
+              {item.label}
+            </Link>
+          ))}
           <Link
             href="/ask"
             className="block w-full px-3 py-2 text-sm font-semibold text-[#17231C] bg-[var(--accent)] hover:bg-[var(--accent-light)] rounded-lg transition-colors text-center"
           >
-            ചോദ്യം ചോദിക്കൂ
+            Ask a question
           </Link>
           {session ? (
             <>

@@ -22,6 +22,7 @@ import { HealthModule } from './health/health.module';
 import { MetricsModule } from './metrics/metrics.module';
 import { TrendingModule } from './trending/trending.module';
 import { UsersModule } from './users/users.module';
+import { SocialModule } from './social/social.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { UsersModule } from './users/users.module';
     MetricsModule,
     TrendingModule,
     UsersModule,
+    SocialModule,
   ],
   controllers: [AppController],
   providers: [AppService],

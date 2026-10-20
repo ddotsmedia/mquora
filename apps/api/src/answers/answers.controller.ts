@@ -8,8 +8,8 @@ export class AnswersController {
   constructor(private answersService: AnswersService) {}
 
   @Get('posts/:postId/answers')
-  async findByPost(@Param('postId') postId: string, @Query('cursor') cursor?: string, @Query('limit') limit?: string) {
-    return this.answersService.findByPost(postId, cursor, limit ? parseInt(limit, 10) : 20);
+  async findByPost(@Param('postId') postId: string, @Query('cursor') cursor?: string, @Query('limit') limit?: string, @Query('sort') sort?: string) {
+    return this.answersService.findByPost(postId, cursor, limit ? parseInt(limit, 10) : 20, sort);
   }
 
   @Post('posts/:postId/answers')

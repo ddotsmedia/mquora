@@ -11,6 +11,8 @@ import Link from 'next/link';
 import { ShareButtons } from '@/components/share-buttons';
 import { AcceptButton } from '@/components/accept-button';
 import { VerifiedBadge } from '@/components/verified-badge';
+import { FollowQuestionButton } from '@/components/follow-question-button';
+import { ReadMore } from '@/components/read-more';
 import { formatDistanceToNow } from 'date-fns';
 
 interface Post {
@@ -23,6 +25,7 @@ interface Post {
   answerCount: number;
   commentCount: number;
   viewCount: number;
+  followerCount?: number;
   createdAt: string;
   deletedAt?: string | null;
   author: {
@@ -35,7 +38,7 @@ interface Post {
     id: string;
     slug: string;
     name: string;
-  };
+  } | null;
   tags?: Array<{ tag: { id: string; name: string; slug: string } }>;
 }
 
@@ -46,11 +49,13 @@ interface Answer {
   isAccepted: boolean;
   commentCount?: number;
   createdAt: string;
+  updatedAt?: string;
   author: {
     id: string;
     username: string;
     displayName: string;
     isVerified?: boolean;
+    profile?: { credential: string | null } | null;
   };
 }
 
@@ -76,8 +81,9 @@ export async function generateMetadata({
   }
 }
 
-export default async function PostPage({ params }: { params: Promise<{ seoSlug: string }> }) {
+export default async function PostPage({ params, searchParams }: { params: Promise<{ seoSlug: string }>; searchParams: Promise<{ sort?: string }> }) {
   const { seoSlug } = await params;
+  const sort = (await searchParams).sort === 'recent' ? 'recent' : 'suggested';
   let post: Post | null = null;
   let answers: Answer[] = [];
   let related: Array<{ id: string; seoSlug: string; title: string; answerCount: number }> = [];
@@ -85,7 +91,7 @@ export default async function PostPage({ params }: { params: Promise<{ seoSlug: 
   try {
     post = await serverApiFetch<Post>(`/api/v1/posts/${seoSlug}`);
     const response = await serverApiFetch<{ data: Answer[]; nextCursor: string | null }>(
-      `/api/v1/posts/${post.id}/answers`,
+      `/api/v1/posts/${post.id}/answers?limit=50&sort=${sort}`, undefined, { cache: 'no-store' },
     );
     answers = response.data;
     related = await serverApiFetch<typeof related>(`/api/v1/posts/${post.id}/related?limit=5`).catch(() => []);
@@ -139,15 +145,20 @@ export default async function PostPage({ params }: { params: Promise<{ seoSlug: 
             <VerifiedBadge show={post.author.isVerified} />
             <p>{formatDistanceToNow(new Date(post.createdAt), {addSuffix: true})}</p>
           </div>
-          <span>in</span>
-          <a href={`/c/${post.community.slug}`} className="hover:text-accent">
-            {post.community.name}
-          </a>
+          {post.community && (
+            <>
+              <span>in</span>
+              <a href={`/c/${post.community.slug}`} className="hover:text-accent">
+                {post.community.name}
+              </a>
+            </>
+          )}
         </div>
 
         <div className="flex gap-4 mb-6">
           <VoteButtons targetId={post.id} targetType="POST" initialScore={post.voteScore} />
           <BookmarkButton postId={post.id} />
+          <span className="self-center"><FollowQuestionButton postId={post.id} initialCount={post.followerCount ?? 0} /></span>
           <span className="ml-auto self-center"><ReportButton targetId={post.id} targetType="POST" /></span>
         </div>
 
@@ -175,10 +186,28 @@ export default async function PostPage({ params }: { params: Promise<{ seoSlug: 
       </article>
 
       <div className="border-t border-border p-6">
-        <h2 className="text-2xl font-bold text-foreground mb-6">{answers.length} Answers</h2>
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-2xl font-bold text-foreground">{answers.length} {answers.length === 1 ? 'Answer' : 'Answers'}</h2>
+          {answers.length > 1 && (
+            <div className="flex gap-1 rounded-full border border-border bg-[var(--surface)] p-1 text-xs">
+              {(['suggested', 'recent'] as const).map((s) => (
+                <Link key={s} href={`/q/${post!.seoSlug}${s === 'recent' ? '?sort=recent' : ''}`} scroll={false}
+                  className={`rounded-full px-3 py-1 ${sort === s ? 'bg-[var(--primary)] text-white' : 'text-[var(--text-secondary)]'}`}>
+                  {s === 'suggested' ? 'Suggested' : 'Recent'}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+        {answers.length === 0 && (
+          <a href="#your-answer" className="mb-6 block rounded-xl border border-dashed border-[var(--primary)]/40 bg-[var(--primary)]/5 p-5 text-center">
+            <span className="font-semibold text-[var(--primary)]">Can you answer this question?</span>
+            <span className="block text-sm text-[var(--text-secondary)]">People are waiting for a good answer.</span>
+          </a>
+        )}
 
         <div className="space-y-6 mb-8">
-          {[...answers].sort((a, b) => Number(b.isAccepted) - Number(a.isAccepted)).map((answer) => (
+          {answers.map((answer) => (
             <div key={answer.id} id={`answer-${answer.id}`} className={`rounded-xl border p-4 bg-[var(--surface)] ${answer.isAccepted ? 'border-green-600/50 ring-1 ring-green-600/20' : 'border-border'}`}>
               {answer.isAccepted && (
                 <p className="text-sm text-green-600 dark:text-green-400 mb-2 font-semibold">✓ Accepted Answer</p>
@@ -186,11 +215,18 @@ export default async function PostPage({ params }: { params: Promise<{ seoSlug: 
               <div className="flex gap-4">
                 <VoteButtons targetId={answer.id} targetType="ANSWER" initialScore={answer.voteScore} />
                 <div className="flex-1">
-                  <p className="text-foreground whitespace-pre-wrap">{answer.body}</p>
-                  <div className="mt-4 text-sm text-muted-foreground">
+                  <div className="mb-3 text-sm text-muted-foreground">
                     <Link href={`/profile/${answer.author.username}`} className="font-semibold text-foreground hover:underline">{answer.author.displayName}</Link>
                     <VerifiedBadge show={answer.author.isVerified} />
-                    <p>{formatDistanceToNow(new Date(answer.createdAt), {addSuffix: true})}</p>
+                    {answer.author.profile?.credential && <span className="text-[var(--text-secondary)]"> · {answer.author.profile.credential}</span>}
+                    <p className="text-xs">
+                      {answer.updatedAt && new Date(answer.updatedAt).getTime() - new Date(answer.createdAt).getTime() > 60_000
+                        ? `Updated ${formatDistanceToNow(new Date(answer.updatedAt), { addSuffix: true })}`
+                        : formatDistanceToNow(new Date(answer.createdAt), { addSuffix: true })}
+                    </p>
+                  </div>
+                  <ReadMore text={answer.body} />
+                  <div className="mt-4 text-sm text-muted-foreground">
                     <div className="mt-2 flex items-center gap-3">
                       <AcceptButton answerId={answer.id} questionAuthorId={post.author.id} accepted={answer.isAccepted} />
                       <ReportButton targetId={answer.id} targetType="ANSWER" />
@@ -203,7 +239,7 @@ export default async function PostPage({ params }: { params: Promise<{ seoSlug: 
           ))}
         </div>
 
-        <div className="border-t border-border pt-6">
+        <div id="your-answer" className="scroll-mt-20 border-t border-border pt-6">
           <h3 className="text-lg font-semibold text-foreground mb-4">Your Answer</h3>
           <AnswerForm postId={post.id} />
         </div>
