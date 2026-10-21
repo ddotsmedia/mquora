@@ -104,7 +104,7 @@ jobs:
           mkdir -p .deploy
           printf '%s\n' "$PROD_ENV" > .deploy/prod.env
           printf 'GITHUB_REPOSITORY=%s\nIMAGE_TAG=%s\n' "$GITHUB_REPOSITORY" "$GITHUB_SHA" >> .deploy/prod.env
-          # Public domain (repo variable PUBLIC_DOMAIN, e.g. gayathi.ae) overrides the URL settings in PROD_ENV.
+          # Public domain (repo variable PUBLIC_DOMAIN, e.g. askvyo.com) overrides the URL settings in PROD_ENV.
           if [ -n "$PUBLIC_DOMAIN" ]; then
             {
               echo "PUBLIC_DOMAIN=$PUBLIC_DOMAIN"
