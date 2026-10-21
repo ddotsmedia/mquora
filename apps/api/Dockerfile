@@ -18,4 +18,4 @@ USER node
 EXPOSE 3100
 HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
   CMD node -e "require('http').get('http://127.0.0.1:3100/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
-ENTRYPOINT [ "sh", "-c", "if [ -n \"$ADMIN_PASSWORD\" ]; then node apps/api/dist/apps/api/src/init-admin.js || true; fi && exec node apps/api/dist/apps/api/src/main.js" ]
+CMD ["node", "apps/api/dist/apps/api/src/main.js"]

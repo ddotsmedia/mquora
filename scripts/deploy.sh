@@ -28,8 +28,11 @@ if [ -x /opt/mquora/scripts/backup.sh ]; then
   bash /opt/mquora/scripts/backup.sh | tail -n 1 || echo "WARNING: pre-deploy backup failed"
 fi
 
+# Remove leftover one-off mquora containers from interrupted runs (mquora names only).
+docker ps -aq --filter 'name=^mquora-api-run-' | xargs -r docker rm -f >/dev/null || true
+
 echo "Applying database migrations..."
-$COMPOSE run --rm --no-deps api sh -c 'pnpm --filter @mquora/db exec prisma migrate deploy --schema=prisma/schema.prisma'
+$COMPOSE run -T --rm --no-deps api sh -c 'pnpm --filter @mquora/db exec prisma migrate deploy --schema=prisma/schema.prisma'
 
 echo "Starting application services..."
 $COMPOSE up -d --remove-orphans web api worker

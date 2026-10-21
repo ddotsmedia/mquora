@@ -28,6 +28,24 @@ jobs:
           printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
+      - name: Verify target server is the mquora VPS (never touch the shared VPS)
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || 22 }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          EXPECTED_HOSTNAME: ${{ vars.VPS_HOSTNAME || 'srv1778407' }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/guard_key && chmod 600 ~/.ssh/guard_key
+          actual=$(ssh -i ~/.ssh/guard_key -p "$VPS_PORT" -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15 "$VPS_USER@$VPS_HOST" hostname)
+          if [ "$actual" != "$EXPECTED_HOSTNAME" ]; then
+            echo "::error::VPS_HOST points to server '$actual', expected '$EXPECTED_HOSTNAME'. Refusing to continue."
+            exit 1
+          fi
+          echo "Target server verified: $actual"
+
       - name: Initialize admin on VPS
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
@@ -49,12 +67,11 @@ jobs:
             ADMIN_PASSWORD="$1"
             set -e
             cd /opt/mquora
-            docker compose -p mquora -f docker-compose.prod.yml stop api || true
-            docker compose -p mquora -f docker-compose.prod.yml run \
+            # Only mquora's own one-off containers are touched.
+            docker ps -aq --filter 'name=^mquora-api-run-' | xargs -r docker rm -f
+            docker compose -p mquora -f docker-compose.prod.yml --env-file .env run -T \
               --rm --no-deps -e ADMIN_PASSWORD="$ADMIN_PASSWORD" api \
               node apps/api/dist/apps/api/src/init-admin.js
-            docker compose -p mquora -f docker-compose.prod.yml up -d api
-            sleep 5
           EOFSCRIPT
 
           echo "Verifying admin account..."
