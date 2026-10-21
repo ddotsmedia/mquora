@@ -5,6 +5,7 @@ MODE="$1"; DOMAIN="$2"; OLD="$3"
 case "$DOMAIN$OLD" in *[!a-zA-Z0-9.-]*) echo "Invalid domain"; exit 1;; esac
 
 if [ "$MODE" = "inspect" ]; then
+  echo "==== /etc/nginx/sites-available/$OLD"; cat "/etc/nginx/sites-available/$OLD" 2>/dev/null || true; echo "==== end"
   echo "== nginx sites-enabled =="; ls -la /etc/nginx/sites-enabled/ /etc/nginx/conf.d/ 2>/dev/null || true
   echo "== files mentioning $OLD or $DOMAIN =="
   grep -rlE "$OLD|$DOMAIN" /etc/nginx/ 2>/dev/null || true
