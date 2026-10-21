@@ -1,0 +1,61 @@
+name: Domain Setup
+
+# Manages the host nginx site for mquora's public domain on srv1778407.
+# inspect = read-only report. apply = add new domain site + TLS cert (never edits other sites).
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'inspect | apply | redirect-old'
+        required: true
+        default: inspect
+        type: choice
+        options: [inspect, apply, redirect-old]
+      domain:
+        description: 'New primary domain'
+        required: true
+        default: askvyo.com
+      old_domain:
+        description: 'Old domain (redirect-old mode)'
+        required: true
+        default: gayathi.ae
+
+jobs:
+  domain:
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify target server is the mquora VPS (never touch the shared VPS)
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || 22 }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          EXPECTED_HOSTNAME: ${{ vars.VPS_HOSTNAME || 'srv1778407' }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          actual=$(ssh -i ~/.ssh/deploy_key -p "$VPS_PORT" -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15 "$VPS_USER@$VPS_HOST" hostname)
+          if [ "$actual" != "$EXPECTED_HOSTNAME" ]; then
+            echo "::error::VPS_HOST points to server '$actual', expected '$EXPECTED_HOSTNAME'. Refusing to continue."
+            exit 1
+          fi
+          echo "Target server verified: $actual"
+
+      - name: Run on VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || 22 }}
+          MODE: ${{ inputs.mode }}
+          DOMAIN: ${{ inputs.domain }}
+          OLD: ${{ inputs.old_domain }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/deploy_key -p "$VPS_PORT" -o StrictHostKeyChecking=accept-new "$VPS_USER@$VPS_HOST" \
+            bash -s "$MODE" "$DOMAIN" "$OLD" < scripts/domain.sh
