@@ -1,0 +1,65 @@
+name: Admin Setup
+
+on:
+  workflow_dispatch:
+    inputs:
+      admin_password:
+        description: 'Admin password (uses secret if empty)'
+        required: false
+        type: string
+
+env:
+  ADMIN_EMAIL: admin@admin.com
+  ADMIN_USERNAME: admin
+  ADMIN_DISPLAY_NAME: Admin
+
+jobs:
+  setup-admin:
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+      - name: Initialize admin on VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || 22 }}
+          ADMIN_PASSWORD: ${{ inputs.admin_password || secrets.ADMIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          SSH_OPTS=(-i ~/.ssh/deploy_key -p "$VPS_PORT" -o StrictHostKeyChecking=accept-new)
+
+          if [ -z "$ADMIN_PASSWORD" ]; then
+            echo "ERROR: No admin password provided"
+            echo "Set ADMIN_PASSWORD secret or provide password as input"
+            exit 1
+          fi
+
+          echo "Running admin initialization..."
+          ssh "${SSH_OPTS[@]}" "$VPS_USER@$VPS_HOST" bash -s "$ADMIN_PASSWORD" << 'EOFSCRIPT'
+            ADMIN_PASSWORD="$1"
+            set -e
+            cd /opt/mquora
+            docker compose -p mquora -f docker-compose.prod.yml stop api || true
+            docker compose -p mquora -f docker-compose.prod.yml run \
+              --rm --no-deps -e ADMIN_PASSWORD="$ADMIN_PASSWORD" api \
+              node apps/api/dist/apps/api/src/init-admin.js
+            docker compose -p mquora -f docker-compose.prod.yml up -d api
+            sleep 5
+          EOFSCRIPT
+
+          echo "Verifying admin account..."
+          curl -fsS --max-time 10 "http://$VPS_HOST:3024/health" || {
+            echo "WARNING: API health check failed, but admin init may have succeeded"
+          }
+
+          echo "Admin setup completed. Log in at: https://${{ vars.PUBLIC_DOMAIN || secrets.PUBLIC_DOMAIN }}/admin"

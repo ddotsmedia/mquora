@@ -326,12 +326,18 @@ importers:
         specifier: ^5.17.0
         version: 5.22.0(prisma@5.22.0)
     devDependencies:
+      '@types/bcrypt':
+        specifier: ^6.0.0
+        version: 6.0.0
       '@types/node':
         specifier: ^26.6.4
         version: 26.6.4
       argon2:
         specifier: ^0.45.1
         version: 0.45.1
+      bcrypt:
+        specifier: ^6.0.0
+        version: 6.0.0
       prisma:
         specifier: ^5.17.0
         version: 5.22.0
