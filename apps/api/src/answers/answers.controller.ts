@@ -38,4 +38,25 @@ export class AnswersController {
     const authorId = (req.user as Record<string, unknown>).id as string;
     return this.answersService.softDelete(id, authorId);
   }
+
+  @Post('answers/:id/vote')
+  @UseGuards(JwtAuthGuard)
+  async vote(@Param('id') id: string, @Body() dto: Record<string, unknown>, @Req() req: Request) {
+    const userId = (req.user as Record<string, unknown>).id as string;
+    const voteType = dto.type as 'UP' | 'DOWN';
+    return this.answersService.voteAnswer(id, userId, voteType);
+  }
+
+  @Delete('answers/:id/vote')
+  @UseGuards(JwtAuthGuard)
+  async removeVote(@Param('id') id: string, @Req() req: Request) {
+    const userId = (req.user as Record<string, unknown>).id as string;
+    await this.answersService.removeAnswerVote(id, userId);
+    return { removed: true };
+  }
+
+  @Get('answers/:id/vote-status')
+  async getVoteStatus(@Param('id') id: string, @Query('userId') userId?: string) {
+    return this.answersService.getAnswerVoteStatus(id, userId);
+  }
 }

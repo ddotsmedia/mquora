@@ -28,6 +28,11 @@ enum VoteType {
   DOWN
 }
 
+enum AnswerVoteType {
+  UP
+  DOWN
+}
+
 enum ModerationAction {
   WARN
   REMOVE
@@ -107,6 +112,7 @@ model User {
   tagFollows            TagFollow[]
   questionFollows       QuestionFollow[]
   questionPasses        QuestionPass[]
+  answerVotes           AnswerVote[]    @relation("user_answer_votes")
   subscriptions         QuestionSubscription[] @relation("subscriptions")
   onboardedAt           DateTime?
 
@@ -260,6 +266,7 @@ model Answer {
   isManglish        Boolean   @default(false)
   status            ContentStatus @default(PUBLISHED)
   voteScore         Int       @default(0)
+  voteCount         Int            @default(0)
   commentCount      Int       @default(0)
   isAccepted        Boolean   @default(false)
   qualityScore      Int?
@@ -271,6 +278,7 @@ model Answer {
   author            User      @relation(fields: [authorId], references: [id])
   comments          Comment[]
   votes             Vote[]    @relation("answer")
+  answerVotes       AnswerVote[] @relation("answer_votes")
   reports           Report[]  @relation("report_answer")
   embedding         AnswerEmbedding?
 
@@ -329,6 +337,23 @@ model Vote {
   @@index([targetId])
   @@index([targetType])
 }
+
+model AnswerVote {
+  id                String    @id @default(cuid())
+  answerId          String
+  userId            String
+  type              AnswerVoteType
+  createdAt         DateTime  @default(now())
+
+  answer            Answer    @relation("answer_votes", fields: [answerId], references: [id], onDelete: Cascade)
+  user              User      @relation("user_answer_votes", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([answerId, userId])
+  @@index([answerId])
+  @@index([userId])
+}
+
+
 
 model Bookmark {
   id                String    @id @default(cuid())

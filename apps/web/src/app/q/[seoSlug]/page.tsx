@@ -9,6 +9,7 @@ import { AnswerForm } from '@/components/answer-form';
 import { Comments } from '@/components/comments';
 import { ReportButton } from '@/components/report-button';
 import { AnswerSummary } from '@/components/AnswerSummary';
+import { AnswerVoting } from '@/components/AnswerVoting';
 import Link from 'next/link';
 import { ShareButtons } from '@/components/share-buttons';
 import { AcceptButton } from '@/components/accept-button';
@@ -25,6 +26,7 @@ interface Post {
   body: string;
   language: string;
   voteScore: number;
+  voteCount?: number;
   answerCount: number;
   commentCount: number;
   viewCount: number;
@@ -49,6 +51,7 @@ interface Answer {
   id: string;
   body: string;
   voteScore: number;
+  voteCount?: number;
   isAccepted: boolean;
   commentCount?: number;
   createdAt: string;
@@ -235,7 +238,7 @@ export default async function PostPage({ params, searchParams }: { params: Promi
                 <p className="text-sm text-green-600 dark:text-green-400 mb-2 font-semibold">✓ Accepted Answer</p>
               )}
               <div className="flex gap-4">
-                <VoteButtons targetId={answer.id} targetType="ANSWER" initialScore={answer.voteScore} />
+                <AnswerVoting answerId={answer.id} initialVoteCount={answer.voteCount ?? 0} />
                 <div className="flex-1">
                   <div className="mb-3 text-sm text-muted-foreground">
                     <Link href={`/profile/${answer.author.username}`} className="font-semibold text-foreground hover:underline">{answer.author.displayName}</Link>

@@ -245,3 +245,73 @@ export class AnswersService {
     return summary || null;
   }
 }
+
+  async voteAnswer(answerId: string, userId: string, voteType: 'UP' | 'DOWN') {
+    const answer = await this.prisma.answer.findFirst({
+      where: { id: answerId, status: 'PUBLISHED', deletedAt: null },
+      select: { authorId: true, voteScore: true, voteCount: true },
+    });
+    if (!answer) throw new NotFoundException('Answer not found');
+    if (answer.authorId === userId) throw new BadRequestException('You cannot vote on your own answer');
+
+    const existing = await this.prisma.answerVote.findUnique({
+      where: { answerId_userId: { answerId, userId } },
+      select: { type: true },
+    });
+
+    if (existing?.type === voteType) {
+      return { voteCount: answer.voteCount, userVote: voteType };
+    }
+
+    const delta = (voteType === 'UP' ? 1 : -1) - (existing ? (existing.type === 'UP' ? 1 : -1) : 0);
+    await this.prisma.$transaction([
+      this.prisma.answerVote.upsert({
+        where: { answerId_userId: { answerId, userId } },
+        create: { answerId, userId, type: voteType },
+        update: { type: voteType },
+      }),
+      this.prisma.answer.update({
+        where: { id: answerId },
+        data: { voteCount: { increment: delta }, voteScore: { increment: delta } },
+      }),
+    ]);
+
+    return { voteCount: answer.voteCount + delta, userVote: voteType };
+  }
+
+  async removeAnswerVote(answerId: string, userId: string) {
+    const vote = await this.prisma.answerVote.findUnique({
+      where: { answerId_userId: { answerId, userId } },
+    });
+    if (!vote) return;
+
+    const delta = vote.type === 'UP' ? -1 : 1;
+    await this.prisma.$transaction([
+      this.prisma.answerVote.delete({
+        where: { answerId_userId: { answerId, userId } },
+      }),
+      this.prisma.answer.update({
+        where: { id: answerId },
+        data: { voteCount: { increment: delta }, voteScore: { increment: delta } },
+      }),
+    ]);
+  }
+
+  async getAnswerVoteStatus(answerId: string, userId?: string) {
+    const answer = await this.prisma.answer.findUnique({
+      where: { id: answerId },
+      select: { voteCount: true },
+    });
+    if (!answer) throw new NotFoundException('Answer not found');
+
+    let userVote = null;
+    if (userId) {
+      const vote = await this.prisma.answerVote.findUnique({
+        where: { answerId_userId: { answerId, userId } },
+        select: { type: true },
+      });
+      userVote = vote?.type ?? null;
+    }
+
+    return { voteCount: answer.voteCount, userVote };
+  }
