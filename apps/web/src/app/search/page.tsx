@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { VoiceInput } from '@/components/VoiceInput';
 
 type Post = {
   id: string;
@@ -69,21 +70,28 @@ export default function SearchPage() {
     <div className="mx-auto max-w-4xl space-y-6 px-4 py-8">
       <div>
         <h1 className="font-malayalam mb-4 text-3xl font-bold text-[var(--text)]">തിരയുക</h1>
-        <form onSubmit={(e) => { e.preventDefault(); handleSearch(searchInput, 0); setOffset(0); }} className="flex gap-2">
-          <input
-            type="text"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Search questions (Malayalam or Manglish)..."
-            className="flex-1 rounded-lg border border-[var(--border)] bg-[var(--input-bg)] px-4 py-2 text-[var(--text)] placeholder-[var(--text-muted)] focus:border-[var(--primary)] focus:outline-none"
+        <form onSubmit={(e) => { e.preventDefault(); handleSearch(searchInput, 0); setOffset(0); }} className="space-y-3">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Search questions (Malayalam or Manglish)..."
+              className="flex-1 rounded-lg border border-[var(--border)] bg-[var(--input-bg)] px-4 py-2 text-[var(--text)] placeholder-[var(--text-muted)] focus:border-[var(--primary)] focus:outline-none"
+            />
+            <button
+              type="submit"
+              disabled={loading}
+              className="rounded-lg bg-[var(--primary)] px-6 py-2 font-medium text-white hover:opacity-90 disabled:opacity-50"
+            >
+              {loading ? 'Searching...' : 'Search'}
+            </button>
+          </div>
+          <VoiceInput
+            onTranscript={(text) => setSearchInput(text)}
+            language="ml-IN"
+            placeholder="Click mic to search by voice"
           />
-          <button
-            type="submit"
-            disabled={loading}
-            className="rounded-lg bg-[var(--primary)] px-6 py-2 font-medium text-white hover:opacity-90 disabled:opacity-50"
-          >
-            {loading ? 'Searching...' : 'Search'}
-          </button>
         </form>
       </div>
 

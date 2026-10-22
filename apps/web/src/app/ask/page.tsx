@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
 import { LanguageBadge } from '@/components/language-badge';
+import { VoiceInput } from '@/components/VoiceInput';
 
 interface Community {
   id: string;
@@ -122,14 +123,21 @@ export default function AskPage() {
 
           <div>
             <label className="block text-sm font-semibold text-foreground mb-2">ചോദ്യം</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="നിങ്ങളുടെ ചോദ്യം ഇവിടെ എഴുതൂ..."
-              className="w-full px-4 py-3 rounded-lg bg-[var(--surface)] border border-border text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:border-[var(--primary)]"
-              required
-            />
+            <div className="space-y-2">
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="നിങ്ങളുടെ ചോദ്യം ഇവിടെ എഴുതൂ..."
+                className="w-full px-4 py-3 rounded-lg bg-[var(--surface)] border border-border text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:border-[var(--primary)]"
+                required
+              />
+              <VoiceInput
+                onTranscript={(text) => setTitle((prev) => (prev ? prev + ' ' + text : text))}
+                language="ml-IN"
+                placeholder="Click mic to ask in Malayalam"
+              />
+            </div>
             <div className="mt-2 flex items-center gap-2">
               <span className="text-xs text-muted-foreground">Detected language:</span>
               <LanguageBadge language={language} />
@@ -155,13 +163,20 @@ export default function AskPage() {
 
           <div>
             <label className="block text-sm font-semibold text-foreground mb-2">Details (optional)</label>
-            <textarea
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              placeholder="Add more details about your question..."
-              rows={8}
-              className="w-full px-4 py-3 rounded-lg bg-[var(--surface)] border border-border text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:border-[var(--primary)]"
-            />
+            <div className="space-y-2">
+              <textarea
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                placeholder="Add more details about your question..."
+                rows={8}
+                className="w-full px-4 py-3 rounded-lg bg-[var(--surface)] border border-border text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:border-[var(--primary)]"
+              />
+              <VoiceInput
+                onTranscript={(text) => setBody((prev) => (prev ? prev + '\n' + text : text))}
+                language="ml-IN"
+                placeholder="Click mic to add details in Malayalam"
+              />
+            </div>
             <p className="text-xs text-muted-foreground mt-2">Markdown formatting is supported</p>
           </div>
 
