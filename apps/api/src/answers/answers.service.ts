@@ -3,12 +3,11 @@ import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import { PrismaClient } from '@prisma/client';
 import { LanguageService } from '../shared/language.service';
-import { AiGatewayService } from '@askvyo/ai';
+import axios from 'axios';
 
 @Injectable()
 export class AnswersService {
   private prisma = new PrismaClient();
-  private aiGateway = new AiGatewayService();
 
   constructor(
     private languageService: LanguageService,
@@ -231,21 +230,10 @@ export class AnswersService {
     const answerText = answers.map((a) => a.body).join('\n\n');
 
     // Generate summary using AI gateway
-    const summary = await this.aiGateway.chat([
-      {
-        role: 'system',
-        content: 'You are a helpful assistant that summarizes Q&A discussions in 3 lines. Keep it concise and in Malayalam if the answers are in Malayalam.',
-      },
-      {
-        role: 'user',
-        content: `Summarize these answers in 3 lines:\n\n${answerText}`,
-      },
-    ]);
+    const summary = await this.summarize(answerText);
 
     return summary || null;
   }
-}
-
   async voteAnswer(answerId: string, userId: string, voteType: 'UP' | 'DOWN') {
     const answer = await this.prisma.answer.findFirst({
       where: { id: answerId, status: 'PUBLISHED', deletedAt: null },
@@ -315,3 +303,29 @@ export class AnswersService {
 
     return { voteCount: answer.voteCount, userVote };
   }
+
+  private async summarize(answerText: string): Promise<string> {
+    const gatewayUrl = process.env.AI_GATEWAY_URL;
+    if (!gatewayUrl) return '';
+    try {
+      const res = await axios.post(
+        `${gatewayUrl}/chat`,
+        {
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content:
+                'You are a helpful assistant that summarizes Q&A discussions in 3 lines. Keep it concise and in Malayalam if the answers are in Malayalam.',
+            },
+            { role: 'user', content: `Summarize these answers in 3 lines:\n\n${answerText}` },
+          ],
+        },
+        { timeout: 30000 },
+      );
+      return res.data?.choices?.[0]?.message?.content ?? '';
+    } catch {
+      return '';
+    }
+  }
+}

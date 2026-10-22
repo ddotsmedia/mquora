@@ -40,7 +40,8 @@
     "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.1",
     "rxjs": "^7.8.2",
-    "slug": "^12.0.1"
+    "slug": "^12.0.1",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@nestjs/cli": "^12.0.8",
@@ -54,6 +55,7 @@
     "@types/passport-jwt": "^4.0.1",
     "@types/slug": "^5.0.9",
     "@types/supertest": "^7.2.1",
+    "@types/web-push": "^3.6.4",
     "jest": "^30.5.2",
     "supertest": "^7.3.1",
     "ts-jest": "^29.4.14",
