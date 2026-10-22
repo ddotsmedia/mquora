@@ -158,29 +158,36 @@ jobs:
             "$VPS_USER@$VPS_HOST" \
             "GITHUB_ACTOR=$GITHUB_ACTOR GHCR_TOKEN=$GHCR_TOKEN bash /opt/askvyo/scripts/deploy.sh"
 
-      - name: Show VPS diagnostics on failure
+      - name: Post VPS diagnostics to Gist on failure
         if: failure() && steps.vps_deploy.conclusion == 'failure'
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PORT: ${{ secrets.VPS_PORT || 22 }}
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p ~/.ssh
           printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
-          ssh -i ~/.ssh/deploy_key -p "$VPS_PORT" -o StrictHostKeyChecking=accept-new \
-            "$VPS_USER@$VPS_HOST" bash <<'ENDSSH'
+          DIAG=$(ssh -i ~/.ssh/deploy_key -p "$VPS_PORT" -o StrictHostKeyChecking=accept-new \
+            -o LogLevel=ERROR "$VPS_USER@$VPS_HOST" bash <<'ENDSSH' 2>&1 || true
           echo "=== Running containers ==="
-          docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" || true
+          docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" 2>&1 || true
           echo "=== docker compose ps (askvyo) ==="
-          docker compose -p askvyo -f /opt/askvyo/docker-compose.prod.yml ps 2>/dev/null || true
+          docker compose -p askvyo -f /opt/askvyo/docker-compose.prod.yml ps 2>&1 || true
           echo "=== api logs (last 40) ==="
-          docker logs --tail 40 askvyo-api-1 2>/dev/null || echo "(no api container)"
+          docker logs --tail 40 askvyo-api-1 2>&1 || echo "(no api container)"
           echo "=== postgres logs (last 20) ==="
-          docker logs --tail 20 askvyo-postgres-1 2>/dev/null || echo "(no postgres container)"
+          docker logs --tail 20 askvyo-postgres-1 2>&1 || echo "(no postgres container)"
+          echo "=== all mquora/askvyo containers ==="
+          docker ps -a --filter 'label=com.docker.compose.project=mquora' --format "table {{.Names}}\t{{.Status}}" 2>&1 || true
           echo "=== disk / memory ==="
-          df -h / && free -m
+          df -h / 2>&1 && free -m 2>&1
           ENDSSH
+          )
+          printf '%s\n' "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" "" "$DIAG" | \
+            gh gist create --public --filename "askvyo-deploy-diag.txt" -d "askvyo deploy failure diagnostics" - 2>/dev/null || \
+            echo "Gist creation failed; diagnostics: $DIAG"
 
       - name: Smoke test (API and web)
         run: |
