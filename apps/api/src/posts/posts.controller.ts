@@ -17,25 +17,29 @@ export class PostsController {
 
   @Get('question-of-day')
   async questionOfDay() {
-    return this.postsService.getQuestionOfTheDay();
+    const data = await this.postsService.getQuestionOfTheDay();
+    return { data };
   }
 
   @Get('popular-this-week')
   async popularThisWeek(@Query('limit') limit?: string) {
-    return this.postsService.getPopularThisWeek(limit ? parseInt(limit, 10) : 5);
+    const data = await this.postsService.getPopularThisWeek(limit ? parseInt(limit, 10) : 5);
+    return { data };
   }
 
   @Get('recent')
   async recentQuestions(@Query('limit') limit?: string, @Query('offset') offset?: string) {
-    return this.postsService.getRecentQuestions(
+    const data = await this.postsService.getRecentQuestions(
       limit ? parseInt(limit, 10) : 20,
       offset ? parseInt(offset, 10) : 0
     );
+    return { data };
   }
 
   @Get('by-category')
   async questionsByCategory(@Query('limit') limit?: string) {
-    return this.postsService.getQuestionsByCategory(limit ? parseInt(limit, 10) : 10);
+    const data = await this.postsService.getQuestionsByCategory(limit ? parseInt(limit, 10) : 10);
+    return { data };
   }
 
   @Get(':id/related')

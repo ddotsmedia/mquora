@@ -23,8 +23,8 @@ export function QuestionsByCategory() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const data = await apiFetch<CategoryData[]>('/api/v1/posts/by-category?limit=10');
-        setCategories(Array.isArray(data) ? data : []);
+        const response = await apiFetch<{ data: CategoryData[] }>('/api/v1/posts/by-category?limit=10');
+        setCategories(response.data || []);
       } catch (error) {
         console.error('Failed to fetch categories:', error);
         setCategories([]);

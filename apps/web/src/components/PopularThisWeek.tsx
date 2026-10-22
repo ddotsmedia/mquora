@@ -21,8 +21,8 @@ export function PopularThisWeek() {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const data = await apiFetch<PopularPost[]>('/api/v1/posts/popular-this-week?limit=5');
-        setPosts(Array.isArray(data) ? data : []);
+        const response = await apiFetch<{ data: PopularPost[] }>('/api/v1/posts/popular-this-week?limit=5');
+        setPosts(response.data || []);
       } catch (error) {
         console.error('Failed to fetch popular posts:', error);
         setPosts([]);

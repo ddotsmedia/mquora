@@ -20,8 +20,8 @@ export function QuestionOfTheDay() {
   useEffect(() => {
     const fetchQuestion = async () => {
       try {
-        const data = await apiFetch<QuestionOfTheDayData>('/api/v1/posts/question-of-day');
-        setQuestion(data);
+        const response = await apiFetch<{ data: QuestionOfTheDayData | null }>('/api/v1/posts/question-of-day');
+        setQuestion(response.data);
       } catch (error) {
         console.error('Failed to fetch Question of the Day:', error);
         setQuestion(null);

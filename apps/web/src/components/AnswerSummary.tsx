@@ -19,11 +19,11 @@ export function AnswerSummary({ postId }: AnswerSummaryProps) {
   useEffect(() => {
     const fetchSummary = async () => {
       try {
-        const data = await apiFetch<SummaryData>(
+        const response = await apiFetch<SummaryData>(
           `/api/v1/posts/${postId}/answer-summary`
         );
-        if (data?.summary) {
-          setSummary(data.summary);
+        if (response?.summary) {
+          setSummary(response.summary);
         }
       } catch (error) {
         console.error('Failed to fetch answer summary:', error);

@@ -25,10 +25,10 @@ export function RecentQuestions() {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const data = await apiFetch<RecentPost[]>(
+        const response = await apiFetch<{ data: RecentPost[] }>(
           `/api/v1/posts/recent?limit=20&offset=0`
         );
-        setPosts(Array.isArray(data) ? data : []);
+        setPosts(response.data || []);
       } catch (error) {
         console.error('Failed to fetch recent posts:', error);
         setPosts([]);
