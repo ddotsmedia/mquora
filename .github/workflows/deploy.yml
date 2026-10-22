@@ -185,9 +185,13 @@ jobs:
           df -h / 2>&1 && free -m 2>&1
           ENDSSH
           )
-          printf '%s\n' "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" "" "$DIAG" | \
-            gh gist create --public --filename "askvyo-deploy-diag.txt" -d "askvyo deploy failure diagnostics" - 2>/dev/null || \
-            echo "Gist creation failed; diagnostics: $DIAG"
+          BODY="**Deploy failure diagnostics** — run [$GITHUB_RUN_ID]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)
+\`\`\`
+$DIAG
+\`\`\`"
+          gh issue create --title "Deploy failure $(date -u +%Y-%m-%dT%H:%MZ)" \
+            --body "$BODY" --label "deploy-log" 2>/dev/null || \
+          echo "DIAG: $DIAG"
 
       - name: Smoke test (API and web)
         run: |
