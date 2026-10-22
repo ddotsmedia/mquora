@@ -93,3 +93,14 @@ export class AnnouncementDto {
   @IsOptional() @IsString() @Matches(/^\/[^\s]*$/) @MaxLength(200) link?: string;
   @IsIn(['ALL', 'STAFF']) audience!: 'ALL' | 'STAFF';
 }
+
+export class CreateAdminDto {
+  @IsString() @MaxLength(255) email!: string;
+  @IsString() @MaxLength(255) displayName!: string;
+  @IsString() @MaxLength(72) password!: string;
+  @IsArray() @IsString({ each: true }) featureKeys!: string[];
+}
+
+export class UpdateAdminPermissionsDto {
+  @IsArray() @IsString({ each: true }) featureKeys!: string[];
+}

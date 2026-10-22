@@ -200,4 +200,31 @@ export class AdminController {
   getAnalytics() {
     return this.admin.getAnalytics();
   }
+
+  @Get('features')
+  getFeatures() {
+    return this.admin.getAdminFeatures();
+  }
+
+  @Post('create-admin')
+  createAdmin(@Req() req: { user: Actor }, @Body() dto: CreateAdminDto) {
+    return this.admin.createAdmin(this.actor(req), dto.email, dto.password, dto.displayName, dto.featureKeys);
+  }
+
+  @Get('admins')
+  listAdmins(@Query() q: { page?: string; limit?: string }) {
+    const page = Math.max(1, Number(q.page) || 1);
+    const limit = Math.max(1, Math.min(100, Number(q.limit) || 20));
+    return this.admin.listAdmins(page, limit);
+  }
+
+  @Post('admins/:id/permissions')
+  updateAdminPermissions(@Req() req: { user: Actor }, @Param('id') id: string, @Body() dto: UpdateAdminPermissionsDto) {
+    return this.admin.updateAdminPermissions(this.actor(req), id, dto.featureKeys);
+  }
+
+  @Delete('admins/:id')
+  deleteAdmin(@Req() req: { user: Actor }, @Param('id') id: string) {
+    return this.admin.deleteAdmin(this.actor(req), id);
+  }
 }

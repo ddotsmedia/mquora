@@ -16,6 +16,20 @@ enum UserRole {
   ADMIN
 }
 
+enum AdminFeatureType {
+  USERS
+  CONTENT
+  REPORTS
+  COMMUNITIES
+  TAGS
+  ANNOUNCEMENTS
+  SYSTEM
+  AUDIT_LOG
+  FLAGS
+  QUEUES
+  OTHER_ADMINS
+}
+
 enum ContentStatus {
   DRAFT
   PUBLISHED
@@ -107,6 +121,8 @@ model User {
   questionFollows       QuestionFollow[]
   questionPasses        QuestionPass[]
   onboardedAt           DateTime?
+  adminPerms            AdminPermission[] @relation("adminPerms")
+  grantedPerms          AdminPermission[] @relation("grantedPerms")
 
   @@index([email])
   @@index([username])
@@ -616,4 +632,29 @@ model DuplicateCandidate {
   @@index([sourcePostId])
   @@index([targetPostId])
   @@index([status])
+}
+
+model AdminFeature {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+
+  permissions AdminPermission[]
+}
+
+model AdminPermission {
+  id          String   @id @default(cuid())
+  adminId     String
+  featureKey  String
+  grantedBy   String?
+  createdAt   DateTime @default(now())
+
+  admin       User     @relation("adminPerms", fields: [adminId], references: [id], onDelete: Cascade)
+  grantedByUser User?  @relation("grantedPerms", fields: [grantedBy], references: [id])
+
+  @@unique([adminId, featureKey])
+  @@index([adminId])
+  @@index([featureKey])
 }

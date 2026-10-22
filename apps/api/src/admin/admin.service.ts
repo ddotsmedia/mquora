@@ -730,4 +730,147 @@ export class AdminService {
     await this.audit(actor.id, 'USERS_EXPORT', 'USER', 'all', { rows: rows.length });
     return [head.join(','), ...lines].join('\n');
   }
+
+  // ---------- admin account management ----------
+
+  async getAdminFeatures() {
+    return await this.prisma.adminFeature.findMany({
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  async createAdmin(actor: Actor, email: string, password: string, displayName: string, featureKeys: string[]) {
+    this.requireAdmin(actor);
+
+    const hasAdminPerms = await this.prisma.adminPermission.findFirst({
+      where: { adminId: actor.id, featureKey: 'OTHER_ADMINS' },
+    });
+    if (!hasAdminPerms) throw new ForbiddenException('You lack OTHER_ADMINS permission');
+
+    const existing = await this.prisma.user.findUnique({ where: { email } });
+    if (existing) throw new BadRequestException('Email already in use');
+
+    const passwordHash = await argon2.hash(password);
+
+    const newAdmin = await this.prisma.user.create({
+      data: {
+        email,
+        displayName,
+        username: email.split('@')[0] + '_' + Math.random().toString(36).substr(2, 5),
+        passwordHash,
+        role: 'ADMIN',
+      },
+    });
+
+    await Promise.all(
+      featureKeys.map(key =>
+        this.prisma.adminPermission.create({
+          data: {
+            adminId: newAdmin.id,
+            featureKey: key,
+            grantedBy: actor.id,
+          },
+        })
+      )
+    );
+
+    await this.audit(actor.id, 'ADMIN_CREATED', 'USER', newAdmin.id, { email, features: featureKeys });
+
+    return {
+      id: newAdmin.id,
+      email: newAdmin.email,
+      displayName: newAdmin.displayName,
+      createdAt: newAdmin.createdAt,
+    };
+  }
+
+  async listAdmins(page = 1, limit = 20) {
+    const admins = await this.prisma.user.findMany({
+      where: { role: 'ADMIN' },
+      select: {
+        id: true,
+        email: true,
+        displayName: true,
+        createdAt: true,
+        adminPerms: {
+          select: { featureKey: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    const total = await this.prisma.user.count({ where: { role: 'ADMIN' } });
+
+    return {
+      data: admins.map(a => ({
+        id: a.id,
+        email: a.email,
+        displayName: a.displayName,
+        features: a.adminPerms.map(p => p.featureKey),
+        createdAt: a.createdAt,
+      })),
+      total,
+    };
+  }
+
+  async updateAdminPermissions(actor: Actor, adminId: string, featureKeys: string[]) {
+    this.requireAdmin(actor);
+
+    const hasAdminPerms = await this.prisma.adminPermission.findFirst({
+      where: { adminId: actor.id, featureKey: 'OTHER_ADMINS' },
+    });
+    if (!hasAdminPerms) throw new ForbiddenException('You lack OTHER_ADMINS permission');
+
+    if (actor.id === adminId) throw new BadRequestException('You cannot modify your own permissions');
+
+    const admin = await this.loadUser(adminId);
+    if (admin.role !== 'ADMIN') throw new BadRequestException('User is not an admin');
+
+    await this.prisma.adminPermission.deleteMany({ where: { adminId } });
+
+    await Promise.all(
+      featureKeys.map(key =>
+        this.prisma.adminPermission.create({
+          data: {
+            adminId,
+            featureKey: key,
+            grantedBy: actor.id,
+          },
+        })
+      )
+    );
+
+    await this.audit(actor.id, 'ADMIN_PERMISSIONS_UPDATED', 'USER', adminId, { features: featureKeys });
+
+    return { success: true };
+  }
+
+  async deleteAdmin(actor: Actor, adminId: string) {
+    this.requireAdmin(actor);
+
+    const hasAdminPerms = await this.prisma.adminPermission.findFirst({
+      where: { adminId: actor.id, featureKey: 'OTHER_ADMINS' },
+    });
+    if (!hasAdminPerms) throw new ForbiddenException('You lack OTHER_ADMINS permission');
+
+    if (actor.id === adminId) throw new BadRequestException('You cannot delete your own account');
+
+    const admin = await this.loadUser(adminId);
+    if (admin.role !== 'ADMIN') throw new BadRequestException('User is not an admin');
+
+    await this.prisma.user.delete({ where: { id: adminId } });
+
+    await this.audit(actor.id, 'ADMIN_DELETED', 'USER', adminId);
+
+    return { success: true };
+  }
+
+  async hasFeature(adminId: string, featureKey: string): Promise<boolean> {
+    const perm = await this.prisma.adminPermission.findFirst({
+      where: { adminId, featureKey },
+    });
+    return !!perm;
+  }
 }

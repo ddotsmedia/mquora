@@ -140,3 +140,27 @@ export async function sendAnnouncementAction(input: AnnouncementInput): Promise<
     throw err;
   }
 }
+
+// ---------- admin account management ----------
+
+export type CreateAdminInput = { email: string; displayName: string; password: string; featureKeys: string[] };
+
+export async function createAdminAction(input: CreateAdminInput): Promise<ActionResult> {
+  return run(
+    () => adminFetch('/create-admin', { method: 'POST', body: input }),
+    `Admin "${input.email}" created`,
+    ['/admin/admins', '/admin/dashboard'],
+  );
+}
+
+export async function updateAdminPermissionsAction(id: string, featureKeys: string[]): Promise<ActionResult> {
+  return run(
+    () => adminFetch(`/admins/${id}/permissions`, { method: 'POST', body: { featureKeys } }),
+    'Admin permissions updated',
+    ['/admin/admins'],
+  );
+}
+
+export async function deleteAdminAction(id: string): Promise<ActionResult> {
+  return run(() => adminFetch(`/admins/${id}`, { method: 'DELETE' }), 'Admin deleted', ['/admin/admins', '/admin/dashboard']);
+}
