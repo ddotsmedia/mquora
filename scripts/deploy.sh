@@ -80,13 +80,25 @@ echo "Applying database migrations..."
 # Give postgres extra time to settle before running migrations
 sleep 5
 
+# Resolve any failed migrations from previous broken deploys.
+# prisma migrate resolve --rolled-back marks a failed migration as rolled back
+# so migrate deploy can retry it cleanly. Safe: only updates _prisma_migrations tracking table.
+FAILED=$(docker compose -p askvyo -f docker-compose.prod.yml --env-file .env run -T --rm --no-deps api \
+  sh -c 'pnpm --filter @askvyo/db exec prisma migrate status --schema=prisma/schema.prisma 2>&1' \
+  | grep 'failed' | grep -oP '(?<=• )\S+' || true)
+if [ -n "$FAILED" ]; then
+  echo "Resolving failed migrations: $FAILED"
+  for m in $FAILED; do
+    docker compose -p askvyo -f docker-compose.prod.yml --env-file .env run -T --rm --no-deps api \
+      sh -c "pnpm --filter @askvyo/db exec prisma migrate resolve --rolled-back '$m' --schema=prisma/schema.prisma" || true
+  done
+fi
+
 # Run migrations with timeout and detailed error reporting
 if ! timeout 120 $COMPOSE run -T --rm --no-deps api sh -c 'pnpm --filter @askvyo/db exec prisma migrate deploy --schema=prisma/schema.prisma'; then
   echo "ERROR: Prisma migration failed"
   echo "Postgres status:"
   docker logs --tail 50 askvyo-postgres-1 || true
-  echo "API container logs:"
-  docker logs --tail 50 askvyo-api-1 || true
   exit 1
 fi
 
