@@ -100,10 +100,13 @@ jobs:
           PROD_ENV: ${{ secrets.PROD_ENV }}
           PUBLIC_DOMAIN: ${{ vars.PUBLIC_DOMAIN || secrets.PUBLIC_DOMAIN }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
+          GHCR_TOKEN: ${{ secrets.GHCR_PULL_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           mkdir -p .deploy
           printf '%s\n' "$PROD_ENV" > .deploy/prod.env
           printf 'GITHUB_REPOSITORY=%s\nIMAGE_TAG=%s\n' "$GITHUB_REPOSITORY" "$GITHUB_SHA" >> .deploy/prod.env
+          # Inject GHCR credentials into prod.env so deploy.sh can docker login without env forwarding tricks
+          printf 'GHCR_TOKEN=%s\nGITHUB_ACTOR=%s\n' "$GHCR_TOKEN" "$GITHUB_ACTOR" >> .deploy/prod.env
           # Public domain (repo variable PUBLIC_DOMAIN, e.g. askvyo.com) overrides the URL settings in PROD_ENV.
           if [ -n "$PUBLIC_DOMAIN" ]; then
             {
@@ -147,18 +150,14 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PORT: ${{ secrets.VPS_PORT || 22 }}
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
-          GHCR_TOKEN: ${{ secrets.GHCR_PULL_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           set -euxo pipefail
           mkdir -p ~/.ssh
           printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
-          # Pass GHCR_TOKEN and GITHUB_ACTOR explicitly into the remote shell via env
           ssh -i ~/.ssh/deploy_key -p "$VPS_PORT" \
             -o StrictHostKeyChecking=accept-new \
             -o ConnectTimeout=20 -o ServerAliveInterval=30 \
-            -o SendEnv=GHCR_TOKEN -o SendEnv=GITHUB_ACTOR \
-            "$VPS_USER@$VPS_HOST" \
-            "GHCR_TOKEN='$GHCR_TOKEN' GITHUB_ACTOR='$GITHUB_ACTOR' bash -x /opt/askvyo/scripts/deploy.sh" 2>&1
+            "$VPS_USER@$VPS_HOST" bash -x /opt/askvyo/scripts/deploy.sh 2>&1
 
       - name: Smoke test (API and web)
         run: |
