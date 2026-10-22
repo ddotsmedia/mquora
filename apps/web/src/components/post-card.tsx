@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { LanguageBadge } from './language-badge';
 import { MessageCircle, Eye, ChevronUp, ChevronDown } from 'lucide-react';
 import { timeAgo } from '@/lib/time-ago';
+import { BookmarkButton } from './bookmark-button';
 
 interface PostCardProps {
   id: string;
@@ -73,7 +74,7 @@ export function PostCard(props: PostCardProps) {
           )}
 
           {/* Bottom row */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-full bg-[var(--primary)] flex items-center justify-center text-white text-xs font-bold">
                 {initials}
@@ -82,15 +83,18 @@ export function PostCard(props: PostCardProps) {
               <span className="text-[var(--border)]">·</span>
               <span className="text-xs text-[var(--text-muted)]">{timeAgo(props.createdAt)}</span>
             </div>
-            <div className="flex items-center gap-3 text-xs text-[var(--text-muted)]">
-              <span className="flex items-center gap-1">
-                <MessageCircle className="w-3.5 h-3.5" />
-                {props.answerCount}
-              </span>
-              <span className="flex items-center gap-1">
-                <Eye className="w-3.5 h-3.5" />
-                {props.viewCount || 0}
-              </span>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 text-xs text-[var(--text-muted)]">
+                <span className="flex items-center gap-1">
+                  <MessageCircle className="w-3.5 h-3.5" />
+                  {props.answerCount}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Eye className="w-3.5 h-3.5" />
+                  {props.viewCount || 0}
+                </span>
+              </div>
+              <BookmarkButton postId={props.id} />
             </div>
           </div>
         </div>

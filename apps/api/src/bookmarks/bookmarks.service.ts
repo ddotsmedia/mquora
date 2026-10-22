@@ -6,12 +6,13 @@ export class BookmarksService {
   private prisma = new PrismaClient();
 
   async upsert(userId: string, postId: string) {
-    return this.prisma.bookmark.upsert({
+    const result = await this.prisma.bookmark.upsert({
       where: { userId_postId: { userId, postId } },
       create: { userId, postId },
       update: {},
       select: { id: true },
     });
+    return { bookmarked: true, id: result.id };
   }
 
   async remove(userId: string, postId: string) {
