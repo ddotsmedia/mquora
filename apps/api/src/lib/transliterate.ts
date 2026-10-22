@@ -1,4 +1,4 @@
-// Manglish → Malayalam transliteration mapping (500 common words)
+// Manglish → Malayalam transliteration mapping (400+ common words)
 const MANGLISH_MALAYALAM_MAP: Record<string, string> = {
   // Medical
   'doctor': 'ഡോക്ടർ',
@@ -21,6 +21,20 @@ const MANGLISH_MALAYALAM_MAP: Record<string, string> = {
   'health': 'ആരോഗ്യം',
   'cure': 'സുഖം',
   'diet': 'ഭക്ഷണ ക്രമം',
+  'healthy': 'ആരോഗ്യകരം',
+  'sick': 'രോഗാസന്ന',
+  'exercise': 'വ്യായാമം',
+  'yoga': 'യോഗ',
+  'sleep': 'ഉറക്കം',
+  'rest': 'വിശ്രമം',
+  'weakness': 'ശൈഥിൽയം',
+  'strength': 'ശക്തി',
+  'weight': 'ഭാരം',
+  'height': 'ഉയരം',
+  'fitness': 'ഫിറ്റ്നെസ്',
+  'nutrition': 'പോഷണം',
+  'allergy': 'അലർജി',
+  'infection': 'രോഗാണു',
 
   // Finance & Loans
   'loan': 'ലോൺ',
@@ -106,8 +120,6 @@ const MANGLISH_MALAYALAM_MAP: Record<string, string> = {
   'spice': 'ഉപ്പേരി',
   'curry': 'ഉണ്ടാഗ്രാനി',
   'taste': 'രസം',
-  'hot': 'വൈകുണ്ഠ',
-  'cold': 'തണുത്ത',
   'sweet': 'മധുരം',
 
   // Education
@@ -141,8 +153,6 @@ const MANGLISH_MALAYALAM_MAP: Record<string, string> = {
   'business': 'ബിസിനെസ്',
   'employee': 'ജീവനക്കാരൻ',
   'employer': 'ജോലി കൊടുക്കുന്നയാൾ',
-  'salary': 'ശമ്പളം',
-  'payment': 'പേയ്മെൻറ്',
   'contract': 'കരാർ',
   'project': 'പ്രോജക്ട്',
   'client': 'ക്ലയന്റ്',
@@ -209,7 +219,6 @@ const MANGLISH_MALAYALAM_MAP: Record<string, string> = {
   'thunder': 'ഇടിമിന്നൽ',
   'lightning': 'മിന്നൽ',
   'hot': 'ചൂടായ',
-  'cold': 'തണുത്ത',
   'warm': 'ഊഷ്ണ',
   'cool': 'തണുത്ത',
   'temperature': 'താപനില',
@@ -256,7 +265,6 @@ const MANGLISH_MALAYALAM_MAP: Record<string, string> = {
   'brown': 'തവിട്ട്',
   'grey': 'ചാരനില',
   'silver': 'വെള്ളിയെണ്ണ',
-  'gold': 'സ്വർണം',
   'color': 'നിറം',
 
   // Sports
@@ -284,7 +292,7 @@ const MANGLISH_MALAYALAM_MAP: Record<string, string> = {
   // Technology
   'computer': 'കമ്പ്യൂട്ടർ',
   'mobile': 'മോബൈൽ',
-  'phone': 'ফോൻ',
+  'phone': 'ഫോൻ',
   'internet': 'ഇന്റർനെറ്റ്',
   'email': 'ഈ-മെയിൽ',
   'website': 'വെബ്സൈറ്റ്',
@@ -354,7 +362,6 @@ const MANGLISH_MALAYALAM_MAP: Record<string, string> = {
   'buffalo': 'എമ്പ്',
   'horse': 'കുതിര',
   'bird': 'പക്ഷി',
-  'fish': 'മത്സ്യം',
   'elephant': 'ആന',
   'lion': 'സിംഹം',
   'tiger': 'കടുവ',
@@ -365,9 +372,7 @@ const MANGLISH_MALAYALAM_MAP: Record<string, string> = {
   'goat': 'ആട്',
   'sheep': 'കുരയ',
   'duck': 'താറാവ്',
-  'chicken': 'കോഴി',
   'egg': 'മുട്ട',
-  'meat': 'ഇറച്ചി',
 
   // Emotions
   'happy': 'സന്തുഷ്ട',
@@ -407,28 +412,11 @@ const MANGLISH_MALAYALAM_MAP: Record<string, string> = {
   'name': 'പേര്',
   'age': 'വയസ്സ്',
   'address': 'വിലാസം',
-  'phone': 'ഫോൻ',
   'number': 'നമ്പർ',
   'question': 'ചോദ്യം',
   'answer': 'ഉത്തരം',
   'help': 'സഹായം',
   'problem': 'പ്രശ്നം',
-
-  // Additional health
-  'healthy': 'ആരോഗ്യകരം',
-  'sick': 'രോഗാസന്ന',
-  'exercise': 'വ്യായാമം',
-  'yoga': 'യോഗ',
-  'sleep': 'ഉറക്കം',
-  'rest': 'വിശ്രമം',
-  'weakness': 'ശൈഥിൽയം',
-  'strength': 'ശക്തി',
-  'weight': 'ഭാരം',
-  'height': 'ഉയരം',
-  'fitness': 'ഫിറ്റ്നെസ്',
-  'nutrition': 'പോഷണം',
-  'allergy': 'അലർജി',
-  'infection': 'രോഗാണു',
 };
 
 export function transliterate(text: string): string {
