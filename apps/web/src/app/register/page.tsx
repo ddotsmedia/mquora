@@ -28,8 +28,12 @@ async function register(formData: FormData) {
   try {
     await signIn('credentials', { email, password, redirectTo: '/post-login' });
   } catch (e) {
-    if (e instanceof AuthError) redirect('/login?registered=1');
-    throw e; // NEXT_REDIRECT on success
+    if (e instanceof AuthError) {
+      // Registration succeeded but auto-login failed. Log the error type for debugging.
+      console.error('[register] signIn AuthError after successful registration:', e.type, e.message);
+      redirect('/login?registered=1');
+    }
+    throw e; // NEXT_REDIRECT on success (not an error)
   }
 }
 

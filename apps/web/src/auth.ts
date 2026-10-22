@@ -39,14 +39,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials) {
         if (!credentials.email || !credentials.password) return null;
 
-        const res = await fetch(`${API}/api/v1/auth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          // API rejects unknown fields (csrfToken etc.), so send only these two
-          body: JSON.stringify({ email: credentials.email, password: credentials.password }),
-        });
+        let res: Response;
+        try {
+          res = await fetch(`${API}/api/v1/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            // API rejects unknown fields (csrfToken etc.), so send only these two
+            body: JSON.stringify({ email: credentials.email, password: credentials.password }),
+            cache: 'no-store',
+          });
+        } catch (err) {
+          console.error('[auth] authorize fetch error — API unreachable?', err);
+          return null;
+        }
 
-        if (!res.ok) return null;
+        if (!res.ok) {
+          console.error('[auth] authorize login failed:', res.status, await res.text().catch(() => ''));
+          return null;
+        }
         const data = await res.json();
         const user: User = {
           id: data.user.id,
