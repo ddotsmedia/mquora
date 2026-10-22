@@ -32,19 +32,19 @@ importers:
 
   apps/api:
     dependencies:
-      '@mquora/ai':
+      '@askvyo/ai':
         specifier: workspace:*
         version: link:../../packages/ai
-      '@mquora/config':
+      '@askvyo/config':
         specifier: workspace:*
         version: link:../../packages/config
-      '@mquora/db':
+      '@askvyo/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@mquora/security':
+      '@askvyo/security':
         specifier: workspace:*
         version: link:../../packages/security
-      '@mquora/types':
+      '@askvyo/types':
         specifier: workspace:*
         version: link:../../packages/types
       '@nestjs/bull':
@@ -171,10 +171,10 @@ importers:
 
   apps/web:
     dependencies:
-      '@mquora/types':
+      '@askvyo/types':
         specifier: workspace:*
         version: link:../../packages/types
-      '@mquora/ui':
+      '@askvyo/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@tailwindcss/postcss':
@@ -238,19 +238,19 @@ importers:
 
   apps/worker:
     dependencies:
-      '@mquora/ai':
+      '@askvyo/ai':
         specifier: workspace:*
         version: link:../../packages/ai
-      '@mquora/config':
+      '@askvyo/config':
         specifier: workspace:*
         version: link:../../packages/config
-      '@mquora/db':
+      '@askvyo/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@mquora/security':
+      '@askvyo/security':
         specifier: workspace:*
         version: link:../../packages/security
-      '@mquora/types':
+      '@askvyo/types':
         specifier: workspace:*
         version: link:../../packages/types
       '@nestjs/bull':
@@ -296,7 +296,7 @@ importers:
 
   packages/ai:
     dependencies:
-      '@mquora/types':
+      '@askvyo/types':
         specifier: workspace:*
         version: link:../types
       axios:

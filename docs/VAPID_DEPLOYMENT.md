@@ -74,7 +74,7 @@ NEXT_PUBLIC_VAPID_PUBLIC_KEY=BIeW5mEqbYTcEZtB8S2WwUz0kelGs5OYqui0wiSGL6PAf5q1h7c
    - Run TypeScript type checks on api, worker, web
 3. **Build & Push Phase**:
    - Docker images built for web, api, worker
-   - Images pushed to `ghcr.io/ddotsmedia/mquora/{service}:{sha},{latest}`
+   - Images pushed to `ghcr.io/ddotsmedia/askvyo/{service}:{sha},{latest}`
 4. **Database Migration Phase**:
    - Prisma migration runs on VPS: `pnpm db:migrate`
    - Creates/updates `NotificationSubscription` table
@@ -94,7 +94,7 @@ NEXT_PUBLIC_VAPID_PUBLIC_KEY=BIeW5mEqbYTcEZtB8S2WwUz0kelGs5OYqui0wiSGL6PAf5q1h7c
 pnpm install
 
 # 2. Generate Prisma client
-pnpm --filter @mquora/db exec prisma generate
+pnpm --filter @askvyo/db exec prisma generate
 
 # 3. Run migrations (local database)
 pnpm db:migrate
@@ -133,16 +133,16 @@ pnpm dev
 - [ ] Docker images pushed to ghcr.io
 - [ ] Prisma migration runs and `NotificationSubscription` table created
 - [ ] Containers deployed and running:
-  - [ ] `mquora_web` listening on port 3022
-  - [ ] `mquora_api` listening on port 3024
-  - [ ] `mquora_worker` listening on port 3023
+  - [ ] `askvyo_web` listening on port 3022
+  - [ ] `askvyo_api` listening on port 3024
+  - [ ] `askvyo_worker` listening on port 3023
 - [ ] Smoke tests pass (API health + web status < 500)
 
 ### Post-Deployment (Verify functionality)
 
 **In Browser DevTools (Application Tab):**
 - [ ] Service Worker registered at `/sw.js` (status: activated)
-- [ ] Cache storage contains `mquora-cache-v1` (or similar)
+- [ ] Cache storage contains `askvyo-cache-v1` (or similar)
 
 **In User Settings/Dashboard:**
 - [ ] "Enable Push Notifications" toggle appears
@@ -233,7 +233,7 @@ model NotificationSubscription {
 4. Test with invalid subscription to see error handling
 
 ### Database migration fails on VPS
-1. Check Prisma client is generated: `pnpm --filter @mquora/db exec prisma generate`
+1. Check Prisma client is generated: `pnpm --filter @askvyo/db exec prisma generate`
 2. Verify database connection in PROD_ENV
 3. Check for conflicting migrations
 4. See VPS logs: `docker-compose -f docker-compose.prod.yml logs -f postgres`
@@ -255,12 +255,12 @@ If issues occur after deployment:
    pnpm db:rollback
    # Or manually drop table if critical:
    docker-compose -f docker-compose.prod.yml exec postgres \
-     psql -U mquora -d mquora -c "DROP TABLE NotificationSubscription;"
+     psql -U askvyo -d askvyo -c "DROP TABLE NotificationSubscription;"
    ```
 
 3. **Cleanup**: Clear browser caches:
    - Clear service worker: DevTools → Application → Service Workers → Unregister
-   - Clear cache: DevTools → Application → Cache Storage → Delete mquora-cache-v1
+   - Clear cache: DevTools → Application → Cache Storage → Delete askvyo-cache-v1
 
 ## Next Steps
 

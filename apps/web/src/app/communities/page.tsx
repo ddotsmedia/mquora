@@ -4,8 +4,8 @@ import { serverApiFetch } from '@/lib/api';
 import { JoinButton } from '@/components/join-button';
 
 export const metadata: Metadata = {
-  title: 'Communities — mquora',
-  description: 'Browse Malayalam communities on mquora: Kerala, UAE, jobs, education, technology, health and more.',
+  title: 'Communities — askvyo',
+  description: 'Browse Malayalam communities on askvyo: Kerala, UAE, jobs, education, technology, health and more.',
   alternates: { canonical: '/communities' },
 };
 export const revalidate = 60;

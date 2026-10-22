@@ -4,7 +4,7 @@ import { OG_SIZE, pngResponse, renderCard, siteDomain } from '@/lib/og-card';
 export const runtime = 'nodejs';
 export const size = OG_SIZE;
 export const contentType = 'image/png';
-export const alt = 'Question on mquora';
+export const alt = 'Question on askvyo';
 
 interface PostSummary {
   title: string;

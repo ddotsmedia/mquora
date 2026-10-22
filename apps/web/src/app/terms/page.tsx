@@ -2,15 +2,15 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { StaticPage } from '@/components/static-page';
 
-export const metadata: Metadata = { title: 'Terms of use — mquora', alternates: { canonical: '/terms' } };
+export const metadata: Metadata = { title: 'Terms of use — askvyo', alternates: { canonical: '/terms' } };
 
 export default function TermsPage() {
   return (
     <StaticPage title="Terms of use" subtitle="Last updated: October 2026">
-      <p>By using mquora you agree to these terms.</p>
+      <p>By using askvyo you agree to these terms.</p>
       <h2>Your content</h2>
       <p>
-        You keep ownership of what you post. By posting, you allow mquora to display and distribute it on the site. You are
+        You keep ownership of what you post. By posting, you allow askvyo to display and distribute it on the site. You are
         responsible for what you post and must have the right to share it.
       </p>
       <h2>Acceptable use</h2>

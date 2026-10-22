@@ -49,7 +49,7 @@ export class AdminController {
   // Declared before users/:id so "export" is not treated as an id.
   @Get('users/export')
   @Header('Content-Type', 'text/csv; charset=utf-8')
-  @Header('Content-Disposition', 'attachment; filename="mquora-users.csv"')
+  @Header('Content-Disposition', 'attachment; filename="askvyo-users.csv"')
   exportUsers(@Req() req: { user: Actor }) {
     return this.admin.exportUsersCsv(this.actor(req));
   }

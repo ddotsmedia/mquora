@@ -11,11 +11,11 @@ import { siteOrigin } from "@/lib/site";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteOrigin()),
-  title: "mquora - Malayalam Knowledge Community",
-  appleWebApp: { capable: true, title: "mquora", statusBarStyle: "default" },
+  title: "askvyo - Malayalam Knowledge Community",
+  appleWebApp: { capable: true, title: "askvyo", statusBarStyle: "default" },
   description: "A Malayalam-first knowledge community for learning, sharing, and discovering",
   openGraph: {
-    title: "mquora",
+    title: "askvyo",
     description: "A Malayalam-first knowledge community",
     type: "website",
   },
@@ -39,7 +39,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "WebSite",
-              name: "mquora",
+              name: "askvyo",
               url: siteOrigin(),
               inLanguage: ["ml", "en"],
               potentialAction: {

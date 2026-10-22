@@ -5,7 +5,7 @@ import { FollowQuestionButton } from '@/components/follow-question-button';
 import { PassButton } from '@/components/pass-button';
 import { timeAgo } from '@/lib/time-ago';
 
-export const metadata: Metadata = { title: 'Answer questions — mquora', robots: { index: false } };
+export const metadata: Metadata = { title: 'Answer questions — askvyo', robots: { index: false } };
 export const dynamic = 'force-dynamic';
 
 type Q = {

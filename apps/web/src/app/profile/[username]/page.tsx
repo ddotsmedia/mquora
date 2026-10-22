@@ -74,8 +74,8 @@ export async function generateMetadata({ params }: { params: Promise<{ username:
   const user = await load(username).catch(() => null);
   if (!user) return { title: 'User not found' };
   return {
-    title: `${user.displayName} (@${user.username}) — mquora`,
-    description: user.bio || `Profile of ${user.displayName} on mquora`,
+    title: `${user.displayName} (@${user.username}) — askvyo`,
+    description: user.bio || `Profile of ${user.displayName} on askvyo`,
   };
 }
 

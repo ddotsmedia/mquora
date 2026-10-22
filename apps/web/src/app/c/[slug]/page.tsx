@@ -44,8 +44,8 @@ export async function generateMetadata({
   try {
     const community = await serverApiFetch<Community>(`/api/v1/communities/${slug}`);
     return {
-      title: `${community.name} — mquora`,
-      description: community.description || `Join the ${community.name} community on mquora`,
+      title: `${community.name} — askvyo`,
+      description: community.description || `Join the ${community.name} community on askvyo`,
       openGraph: {
         title: community.name,
         description: community.description,

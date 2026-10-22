@@ -4,7 +4,7 @@ import { serverApiFetch } from '@/lib/api';
 import { userFetch } from '@/lib/session-api';
 import { InterestPicker } from './picker';
 
-export const metadata: Metadata = { title: 'Your interests — mquora', robots: { index: false } };
+export const metadata: Metadata = { title: 'Your interests — askvyo', robots: { index: false } };
 export const dynamic = 'force-dynamic';
 
 type Community = { id: string; slug: string; name: string; description: string | null };
@@ -31,7 +31,7 @@ export default async function OnboardingPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
-      <p className="text-sm font-medium text-[var(--primary)]">Welcome to mquora</p>
+      <p className="text-sm font-medium text-[var(--primary)]">Welcome to askvyo</p>
       <h1 className="mt-1 font-malayalam text-3xl font-bold text-[var(--text)]">നിങ്ങളുടെ താൽപര്യങ്ങൾ എന്തൊക്കെ?</h1>
       <p className="mb-8 mt-2 text-[var(--text-secondary)]">Pick at least 3 — we&apos;ll fill your Following feed and suggest questions you can answer.</p>
       {communities.length + tags.length === 0 ? (

@@ -19,7 +19,7 @@ export async function GET() {
   return new Response(res.body, {
     headers: {
       'Content-Type': 'text/csv; charset=utf-8',
-      'Content-Disposition': `attachment; filename="mquora-users-${date}.csv"`,
+      'Content-Disposition': `attachment; filename="askvyo-users-${date}.csv"`,
       'Cache-Control': 'no-store',
     },
   });

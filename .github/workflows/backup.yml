@@ -20,7 +20,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Verify target server is the mquora VPS (never touch the shared VPS)
+      - name: Verify target server is the askvyo VPS (never touch the shared VPS)
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
@@ -52,10 +52,10 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           SSH=(-i ~/.ssh/deploy_key -p "$VPS_PORT" -o StrictHostKeyChecking=accept-new)
           SCP=(-i ~/.ssh/deploy_key -P "$VPS_PORT" -o StrictHostKeyChecking=accept-new)
-          scp "${SCP[@]}" scripts/backup.sh "$VPS_USER@$VPS_HOST:/opt/mquora/scripts/backup.sh"
-          ssh "${SSH[@]}" "$VPS_USER@$VPS_HOST" "bash /opt/mquora/scripts/backup.sh" | tee out.txt
+          scp "${SCP[@]}" scripts/backup.sh "$VPS_USER@$VPS_HOST:/opt/askvyo/scripts/backup.sh"
+          ssh "${SSH[@]}" "$VPS_USER@$VPS_HOST" "bash /opt/askvyo/scripts/backup.sh" | tee out.txt
           REMOTE=$(tail -n 1 out.txt)
-          case "$REMOTE" in /opt/mquora/backups/mquora-*.sql.gz) ;; *) echo "Unexpected backup path: $REMOTE"; exit 1;; esac
+          case "$REMOTE" in /opt/askvyo/backups/askvyo-*.sql.gz) ;; *) echo "Unexpected backup path: $REMOTE"; exit 1;; esac
           mkdir -p dump
           scp "${SCP[@]}" "$VPS_USER@$VPS_HOST:$REMOTE" dump/
           echo "file=dump/$(basename "$REMOTE")" >> "$GITHUB_OUTPUT"
@@ -82,7 +82,7 @@ jobs:
         if: steps.enc.outputs.ready == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: mquora-db-${{ github.run_id }}
+          name: askvyo-db-${{ github.run_id }}
           path: dump/*.enc
           retention-days: 30
           if-no-files-found: error

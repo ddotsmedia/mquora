@@ -3,8 +3,8 @@ import Link from 'next/link';
 import { serverApiFetch } from '@/lib/api';
 
 export const metadata: Metadata = {
-  title: 'Topics — mquora',
-  description: 'Browse every topic people ask about on mquora.',
+  title: 'Topics — askvyo',
+  description: 'Browse every topic people ask about on askvyo.',
   alternates: { canonical: '/tags' },
 };
 export const dynamic = 'force-dynamic';

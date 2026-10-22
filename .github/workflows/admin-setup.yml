@@ -28,7 +28,7 @@ jobs:
           printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
-      - name: Verify target server is the mquora VPS (never touch the shared VPS)
+      - name: Verify target server is the askvyo VPS (never touch the shared VPS)
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
@@ -66,10 +66,10 @@ jobs:
           ssh "${SSH_OPTS[@]}" "$VPS_USER@$VPS_HOST" bash -s "$ADMIN_PASSWORD" << 'EOFSCRIPT'
             ADMIN_PASSWORD="$1"
             set -e
-            cd /opt/mquora
-            # Only mquora's own one-off containers are touched.
-            docker ps -aq --filter 'name=^mquora-api-run-' | xargs -r docker rm -f
-            docker compose -p mquora -f docker-compose.prod.yml --env-file .env run -T \
+            cd /opt/askvyo
+            # Only askvyo's own one-off containers are touched.
+            docker ps -aq --filter 'name=^askvyo-api-run-' | xargs -r docker rm -f
+            docker compose -p askvyo -f docker-compose.prod.yml --env-file .env run -T \
               --rm --no-deps -e ADMIN_PASSWORD="$ADMIN_PASSWORD" api \
               node apps/api/dist/apps/api/src/init-admin.js
           EOFSCRIPT

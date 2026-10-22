@@ -2,13 +2,13 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { StaticPage } from '@/components/static-page';
 
-export const metadata: Metadata = { title: 'About — mquora', description: 'mquora is a Malayalam-first question and answer community.', alternates: { canonical: '/about' } };
+export const metadata: Metadata = { title: 'About — askvyo', description: 'askvyo is a Malayalam-first question and answer community.', alternates: { canonical: '/about' } };
 
 export default function AboutPage() {
   return (
-    <StaticPage title="About mquora" subtitle="A Malayalam-first place to ask questions and share what you know.">
+    <StaticPage title="About askvyo" subtitle="A Malayalam-first place to ask questions and share what you know.">
       <p>
-        mquora is a question and answer community for Malayalam speakers everywhere. Ask in Malayalam, English or Manglish —
+        askvyo is a question and answer community for Malayalam speakers everywhere. Ask in Malayalam, English or Manglish —
         whatever is easiest for you — and get answers from people who have lived it.
       </p>
       <h2>What you can do</h2>

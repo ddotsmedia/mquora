@@ -31,40 +31,40 @@ export class MetricsService {
   }
 
   getMetrics(activeUsers24h: number, totalPosts: number, queueDepths: Record<string, number>): string {
-    let metrics = '# HELP mquora_requests_total Total requests processed\n';
-    metrics += '# TYPE mquora_requests_total counter\n';
+    let metrics = '# HELP askvyo_requests_total Total requests processed\n';
+    metrics += '# TYPE askvyo_requests_total counter\n';
 
     for (const [key, count] of this.requestCounts.entries()) {
       const [method, route, status] = key.split(':');
-      metrics += `mquora_requests_total{method="${method}",route="${route}",status="${status}"} ${count}\n`;
+      metrics += `askvyo_requests_total{method="${method}",route="${route}",status="${status}"} ${count}\n`;
     }
 
-    metrics += '\n# HELP mquora_response_time_ms Response time histogram\n';
-    metrics += '# TYPE mquora_response_time_ms histogram\n';
+    metrics += '\n# HELP askvyo_response_time_ms Response time histogram\n';
+    metrics += '# TYPE askvyo_response_time_ms histogram\n';
 
     for (const [route, times] of this.responseTimes.entries()) {
       const p50 = this.percentile(times, 50);
       const p95 = this.percentile(times, 95);
       const p99 = this.percentile(times, 99);
 
-      metrics += `mquora_response_time_ms{route="${route}",quantile="0.5"} ${p50}\n`;
-      metrics += `mquora_response_time_ms{route="${route}",quantile="0.95"} ${p95}\n`;
-      metrics += `mquora_response_time_ms{route="${route}",quantile="0.99"} ${p99}\n`;
+      metrics += `askvyo_response_time_ms{route="${route}",quantile="0.5"} ${p50}\n`;
+      metrics += `askvyo_response_time_ms{route="${route}",quantile="0.95"} ${p95}\n`;
+      metrics += `askvyo_response_time_ms{route="${route}",quantile="0.99"} ${p99}\n`;
     }
 
-    metrics += '\n# HELP mquora_active_users_24h Active users in last 24 hours\n';
-    metrics += '# TYPE mquora_active_users_24h gauge\n';
-    metrics += `mquora_active_users_24h ${activeUsers24h}\n`;
+    metrics += '\n# HELP askvyo_active_users_24h Active users in last 24 hours\n';
+    metrics += '# TYPE askvyo_active_users_24h gauge\n';
+    metrics += `askvyo_active_users_24h ${activeUsers24h}\n`;
 
-    metrics += '\n# HELP mquora_posts_total Total posts created\n';
-    metrics += '# TYPE mquora_posts_total gauge\n';
-    metrics += `mquora_posts_total ${totalPosts}\n`;
+    metrics += '\n# HELP askvyo_posts_total Total posts created\n';
+    metrics += '# TYPE askvyo_posts_total gauge\n';
+    metrics += `askvyo_posts_total ${totalPosts}\n`;
 
-    metrics += '\n# HELP mquora_queue_depth Job queue depth\n';
-    metrics += '# TYPE mquora_queue_depth gauge\n';
+    metrics += '\n# HELP askvyo_queue_depth Job queue depth\n';
+    metrics += '# TYPE askvyo_queue_depth gauge\n';
 
     for (const [queue, depth] of Object.entries(queueDepths)) {
-      metrics += `mquora_queue_depth{queue="${queue}"} ${depth}\n`;
+      metrics += `askvyo_queue_depth{queue="${queue}"} ${depth}\n`;
     }
 
     return metrics;

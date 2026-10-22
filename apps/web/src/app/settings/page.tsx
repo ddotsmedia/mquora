@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { userFetch } from '@/lib/session-api';
 import { ApiError } from '@/lib/api';
 
-export const metadata: Metadata = { title: 'Profile settings — mquora', robots: { index: false } };
+export const metadata: Metadata = { title: 'Profile settings — askvyo', robots: { index: false } };
 export const dynamic = 'force-dynamic';
 
 type Me = { id: string; email: string; username: string; displayName: string; bio: string; location: string; website: string; profile?: { credential: string | null } | null };

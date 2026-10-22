@@ -1,7 +1,7 @@
 # Production stack for the VPS. Images are built on GitHub Actions and pulled here.
 # Host ports are fixed per the VPS port plan: web 3022, api 3024, worker 3023.
 # Postgres and Redis are private to this project's network; they are not published.
-name: mquora
+name: askvyo
 
 services:
   web:
@@ -15,7 +15,7 @@ services:
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
       - API_INTERNAL_URL=http://api:3100
-    networks: [mquora_net]
+    networks: [askvyo_net]
     deploy:
       resources:
         limits: {memory: 512m, cpus: '0.5'}
@@ -36,7 +36,7 @@ services:
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
       - AI_GATEWAY_URL=${AI_GATEWAY_URL}
       - WORKER_HOST=worker
-    networks: [mquora_net]
+    networks: [askvyo_net]
     deploy:
       resources:
         limits: {memory: 512m, cpus: '0.5'}
@@ -51,7 +51,7 @@ services:
       - REDIS_URL=${REDIS_URL}
       - REDIS_HOST=redis
       - AI_GATEWAY_URL=${AI_GATEWAY_URL}
-    networks: [mquora_net]
+    networks: [askvyo_net]
     deploy:
       resources:
         limits: {memory: 1g, cpus: '1.0'}
@@ -71,9 +71,9 @@ services:
       - PUBLIC_DOMAIN=${PUBLIC_DOMAIN:-}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - mquora_caddy_data:/data
-      - mquora_caddy_config:/config
-    networks: [mquora_net]
+      - askvyo_caddy_data:/data
+      - askvyo_caddy_config:/config
+    networks: [askvyo_net]
     depends_on: [web, api]
     deploy:
       resources:
@@ -87,8 +87,8 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
-      - mquora_postgres:/var/lib/postgresql/data
-    networks: [mquora_net]
+      - askvyo_postgres:/var/lib/postgresql/data
+    networks: [askvyo_net]
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
       interval: 10s
@@ -103,20 +103,20 @@ services:
     image: redis:7-alpine
     command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --save ""
     volumes:
-      - mquora_redis:/data
-    networks: [mquora_net]
+      - askvyo_redis:/data
+    networks: [askvyo_net]
     deploy:
       resources:
         limits: {memory: 256m}
     restart: unless-stopped
 
 volumes:
-  mquora_postgres: {}
-  mquora_redis: {}
-  mquora_caddy_data: {}
-  mquora_caddy_config: {}
+  askvyo_postgres: {}
+  askvyo_redis: {}
+  askvyo_caddy_data: {}
+  askvyo_caddy_config: {}
 
 networks:
-  mquora_net:
-    name: mquora_net
+  askvyo_net:
+    name: askvyo_net
     driver: bridge

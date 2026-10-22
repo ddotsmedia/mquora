@@ -6,10 +6,10 @@ async function main() {
   console.log('Starting seed...');
 
   const adminUser = await prisma.user.upsert({
-    where: { email: 'admin@mquora.com' },
+    where: { email: 'admin@askvyo.com' },
     update: {},
     create: {
-      email: 'admin@mquora.com',
+      email: 'admin@askvyo.com',
       displayName: 'Admin User',
       username: 'admin',
       role: 'ADMIN',
@@ -19,10 +19,10 @@ async function main() {
   });
 
   const user1 = await prisma.user.upsert({
-    where: { email: 'user1@mquora.com' },
+    where: { email: 'user1@askvyo.com' },
     update: {},
     create: {
-      email: 'user1@mquora.com',
+      email: 'user1@askvyo.com',
       displayName: 'Raj Kumar',
       username: 'raj_kumar',
       role: 'USER',
@@ -32,10 +32,10 @@ async function main() {
   });
 
   const user2 = await prisma.user.upsert({
-    where: { email: 'user2@mquora.com' },
+    where: { email: 'user2@askvyo.com' },
     update: {},
     create: {
-      email: 'user2@mquora.com',
+      email: 'user2@askvyo.com',
       displayName: 'Priya Singh',
       username: 'priya_singh',
       role: 'TRUSTED_CONTRIBUTOR',
@@ -45,10 +45,10 @@ async function main() {
   });
 
   const user3 = await prisma.user.upsert({
-    where: { email: 'user3@mquora.com' },
+    where: { email: 'user3@askvyo.com' },
     update: {},
     create: {
-      email: 'user3@mquora.com',
+      email: 'user3@askvyo.com',
       displayName: 'Ahmed Al-Mansouri',
       username: 'ahmed_mansouri',
       role: 'VERIFIED_EXPERT',
@@ -58,10 +58,10 @@ async function main() {
   });
 
   const user4 = await prisma.user.upsert({
-    where: { email: 'user4@mquora.com' },
+    where: { email: 'user4@askvyo.com' },
     update: {},
     create: {
-      email: 'user4@mquora.com',
+      email: 'user4@askvyo.com',
       displayName: 'Ananya Sharma',
       username: 'ananya_sharma',
       role: 'USER',

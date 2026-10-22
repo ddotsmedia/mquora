@@ -1,4 +1,4 @@
-# Deploying mquora (GitHub Actions only)
+# Deploying askvyo (GitHub Actions only)
 
 Flow: push to `main` → CI type-checks → images build on GitHub → VPS pulls images and restarts `web`, `api`, `worker` → smoke test.
 Nothing is built or edited on the VPS.
@@ -10,7 +10,7 @@ Nothing is built or edited on the VPS.
 | worker | none (internal) | 3023 |
 | api | 3024 | 3100 |
 
-Postgres and Redis are internal to the `mquora_net` network and are not published.
+Postgres and Redis are internal to the `askvyo_net` network and are not published.
 
 ## GitHub secrets (Settings → Secrets and variables → Actions)
 | Name | Value |
@@ -28,7 +28,7 @@ Environment `production` is referenced by the deploy job; create it to add requi
 
 ## One-time checks (in GitHub, not on the VPS)
 1. Actions → the workflow runs on `main`. `check` must pass before images build.
-2. Packages → confirm `web`, `api`, `worker` appear under `ddotsmedia/mquora`. If the VPS cannot pull, set `GHCR_PULL_TOKEN`.
+2. Packages → confirm `web`, `api`, `worker` appear under `ddotsmedia/askvyo`. If the VPS cannot pull, set `GHCR_PULL_TOKEN`.
 
 ## Rollback
 Re-run the deploy job of an earlier successful commit (Actions → Re-run) or set `IMAGE_TAG` to that commit's SHA in `PROD_ENV` and run the workflow.

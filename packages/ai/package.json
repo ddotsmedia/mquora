@@ -1,5 +1,5 @@
 {
-  "name": "@mquora/ai",
+  "name": "@askvyo/ai",
   "version": "0.1.0",
   "private": true,
   "main": "dist/index.js",
@@ -9,7 +9,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@mquora/types": "workspace:*",
+    "@askvyo/types": "workspace:*",
     "axios": "^1.20.0"
   },
   "devDependencies": {

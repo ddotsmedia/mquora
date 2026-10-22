@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { StaticPage } from '@/components/static-page';
 
-export const metadata: Metadata = { title: 'Privacy policy — mquora', alternates: { canonical: '/privacy' } };
+export const metadata: Metadata = { title: 'Privacy policy — askvyo', alternates: { canonical: '/privacy' } };
 
 export default function PrivacyPage() {
   return (

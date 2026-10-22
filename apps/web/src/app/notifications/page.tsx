@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { userFetch } from '@/lib/session-api';
 import { timeAgo } from '@/lib/time-ago';
 
-export const metadata: Metadata = { title: 'Notifications — mquora', robots: { index: false } };
+export const metadata: Metadata = { title: 'Notifications — askvyo', robots: { index: false } };
 export const dynamic = 'force-dynamic';
 
 type Notif = { id: string; type: string; title: string; body: string; link: string | null; readAt: string | null; createdAt: string };

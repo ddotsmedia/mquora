@@ -9,7 +9,7 @@ RUN apk add --no-cache python3 make g++ libc6-compat \
  && npm install -g pnpm@10.28.0
 COPY . .
 RUN pnpm install --frozen-lockfile
-RUN pnpm --filter @mquora/web... run build
+RUN pnpm --filter @askvyo/web... run build
 
 FROM node:22-alpine
 WORKDIR /repo

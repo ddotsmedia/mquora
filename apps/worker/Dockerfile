@@ -5,8 +5,8 @@ RUN apk add --no-cache python3 make g++ openssl libc6-compat \
  && npm install -g pnpm@10.28.0
 COPY . .
 RUN pnpm install --frozen-lockfile
-RUN pnpm --filter @mquora/db exec prisma generate
-RUN pnpm --filter @mquora/worker... run build
+RUN pnpm --filter @askvyo/db exec prisma generate
+RUN pnpm --filter @askvyo/worker... run build
 
 FROM node:22-alpine
 WORKDIR /repo

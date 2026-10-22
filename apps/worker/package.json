@@ -1,5 +1,5 @@
 {
-  "name": "@mquora/worker",
+  "name": "@askvyo/worker",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -10,11 +10,11 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@mquora/ai": "workspace:*",
-    "@mquora/config": "workspace:*",
-    "@mquora/db": "workspace:*",
-    "@mquora/security": "workspace:*",
-    "@mquora/types": "workspace:*",
+    "@askvyo/ai": "workspace:*",
+    "@askvyo/config": "workspace:*",
+    "@askvyo/db": "workspace:*",
+    "@askvyo/security": "workspace:*",
+    "@askvyo/types": "workspace:*",
     "@nestjs/bull": "^12.0.0",
     "@nestjs/common": "^12.1.2",
     "@nestjs/config": "^12.0.1",

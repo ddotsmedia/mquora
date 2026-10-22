@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import { StaticPage } from '@/components/static-page';
 
-export const metadata: Metadata = { title: 'Community guidelines — mquora', alternates: { canonical: '/guidelines' } };
+export const metadata: Metadata = { title: 'Community guidelines — askvyo', alternates: { canonical: '/guidelines' } };
 
 export default function GuidelinesPage() {
   return (
-    <StaticPage title="Community guidelines" subtitle="A few simple rules that keep mquora helpful and friendly.">
+    <StaticPage title="Community guidelines" subtitle="A few simple rules that keep askvyo helpful and friendly.">
       <h2>Do</h2>
       <ul>
         <li>Ask clear questions with enough detail for others to help.</li>

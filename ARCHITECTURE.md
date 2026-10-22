@@ -1,4 +1,4 @@
-# mquora Architecture
+# askvyo Architecture
 
 ## Stack
 
@@ -47,15 +47,15 @@ packages/
 
 ## Module Boundaries
 
-- **@mquora/web**: Internal only, depends on @ui, @types
-- **@mquora/api**: REST endpoints, depends on @db, @types, @config, @security
-- **@mquora/worker**: Job processing, depends on @db, @types, @config, @ai, @security
-- **@mquora/db**: Prisma schema + client, no dependencies
-- **@mquora/types**: Shared types only
-- **@mquora/config**: Env parsing only
-- **@mquora/ui**: React components only, no backend
-- **@mquora/ai**: AI logic, no database access
-- **@mquora/security**: Auth/crypto, no dependencies
+- **@askvyo/web**: Internal only, depends on @ui, @types
+- **@askvyo/api**: REST endpoints, depends on @db, @types, @config, @security
+- **@askvyo/worker**: Job processing, depends on @db, @types, @config, @ai, @security
+- **@askvyo/db**: Prisma schema + client, no dependencies
+- **@askvyo/types**: Shared types only
+- **@askvyo/config**: Env parsing only
+- **@askvyo/ui**: React components only, no backend
+- **@askvyo/ai**: AI logic, no database access
+- **@askvyo/security**: Auth/crypto, no dependencies
 
 ## TypeScript
 
@@ -100,7 +100,7 @@ Prisma 6 client-only setup:
 5. **Workspace packages**: Internal npm packages for code reuse without separate repos
 6. **Redis + Bull**: Proven queue system, easy scaling
 7. **Nginx as reverse proxy**: Load balancing, SSL termination, gzip compression
-8. **VPS with Docker Compose**: Lean, cost-effective, all containers on mquora_net
+8. **VPS with Docker Compose**: Lean, cost-effective, all containers on askvyo_net
 
 ## Deployment
 

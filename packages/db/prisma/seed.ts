@@ -32,7 +32,7 @@ async function main() {
   const adminHash = await argon2.hash('admin123');
   const adminUser = await prisma.user.create({
     data: {
-      email: 'admin@mquora.com',
+      email: 'admin@askvyo.com',
       username: 'admin',
       displayName: 'Admin',
       passwordHash: adminHash,
@@ -53,7 +53,7 @@ async function main() {
     const hash = await argon2.hash(`user${i}123`);
     const user = await prisma.user.create({
       data: {
-        email: `user${i}@mquora.com`,
+        email: `user${i}@askvyo.com`,
         username: `user${i}`,
         displayName: `User ${i}`,
         passwordHash: hash,

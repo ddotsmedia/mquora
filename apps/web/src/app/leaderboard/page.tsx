@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { serverApiFetch } from '@/lib/api';
 
 export const metadata: Metadata = {
-  title: 'Top contributors — mquora',
+  title: 'Top contributors — askvyo',
   description: 'The most helpful members of the Malayalam knowledge community, ranked by reputation.',
   alternates: { canonical: '/leaderboard' },
 };

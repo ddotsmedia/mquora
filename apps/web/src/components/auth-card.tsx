@@ -13,7 +13,7 @@ export function AuthCard({ title, subtitle, children, footer }: { title: string;
       <div className="grid w-full max-w-4xl overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--surface)] shadow-xl md:grid-cols-2">
         <div className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-[#123D28] via-[#1F6B45] to-[#14482F] p-10 text-white md:flex">
           <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-[#D4A017]/20 blur-3xl" />
-          <Link href="/" className="relative text-lg font-bold">mquora</Link>
+          <Link href="/" className="relative text-lg font-bold">askvyo</Link>
           <div className="relative">
             <p className="font-malayalam text-3xl font-bold leading-snug">അറിവ് പങ്കുവെക്കൂ</p>
             <p className="mt-3 text-sm text-white/70">Ask, answer and learn with Malayalis everywhere.</p>

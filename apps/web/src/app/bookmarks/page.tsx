@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { userFetch } from '@/lib/session-api';
 import { PostCard } from '@/components/post-card';
 
-export const metadata: Metadata = { title: 'Saved — mquora', robots: { index: false } };
+export const metadata: Metadata = { title: 'Saved — askvyo', robots: { index: false } };
 export const dynamic = 'force-dynamic';
 
 type Post = Parameters<typeof PostCard>[0] & { status: string; deletedAt: string | null };

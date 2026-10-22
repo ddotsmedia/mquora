@@ -20,7 +20,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             മ്
           </span>
           <span>
-            <span className="block text-base font-semibold leading-tight">mquora</span>
+            <span className="block text-base font-semibold leading-tight">askvyo</span>
             <span className="block text-[11px] uppercase tracking-wider text-[var(--text-muted)]">Admin console</span>
           </span>
         </Link>

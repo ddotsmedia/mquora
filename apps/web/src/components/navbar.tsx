@@ -61,7 +61,7 @@ export function Navbar() {
           <div className="w-8 h-8 rounded-lg bg-[var(--primary)] flex items-center justify-center">
             <span className="text-white font-bold text-sm font-malayalam">മ്</span>
           </div>
-          <span className="font-bold text-lg text-[var(--primary)]">mquora</span>
+          <span className="font-bold text-lg text-[var(--primary)]">askvyo</span>
         </Link>
 
         {/* Search bar */}

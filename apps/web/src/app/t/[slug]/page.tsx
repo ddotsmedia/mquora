@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const tag = await load(slug).catch(() => null);
   if (!tag) return { title: 'Topic not found' };
   return {
-    title: `#${tag.name} questions — mquora`,
+    title: `#${tag.name} questions — askvyo`,
     description: `${tag.postCount} questions about ${tag.name} in the Malayalam community.`,
     alternates: { canonical: `/t/${tag.slug}` },
   };

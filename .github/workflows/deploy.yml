@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: deploy-mquora
+  group: deploy-askvyo
   cancel-in-progress: false
 
 env:
@@ -28,12 +28,12 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Prisma client
-        run: pnpm --filter @mquora/db exec prisma generate
+        run: pnpm --filter @askvyo/db exec prisma generate
       - name: Type check
         run: |
-          pnpm --filter @mquora/api type-check
-          pnpm --filter @mquora/worker type-check
-          pnpm --filter @mquora/web type-check
+          pnpm --filter @askvyo/api type-check
+          pnpm --filter @askvyo/worker type-check
+          pnpm --filter @askvyo/web type-check
 
   build-push:
     needs: check
@@ -77,7 +77,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Verify target server is the mquora VPS (never touch the shared VPS)
+      - name: Verify target server is the askvyo VPS (never touch the shared VPS)
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
@@ -122,7 +122,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT || 22 }}
-          script: mkdir -p /opt/mquora/scripts
+          script: mkdir -p /opt/askvyo/scripts
 
       - name: Copy compose file, deploy script and env to VPS
         env:
@@ -137,9 +137,9 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           SSH_OPTS=(-i ~/.ssh/deploy_key -P "$VPS_PORT" -o StrictHostKeyChecking=accept-new)
           SSH_BASE=(-i ~/.ssh/deploy_key -p "$VPS_PORT" -o StrictHostKeyChecking=accept-new)
-          scp "${SSH_OPTS[@]}" docker-compose.prod.yml deploy/Caddyfile .deploy/prod.env "$VPS_USER@$VPS_HOST:/opt/mquora/"
-          scp "${SSH_OPTS[@]}" scripts/deploy.sh scripts/backup.sh "$VPS_USER@$VPS_HOST:/opt/mquora/scripts/"
-          ssh "${SSH_BASE[@]}" "$VPS_USER@$VPS_HOST" "chmod +x /opt/mquora/scripts/deploy.sh /opt/mquora/scripts/backup.sh && ls -la /opt/mquora"
+          scp "${SSH_OPTS[@]}" docker-compose.prod.yml deploy/Caddyfile .deploy/prod.env "$VPS_USER@$VPS_HOST:/opt/askvyo/"
+          scp "${SSH_OPTS[@]}" scripts/deploy.sh scripts/backup.sh "$VPS_USER@$VPS_HOST:/opt/askvyo/scripts/"
+          ssh "${SSH_BASE[@]}" "$VPS_USER@$VPS_HOST" "chmod +x /opt/askvyo/scripts/deploy.sh /opt/askvyo/scripts/backup.sh && ls -la /opt/askvyo"
 
       - name: Deploy on VPS (pull images only, no builds)
         uses: appleboy/ssh-action@v1
@@ -152,7 +152,7 @@ jobs:
           script_stop: true
           script: |
             export GITHUB_ACTOR GHCR_TOKEN
-            bash /opt/mquora/scripts/deploy.sh
+            bash /opt/askvyo/scripts/deploy.sh
         env:
           GHCR_TOKEN: ${{ secrets.GHCR_PULL_TOKEN || secrets.GITHUB_TOKEN }}
 
