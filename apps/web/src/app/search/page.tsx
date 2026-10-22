@@ -3,6 +3,7 @@
 import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { apiFetch } from '@/lib/api';
 import { VoiceInput } from '@/components/VoiceInput';
 
 type Post = {
@@ -42,14 +43,11 @@ function SearchPageContent() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/v1/posts/search', {
+      const data = await apiFetch<SearchResponse>('/api/v1/posts/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: q, limit, offset: off }),
       });
-
-      if (!res.ok) throw new Error('Search failed');
-      const data = (await res.json()) as SearchResponse;
       setResults(data.posts);
       setTotal(data.total);
     } catch (e) {
@@ -116,7 +114,7 @@ function SearchPageContent() {
           <div className="space-y-3 rounded-lg border border-[var(--border)] bg-[var(--surface)]">
             {results.map((post) => (
               <div key={post.id} className="border-b border-[var(--border)] last:border-0">
-                <Link href={`/c/${post.community?.slug}/q/${post.seoSlug}`} className="block p-4 hover:bg-[var(--surface-2)]">
+                <Link href={`/q/${post.seoSlug}`} className="block p-4 hover:bg-[var(--surface-2)]">
                   <h3 className="font-medium text-[var(--text)] hover:text-[var(--primary)]">{post.title}</h3>
                   <p className="mt-1 line-clamp-2 text-sm text-[var(--text-muted)]">{post.body}</p>
                   <div className="mt-2 flex items-center gap-4 text-xs text-[var(--text-muted)]">
