@@ -3,6 +3,7 @@ import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import { PrismaClient } from '@prisma/client';
 import { LanguageService } from '../shared/language.service';
+import { transliterate } from '../lib/transliterate';
 import slug from 'slug';
 import { customAlphabet } from 'nanoid';
 
@@ -221,5 +222,86 @@ export class PostsService {
       take: limit - byTag.length,
     });
     return [...byTag, ...byCommunity];
+  }
+
+  async search(query: string, limit = 20, offset = 0, communityId?: string) {
+    if (!query?.trim()) return { posts: [], total: 0 };
+
+    // Apply Manglish → Malayalam transliteration
+    const transliteratedQuery = transliterate(query.trim());
+    const searchQuery = `${query.trim()} ${transliteratedQuery}`;
+
+    // Use raw SQL for trigram-based full-text search with typo tolerance
+    const whereClause = [
+      'p.status = \'PUBLISHED\'',
+      'p.deletedAt IS NULL',
+      `(p.title % $1 OR p.title ILIKE $2 OR p.body % $1 OR p.body ILIKE $2 OR a.body % $1 OR a.body ILIKE $2)`,
+      ...(communityId ? ['p.communityId = $3'] : [])
+    ].join(' AND ');
+
+    const offset_idx = communityId ? 4 : 3;
+    const limit_idx = communityId ? 5 : 4;
+
+    const countQuery = `
+      SELECT COUNT(DISTINCT p.id) as total FROM "Post" p
+      LEFT JOIN "Answer" a ON p.id = a.postId AND a.status = 'PUBLISHED' AND a.deletedAt IS NULL
+      WHERE ${whereClause}
+    `;
+
+    const dataQuery = `
+      SELECT DISTINCT
+        p.id, p.title, p.body, p.seoSlug, p.viewCount,
+        (p.title % $1)::float +
+        (p.body % $1)::float +
+        (COALESCE(MAX(a.body % $1), 0))::float as relevance
+      FROM "Post" p
+      LEFT JOIN "Answer" a ON p.id = a.postId AND a.status = 'PUBLISHED' AND a.deletedAt IS NULL
+      WHERE ${whereClause}
+      GROUP BY p.id, p.title, p.body, p.seoSlug, p.viewCount
+      ORDER BY relevance DESC, p.viewCount DESC
+      LIMIT $${limit_idx} OFFSET $${offset_idx}
+    `;
+
+    const params = [
+      searchQuery,
+      `%${query.trim()}%`,
+      ...(communityId ? [communityId] : []),
+      limit,
+      offset
+    ];
+
+    const [countResult, posts] = await Promise.all([
+      this.prisma.$queryRawUnsafe(countQuery, ...params.slice(0, communityId ? 3 : 2)),
+      this.prisma.$queryRawUnsafe(dataQuery, ...params) as Promise<Array<{
+        id: string; title: string; body: string; seoSlug: string; viewCount: number; relevance: number;
+      }>>
+    ]);
+
+    const total = (countResult as Array<{ total: number }>)[0]?.total || 0;
+
+    // Fetch full post data with community
+    const postIds = posts.map((p) => p.id);
+    if (postIds.length === 0) return { posts: [], total };
+
+    const fullPosts = await this.prisma.post.findMany({
+      where: { id: { in: postIds } },
+      select: {
+        id: true,
+        title: true,
+        body: true,
+        seoSlug: true,
+        viewCount: true,
+        community: { select: { id: true, slug: true, name: true } },
+      },
+    });
+
+    // Preserve search relevance order
+    const postMap = new Map(fullPosts.map((p) => [p.id, p]));
+    const orderedPosts = posts.map((p) => postMap.get(p.id)).filter(Boolean);
+
+    return {
+      posts: orderedPosts,
+      total,
+    };
   }
 }

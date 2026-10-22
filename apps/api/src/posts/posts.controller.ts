@@ -53,4 +53,12 @@ export class PostsController {
     const authorId = (req.user as Record<string, unknown>).id as string;
     return this.postsService.softDelete(id, authorId);
   }
+
+  @Post('search')
+  async search(
+    @Body() body: { query: string; limit?: number; offset?: number; communityId?: string },
+  ) {
+    const { query, limit = 20, offset = 0, communityId } = body;
+    return this.postsService.search(query, limit, offset, communityId);
+  }
 }
