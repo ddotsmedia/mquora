@@ -1,6 +1,6 @@
 #!/bin/bash
 # Runs on the VPS, invoked by GitHub Actions. Pulls prebuilt images and restarts only askvyo services.
-set -euo pipefail
+set -euxo pipefail   # -x prints each command before executing (visible in CI log)
 
 cd /opt/askvyo
 COMPOSE="docker compose -p askvyo -f docker-compose.prod.yml --env-file .env"
@@ -16,11 +16,16 @@ $COMPOSE pull web api worker
 
 echo "Starting database and cache..."
 $COMPOSE up -d postgres redis
-for i in $(seq 1 30); do
-  state=$($COMPOSE ps --format json postgres | grep -o '"Health":"[a-z]*"' | head -1 || true)
-  [[ "$state" == *healthy* ]] && break
+echo "Waiting for postgres to become healthy..."
+for i in $(seq 1 45); do
+  if docker inspect --format '{{.State.Health.Status}}' askvyo-postgres-1 2>/dev/null | grep -q healthy; then
+    echo "Postgres is healthy after ${i}×2s"
+    break
+  fi
   sleep 2
 done
+# Verify postgres is actually accepting connections
+docker exec askvyo-postgres-1 pg_isready -q || { echo "ERROR: postgres not ready after 90s"; docker logs --tail 30 askvyo-postgres-1; exit 1; }
 
 # Safety copy of the database before any migration (failure here does not block the deploy).
 if [ -x /opt/askvyo/scripts/backup.sh ]; then
