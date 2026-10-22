@@ -96,6 +96,10 @@ if ! timeout 120 $COMPOSE run -T --rm --no-deps api sh -c 'pnpm --filter @askvyo
   exit 1
 fi
 
+echo "Ensuring admin user exists..."
+$COMPOSE run -T --rm --no-deps api \
+  sh -c 'pnpm --filter @askvyo/db run ensure-admin' || echo "WARNING: ensure-admin step failed (non-fatal)"
+
 echo "Starting application services..."
 $COMPOSE up -d --remove-orphans web api worker
 
