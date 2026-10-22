@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
+import { createApiUrl } from '@/lib/api';
 
 interface NotificationToggleProps {
   onToggle?: (enabled: boolean) => void;
@@ -117,9 +118,10 @@ export function NotificationToggle({ onToggle }: NotificationToggleProps) {
       }
 
       // Send subscription to backend
-      const response = await fetch('/api/v1/notifications/subscribe', {
+      const token = session?.user?.accessToken;
+      const response = await fetch(createApiUrl('/api/v1/notifications/subscribe'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(token && { Authorization: `Bearer ${token}` }) },
         body: JSON.stringify({
           endpoint: subscription.endpoint,
           p256dh: btoa(
@@ -156,9 +158,10 @@ export function NotificationToggle({ onToggle }: NotificationToggleProps) {
 
       if (subscription) {
         // Notify backend to unsubscribe
-        await fetch('/api/v1/notifications/unsubscribe', {
+        const token = session?.user?.accessToken;
+        await fetch(createApiUrl('/api/v1/notifications/unsubscribe'), {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...(token && { Authorization: `Bearer ${token}` }) },
           body: JSON.stringify({ endpoint: subscription.endpoint }),
         });
 

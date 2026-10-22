@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { ThumbsUp, ThumbsDown } from 'lucide-react';
+import { apiFetch } from '@/lib/api';
 
 interface AnswerVotingProps {
   answerId: string;
@@ -23,21 +24,22 @@ export function AnswerVoting({ answerId, initialVoteCount, initialUserVote }: An
       return;
     }
 
+    const token = session?.user?.accessToken;
+    const authHeader = { Authorization: `Bearer ${token}` };
     setIsLoading(true);
     try {
       if (userVote === type) {
         // Remove vote
-        await fetch(`/api/v1/answers/${answerId}/vote`, { method: 'DELETE' });
+        await apiFetch(`/api/v1/answers/${answerId}/vote`, { method: 'DELETE', headers: authHeader });
         setUserVote(null);
         setVoteCount(userVote === 'UP' ? voteCount - 1 : voteCount + 1);
       } else {
         // Add or change vote
-        const response = await fetch(`/api/v1/answers/${answerId}/vote`, {
+        const data = await apiFetch<{ voteCount: number }>(`/api/v1/answers/${answerId}/vote`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authHeader,
           body: JSON.stringify({ type }),
         });
-        const data = await response.json();
         setUserVote(type);
         setVoteCount(data.voteCount);
       }

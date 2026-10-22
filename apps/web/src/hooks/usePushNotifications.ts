@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
+import { createApiUrl } from '@/lib/api';
 
 interface UsePushNotificationsReturn {
   isSupported: boolean;
@@ -88,9 +89,10 @@ export function usePushNotifications(): UsePushNotificationsReturn {
       });
     }
 
-    const response = await fetch('/api/v1/notifications/subscribe', {
+    const token = session?.user?.accessToken;
+    const response = await fetch(createApiUrl('/api/v1/notifications/subscribe'), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(token && { Authorization: `Bearer ${token}` }) },
       body: JSON.stringify({
         endpoint: subscription.endpoint,
         p256dh: extractKey(subscription, 'p256dh'),
@@ -107,9 +109,10 @@ export function usePushNotifications(): UsePushNotificationsReturn {
     const subscription = await registration.pushManager.getSubscription();
 
     if (subscription) {
-      await fetch('/api/v1/notifications/unsubscribe', {
+      const token = session?.user?.accessToken;
+      await fetch(createApiUrl('/api/v1/notifications/unsubscribe'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(token && { Authorization: `Bearer ${token}` }) },
         body: JSON.stringify({ endpoint: subscription.endpoint }),
       });
 
