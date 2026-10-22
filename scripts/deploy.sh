@@ -9,10 +9,20 @@ COMPOSE="docker compose -p askvyo -f docker-compose.prod.yml --env-file .env"
 cp -f prod.env .env && chmod 600 .env
 set -a; . ./.env; set +a
 
+# GHCR_TOKEN and GITHUB_ACTOR are injected by GitHub Actions via the SSH command line.
+# Validate they are present before proceeding.
+if [ -z "${GHCR_TOKEN:-}" ]; then
+  echo "ERROR: GHCR_TOKEN is not set. Cannot pull images from ghcr.io."
+  exit 1
+fi
+if [ -z "${GITHUB_ACTOR:-}" ]; then
+  GITHUB_ACTOR="ddotsmedia"
+fi
 echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin >/dev/null
 
 echo "Cleaning up leftover containers..."
-# Remove old mquora containers to free ports 3022/3024 (volumes kept for data safety)
+# Stop and remove old mquora containers to free ports 3022/3024 (volumes/data kept)
+docker ps -q --filter 'label=com.docker.compose.project=mquora' | xargs -r docker stop >/dev/null 2>&1 || true
 docker ps -aq --filter 'label=com.docker.compose.project=mquora' | xargs -r docker rm -f >/dev/null 2>&1 || true
 # Clean up any stray askvyo containers from interrupted deploys
 docker ps -aq --filter 'name=^askvyo-' --filter 'status=exited' | xargs -r docker rm -f >/dev/null 2>&1 || true
