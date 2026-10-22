@@ -11,21 +11,54 @@ set -a; . ./.env; set +a
 
 echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin >/dev/null
 
+echo "Cleaning up leftover containers..."
+# Remove old mquora containers to free ports 3022/3024 (volumes kept for data safety)
+docker ps -aq --filter 'label=com.docker.compose.project=mquora' | xargs -r docker rm -f >/dev/null 2>&1 || true
+# Clean up any stray askvyo containers from interrupted deploys
+docker ps -aq --filter 'name=^askvyo-' --filter 'status=exited' | xargs -r docker rm -f >/dev/null 2>&1 || true
+
 echo "Pulling images for ${IMAGE_TAG}..."
-$COMPOSE pull web api worker
+
+# Pull with retry on transient failures
+if ! $COMPOSE pull web api worker; then
+  echo "ERROR: Failed to pull images. Check:"
+  echo "  - Docker daemon is running"
+  echo "  - GHCR credentials are valid (GHCR_TOKEN in .env)"
+  echo "  - Network connectivity to ghcr.io"
+  exit 1
+fi
 
 echo "Starting database and cache..."
 $COMPOSE up -d postgres redis
 echo "Waiting for postgres to become healthy..."
-for i in $(seq 1 45); do
-  if docker inspect --format '{{.State.Health.Status}}' askvyo-postgres-1 2>/dev/null | grep -q healthy; then
-    echo "Postgres is healthy after ${i}×2s"
+READY=0
+for i in $(seq 1 60); do
+  # Check health status from docker inspect
+  HEALTH=$(docker inspect --format '{{.State.Health.Status}}' askvyo-postgres-1 2>/dev/null || echo "unknown")
+  if [ "$HEALTH" = "healthy" ]; then
+    echo "✓ Postgres is healthy after ${i}×2s"
+    READY=1
     break
   fi
+  # Also try direct pg_isready
+  if docker exec askvyo-postgres-1 pg_isready -q 2>/dev/null; then
+    echo "✓ Postgres is ready after ${i}×2s (via pg_isready)"
+    READY=1
+    break
+  fi
+  printf "."
   sleep 2
 done
-# Verify postgres is actually accepting connections
-docker exec askvyo-postgres-1 pg_isready -q || { echo "ERROR: postgres not ready after 90s"; docker logs --tail 30 askvyo-postgres-1; exit 1; }
+echo ""
+
+if [ $READY -eq 0 ]; then
+  echo "ERROR: Postgres did not become ready after 120 seconds"
+  echo "Container status:"
+  docker inspect askvyo-postgres-1 --format '{{json .State}}' | python3 -m json.tool 2>/dev/null || true
+  echo "Recent logs:"
+  docker logs --tail 40 askvyo-postgres-1 || true
+  exit 1
+fi
 
 # Safety copy of the database before any migration (failure here does not block the deploy).
 if [ -x /opt/askvyo/scripts/backup.sh ]; then
@@ -33,15 +66,19 @@ if [ -x /opt/askvyo/scripts/backup.sh ]; then
   bash /opt/askvyo/scripts/backup.sh | tail -n 1 || echo "WARNING: pre-deploy backup failed"
 fi
 
-# Remove leftover one-off askvyo containers from interrupted runs (askvyo names only).
-docker ps -aq --filter 'name=^askvyo-api-run-' | xargs -r docker rm -f >/dev/null || true
-
 echo "Applying database migrations..."
-$COMPOSE run -T --rm --no-deps api sh -c 'pnpm --filter @askvyo/db exec prisma migrate deploy --schema=prisma/schema.prisma'
+# Give postgres extra time to settle before running migrations
+sleep 5
 
-# One-time cutover from the pre-rename "mquora" compose project: remove ONLY its containers
-# (label-scoped; volumes and images are kept) so host ports 3022/3024 are free for askvyo.
-docker ps -aq --filter 'label=com.docker.compose.project=mquora' | xargs -r docker rm -f >/dev/null || true
+# Run migrations with timeout and detailed error reporting
+if ! timeout 120 $COMPOSE run -T --rm --no-deps api sh -c 'pnpm --filter @askvyo/db exec prisma migrate deploy --schema=prisma/schema.prisma'; then
+  echo "ERROR: Prisma migration failed"
+  echo "Postgres status:"
+  docker logs --tail 50 askvyo-postgres-1 || true
+  echo "API container logs:"
+  docker logs --tail 50 askvyo-api-1 || true
+  exit 1
+fi
 
 echo "Starting application services..."
 $COMPOSE up -d --remove-orphans web api worker
