@@ -142,6 +142,7 @@ jobs:
           ssh "${SSH_BASE[@]}" "$VPS_USER@$VPS_HOST" "chmod +x /opt/askvyo/scripts/deploy.sh /opt/askvyo/scripts/backup.sh && ls -la /opt/askvyo"
 
       - name: Deploy on VPS (pull images only, no builds)
+        id: vps_deploy
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -152,9 +153,28 @@ jobs:
           script_stop: true
           script: |
             export GITHUB_ACTOR GHCR_TOKEN
-            bash /opt/askvyo/scripts/deploy.sh
+            bash /opt/askvyo/scripts/deploy.sh 2>&1 | tee /tmp/askvyo-deploy.log
+            exit ${PIPESTATUS[0]}
         env:
           GHCR_TOKEN: ${{ secrets.GHCR_PULL_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Show VPS deploy log on failure
+        if: failure() && steps.vps_deploy.conclusion == 'failure'
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          script: |
+            echo "=== /tmp/askvyo-deploy.log (last 80 lines) ==="
+            tail -80 /tmp/askvyo-deploy.log 2>/dev/null || echo "(no deploy log found)"
+            echo "=== docker compose ps ==="
+            docker compose -p askvyo -f /opt/askvyo/docker-compose.prod.yml ps 2>/dev/null || true
+            echo "=== api container logs (last 30) ==="
+            docker logs --tail 30 askvyo-api-1 2>/dev/null || true
+            echo "=== postgres logs (last 20) ==="
+            docker logs --tail 20 askvyo-postgres-1 2>/dev/null || true
 
       - name: Smoke test (API and web)
         run: |
