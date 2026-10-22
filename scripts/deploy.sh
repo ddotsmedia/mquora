@@ -80,19 +80,13 @@ echo "Applying database migrations..."
 # Give postgres extra time to settle before running migrations
 sleep 5
 
-# Resolve any failed migrations from previous broken deploys.
+# Resolve any known failed migrations from previous broken deploys.
 # prisma migrate resolve --rolled-back marks a failed migration as rolled back
 # so migrate deploy can retry it cleanly. Safe: only updates _prisma_migrations tracking table.
-FAILED=$(docker compose -p askvyo -f docker-compose.prod.yml --env-file .env run -T --rm --no-deps api \
-  sh -c 'pnpm --filter @askvyo/db exec prisma migrate status --schema=prisma/schema.prisma 2>&1' \
-  | grep 'failed' | grep -oP '(?<=• )\S+' || true)
-if [ -n "$FAILED" ]; then
-  echo "Resolving failed migrations: $FAILED"
-  for m in $FAILED; do
-    docker compose -p askvyo -f docker-compose.prod.yml --env-file .env run -T --rm --no-deps api \
-      sh -c "pnpm --filter @askvyo/db exec prisma migrate resolve --rolled-back '$m' --schema=prisma/schema.prisma" || true
-  done
-fi
+# Using hardcoded known failed migration instead of fragile grep parsing of migrate status output.
+echo "Resolving known failed migration (20261013000000_add_ban_and_embedding_tables) if present..."
+docker compose -p askvyo -f docker-compose.prod.yml --env-file .env run -T --rm --no-deps api \
+  sh -c "pnpm --filter @askvyo/db exec prisma migrate resolve --rolled-back '20261013000000_add_ban_and_embedding_tables' --schema=prisma/schema.prisma 2>&1 || true"
 
 # Run migrations with timeout and detailed error reporting
 if ! timeout 120 $COMPOSE run -T --rm --no-deps api sh -c 'pnpm --filter @askvyo/db exec prisma migrate deploy --schema=prisma/schema.prisma'; then
