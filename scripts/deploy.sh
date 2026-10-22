@@ -1,9 +1,9 @@
 #!/bin/bash
-# Runs on the VPS, invoked by GitHub Actions. Pulls prebuilt images and restarts only mquora services.
+# Runs on the VPS, invoked by GitHub Actions. Pulls prebuilt images and restarts only askvyo services.
 set -euo pipefail
 
-cd /opt/mquora
-COMPOSE="docker compose -p mquora -f docker-compose.prod.yml --env-file .env"
+cd /opt/askvyo
+COMPOSE="docker compose -p askvyo -f docker-compose.prod.yml --env-file .env"
 
 # Env file is copied from the GitHub Actions secret PROD_ENV on each deploy.
 cp -f prod.env .env && chmod 600 .env
@@ -23,16 +23,16 @@ for i in $(seq 1 30); do
 done
 
 # Safety copy of the database before any migration (failure here does not block the deploy).
-if [ -x /opt/mquora/scripts/backup.sh ]; then
+if [ -x /opt/askvyo/scripts/backup.sh ]; then
   echo "Backing up database before migrations..."
-  bash /opt/mquora/scripts/backup.sh | tail -n 1 || echo "WARNING: pre-deploy backup failed"
+  bash /opt/askvyo/scripts/backup.sh | tail -n 1 || echo "WARNING: pre-deploy backup failed"
 fi
 
-# Remove leftover one-off mquora containers from interrupted runs (mquora names only).
-docker ps -aq --filter 'name=^mquora-api-run-' | xargs -r docker rm -f >/dev/null || true
+# Remove leftover one-off askvyo containers from interrupted runs (askvyo names only).
+docker ps -aq --filter 'name=^askvyo-api-run-' | xargs -r docker rm -f >/dev/null || true
 
 echo "Applying database migrations..."
-$COMPOSE run -T --rm --no-deps api sh -c 'pnpm --filter @mquora/db exec prisma migrate deploy --schema=prisma/schema.prisma'
+$COMPOSE run -T --rm --no-deps api sh -c 'pnpm --filter @askvyo/db exec prisma migrate deploy --schema=prisma/schema.prisma'
 
 echo "Starting application services..."
 $COMPOSE up -d --remove-orphans web api worker
@@ -40,7 +40,7 @@ $COMPOSE up -d --remove-orphans web api worker
 # Optional built-in HTTPS proxy (USE_CADDY=1). On this VPS the host nginx owns 80/443 for other
 # live sites, so the domain is served by an nginx site file instead and Caddy stays off.
 if [ -n "${PUBLIC_DOMAIN:-}" ] && [ "${USE_CADDY:-0}" = "1" ]; then
-  caddy_running=$(docker ps -q --filter 'name=^mquora-caddy-1$')
+  caddy_running=$(docker ps -q --filter 'name=^askvyo-caddy-1$')
   if [ -n "$caddy_running" ]; then
     $COMPOSE --profile proxy up -d caddy
   elif ss -ltnH '( sport = :80 or sport = :443 )' | grep -q .; then
@@ -52,7 +52,7 @@ if [ -n "${PUBLIC_DOMAIN:-}" ] && [ "${USE_CADDY:-0}" = "1" ]; then
 fi
 $COMPOSE --profile proxy ps
 
-# Remove older mquora image tags only (never system-wide prune: the VPS hosts other projects).
+# Remove older askvyo image tags only (never system-wide prune: the VPS hosts other projects).
 docker image ls --format '{{.Repository}}:{{.Tag}}' \
   | grep "^ghcr.io/${GITHUB_REPOSITORY}/" \
   | grep -v ":${IMAGE_TAG}$" | grep -v ':latest$' \
