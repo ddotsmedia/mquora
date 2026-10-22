@@ -84,7 +84,7 @@ export function usePushNotifications(): UsePushNotificationsReturn {
 
       subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidKey),
+        applicationServerKey: urlBase64ToUint8Array(vapidKey) as any,
       });
     }
 
@@ -132,5 +132,5 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 function extractKey(subscription: PushSubscription, keyName: 'p256dh' | 'auth'): string {
   const key = subscription.getKey(keyName);
   if (!key) throw new Error(`Failed to extract ${keyName}`);
-  return btoa(String.fromCharCode(...new Uint8Array(key)));
+  return btoa(String.fromCharCode(...Array.from(new Uint8Array(key))));
 }

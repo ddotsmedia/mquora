@@ -125,13 +125,13 @@ export function NotificationToggle({ onToggle }: NotificationToggleProps) {
           p256dh: btoa(
             String.fromCharCode.apply(
               null,
-              new Uint8Array(subscription.getKey('p256dh') || []),
+              Array.from(new Uint8Array(subscription.getKey('p256dh') || [])) as any,
             ),
           ),
           auth: btoa(
             String.fromCharCode.apply(
               null,
-              new Uint8Array(subscription.getKey('auth') || []),
+              Array.from(new Uint8Array(subscription.getKey('auth') || [])) as any,
             ),
           ),
         }),

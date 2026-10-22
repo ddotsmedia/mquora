@@ -1,5 +1,5 @@
 import { Injectable, BadRequestException, InternalServerErrorException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaClient } from '@prisma/client';
 import { SubscribePushDto, UnsubscribePushDto, SendTestNotificationDto, PushNotificationPayload } from './notifications.dto';
 
 // web-push library would be installed: npm install web-push
@@ -7,7 +7,9 @@ import { SubscribePushDto, UnsubscribePushDto, SendTestNotificationDto, PushNoti
 
 @Injectable()
 export class NotificationsService {
-  constructor(private prisma: PrismaService) {
+  private prisma = new PrismaClient();
+
+  constructor() {
     // Configure web-push with VAPID keys
     // webpush.setVapidDetails(
     //   process.env.VAPID_SUBJECT || 'mailto:support@askvyo.com',
@@ -86,7 +88,7 @@ export class NotificationsService {
       }
 
       const results = await Promise.allSettled(
-        subscriptions.map((sub) => this.sendToSubscription(sub, payload)),
+        subscriptions.map((sub: any) => this.sendToSubscription(sub, payload)),
       );
 
       const successful = results.filter((r) => r.status === 'fulfilled').length;
@@ -173,7 +175,7 @@ export class NotificationsService {
         return { notified: 0 };
       }
 
-      const notificationTasks = followers.map((follower) =>
+      const notificationTasks = followers.map((follower: any) =>
         this.sendPushNotification(follower.userId, {
           title: 'New Answer to Your Question',
           body: `${answerPreview.substring(0, 100)}...`,
@@ -192,6 +194,24 @@ export class NotificationsService {
     } catch (error) {
       console.error('Failed to notify followers of new answer:', error);
       return { notified: 0, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  async create(userId: string, type: string, title: string, body: string, link?: string) {
+    try {
+      const notification = await this.prisma.notification.create({
+        data: {
+          userId,
+          type: type as any,
+          title,
+          body,
+          link,
+        },
+      });
+      return notification;
+    } catch (error) {
+      console.error('Failed to create notification:', error);
+      throw new InternalServerErrorException('Failed to create notification');
     }
   }
 }
