@@ -34,6 +34,10 @@ docker ps -aq --filter 'name=^askvyo-api-run-' | xargs -r docker rm -f >/dev/nul
 echo "Applying database migrations..."
 $COMPOSE run -T --rm --no-deps api sh -c 'pnpm --filter @askvyo/db exec prisma migrate deploy --schema=prisma/schema.prisma'
 
+# One-time cutover from the pre-rename "mquora" compose project: remove ONLY its containers
+# (label-scoped; volumes and images are kept) so host ports 3022/3024 are free for askvyo.
+docker ps -aq --filter 'label=com.docker.compose.project=mquora' | xargs -r docker rm -f >/dev/null || true
+
 echo "Starting application services..."
 $COMPOSE up -d --remove-orphans web api worker
 
