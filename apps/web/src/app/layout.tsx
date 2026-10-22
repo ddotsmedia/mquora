@@ -7,8 +7,10 @@ import { PublicOnly } from "@/components/public-only";
 import { Toaster } from "sonner";
 import { Providers } from "@/components/providers";
 import "./globals.css";
+import { siteOrigin } from "@/lib/site";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteOrigin()),
   title: "mquora - Malayalam Knowledge Community",
   appleWebApp: { capable: true, title: "mquora", statusBarStyle: "default" },
   description: "A Malayalam-first knowledge community for learning, sharing, and discovering",
@@ -17,6 +19,7 @@ export const metadata: Metadata = {
     description: "A Malayalam-first knowledge community",
     type: "website",
   },
+  twitter: { card: "summary_large_image" },
 };
 
 export const viewport: Viewport = {
@@ -29,7 +32,25 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head />
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              name: "mquora",
+              url: siteOrigin(),
+              inLanguage: ["ml", "en"],
+              potentialAction: {
+                "@type": "SearchAction",
+                target: `${siteOrigin()}/search?q={search_term_string}`,
+                "query-input": "required name=search_term_string",
+              },
+            }),
+          }}
+        />
+      </head>
       <body className={`${sansFont.variable} ${malayalamFont.variable} font-sans bg-[var(--bg)] text-[var(--text)] min-h-screen`}>
         <Providers>
           <PublicOnly><Navbar /></PublicOnly>
