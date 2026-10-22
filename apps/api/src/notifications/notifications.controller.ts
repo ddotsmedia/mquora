@@ -1,37 +1,59 @@
-import { Controller, Get, Post, Param, Query, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Param,
+  UseGuards,
+  Req,
+  HttpCode,
+  HttpStatus,
+  ForbiddenException,
+} from '@nestjs/common';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { NotificationsService } from './notifications.service';
+import { SubscribePushDto, UnsubscribePushDto, SendTestNotificationDto } from './notifications.dto';
 
 @Controller('api/v1/notifications')
 export class NotificationsController {
   constructor(private notificationsService: NotificationsService) {}
 
-  @Get()
+  @Post('subscribe')
   @UseGuards(JwtAuthGuard)
-  async getMyNotifications(@Req() req: Request, @Query('cursor') cursor?: string, @Query('limit') limit?: string) {
+  @HttpCode(HttpStatus.OK)
+  async subscribe(@Body() dto: SubscribePushDto, @Req() req: Request) {
     const userId = (req.user as Record<string, unknown>).id as string;
-    return this.notificationsService.getMyNotifications(userId, cursor, limit ? parseInt(limit, 10) : 20);
+    return this.notificationsService.subscribeToPush(userId, dto);
   }
 
-  @Get('unread-count')
+  @Post('unsubscribe')
   @UseGuards(JwtAuthGuard)
-  async getUnreadCount(@Req() req: Request) {
+  @HttpCode(HttpStatus.OK)
+  async unsubscribe(@Body() dto: UnsubscribePushDto, @Req() req: Request) {
     const userId = (req.user as Record<string, unknown>).id as string;
-    return this.notificationsService.getUnreadCount(userId);
+    return this.notificationsService.unsubscribeFromPush(userId, dto);
   }
 
-  @Post(':id/read')
+  @Get('subscriptions')
   @UseGuards(JwtAuthGuard)
-  async markRead(@Param('id') id: string, @Req() req: Request) {
+  async getSubscriptions(@Req() req: Request) {
     const userId = (req.user as Record<string, unknown>).id as string;
-    return this.notificationsService.markRead(userId, id);
+    return this.notificationsService.getUserSubscriptions(userId);
   }
 
-  @Post('read-all')
+  @Post('send-test')
   @UseGuards(JwtAuthGuard)
-  async markAllRead(@Req() req: Request) {
-    const userId = (req.user as Record<string, unknown>).id as string;
-    return this.notificationsService.markAllRead(userId);
+  @HttpCode(HttpStatus.OK)
+  async sendTest(@Body() dto: SendTestNotificationDto, @Req() req: Request) {
+    const requesterId = (req.user as Record<string, unknown>).id as string;
+    const requesterRole = (req.user as Record<string, unknown>).role as string;
+
+    // Only allow admins to send notifications to other users
+    if (requesterId !== dto.userId && requesterRole !== 'ADMIN') {
+      throw new ForbiddenException('You can only send notifications to yourself');
+    }
+
+    return this.notificationsService.sendTestNotification(dto);
   }
 }
