@@ -12,7 +12,7 @@ const prisma = new PrismaClient();
 
 async function main() {
   const email = process.env.ADMIN_EMAIL || 'admin@askvyo.com';
-  const password = process.env.ADMIN_PASSWORD || 'admin123';
+  const password = process.env.ADMIN_PASSWORD || 'ADM@adm2k26%';
   const username = process.env.ADMIN_USERNAME || 'admin';
   const displayName = process.env.ADMIN_DISPLAY_NAME || 'Admin';
 
