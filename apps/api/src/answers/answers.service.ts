@@ -35,15 +35,21 @@ export class AnswersService {
     ]);
 
     // Notify everyone following the question (the asker follows automatically), except the answerer.
-    const [followers, author] = await Promise.all([
+    const [followers, subscribers, author] = await Promise.all([
       this.prisma.questionFollow.findMany({ where: { postId, userId: { not: authorId } }, select: { userId: true }, take: 1000 }),
+      this.prisma.questionSubscription.findMany({ where: { postId, userId: { not: authorId } }, select: { userId: true }, take: 1000 }),
       this.prisma.user.findUnique({ where: { id: authorId }, select: { displayName: true } }),
     ]);
-    if (followers.length) {
+
+    const followerIds = followers.map((f) => f.userId);
+    const subscriberIds = subscribers.map((s) => s.userId);
+    const uniqueUserIds = Array.from(new Set([...followerIds, ...subscriberIds]));
+
+    if (uniqueUserIds.length) {
       await this.prisma.notification
         .createMany({
-          data: followers.map((f) => ({
-            userId: f.userId,
+          data: uniqueUserIds.map((userId) => ({
+            userId,
             type: 'ANSWER' as const,
             title: 'New answer to a question you follow',
             body: `${author?.displayName ?? 'Someone'} answered: ${post.title.slice(0, 120)}`,
@@ -51,6 +57,21 @@ export class AnswersService {
           })),
         })
         .catch(() => undefined);
+    }
+
+    // Send web push notifications to subscribers
+    if (subscriberIds.length) {
+      const subscriptions = await this.prisma.notificationSubscription.findMany({
+        where: { userId: { in: subscriberIds }, isActive: true },
+        select: { endpoint: true, p256dh: true, auth: true },
+        take: 1000,
+      });
+
+      if (subscriptions.length) {
+        // Queue push notifications asynchronously without blocking answer creation
+        // This would normally use a job queue like Bull; for now we fire-and-forget
+        this.sendWebPushNotifications(subscriptions, post.title.slice(0, 100), author?.displayName ?? 'Someone', post.seoSlug, answer.id).catch(() => undefined);
+      }
     }
 
     await this.embeddingQueue.add(
@@ -141,6 +162,56 @@ export class AnswersService {
         data: { answerCount: { decrement: 1 } },
       }),
     ]);
+  }
+
+  private async sendWebPushNotifications(
+    subscriptions: Array<{ endpoint: string; p256dh: string; auth: string }>,
+    title: string,
+    author: string,
+    seoSlug: string,
+    answerId: string,
+  ) {
+    try {
+      const webpush = (await import('web-push')).default;
+      const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+      const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
+
+      if (!vapidPublicKey || !vapidPrivateKey) return;
+
+      webpush.setVapidDetails(
+        process.env.VAPID_SUBJECT || 'mailto:support@askvyo.com',
+        vapidPublicKey,
+        vapidPrivateKey,
+      );
+
+      const payload = JSON.stringify({
+        title: 'New answer to your subscription',
+        body: `${author} answered: ${title}`,
+        icon: '/favicon.ico',
+        badge: '/favicon.ico',
+        tag: `question-${seoSlug}`,
+        data: {
+          url: `/q/${seoSlug}#answer-${answerId}`,
+        },
+      });
+
+      await Promise.allSettled(
+        subscriptions.map((sub) =>
+          webpush.sendNotification(
+            {
+              endpoint: sub.endpoint,
+              keys: {
+                p256dh: sub.p256dh,
+                auth: sub.auth,
+              },
+            },
+            payload,
+          ),
+        ),
+      );
+    } catch (error) {
+      console.error('Error sending web push notifications:', error);
+    }
   }
 
   async getAnswerSummary(postId: string) {

@@ -13,6 +13,7 @@ import { CommentsModule } from './comments/comments.module';
 import { VotesModule } from './votes/votes.module';
 import { BookmarksModule } from './bookmarks/bookmarks.module';
 import { FollowsModule } from './follows/follows.module';
+import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { ReputationModule } from './reputation/reputation.module';
 import { ModerationModule } from './moderation/moderation.module';
 import { NotificationsModule } from './notifications/notifications.module';
@@ -52,6 +53,7 @@ import { SocialModule } from './social/social.module';
     VotesModule,
     BookmarksModule,
     FollowsModule,
+    SubscriptionsModule,
     ReputationModule,
     ModerationModule,
     NotificationsModule,

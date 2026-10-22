@@ -107,6 +107,7 @@ model User {
   tagFollows            TagFollow[]
   questionFollows       QuestionFollow[]
   questionPasses        QuestionPass[]
+  subscriptions         QuestionSubscription[] @relation("subscriptions")
   onboardedAt           DateTime?
 
   @@index([email])
@@ -229,6 +230,7 @@ model Post {
   community         Community? @relation(fields: [communityId], references: [id])
   followers         QuestionFollow[]
   passes            QuestionPass[]
+  subscribers       QuestionSubscription[] @relation("subscribers")
   answers           Answer[]
   comments          Comment[]
   votes             Vote[]    @relation("post")
@@ -394,6 +396,21 @@ model QuestionFollow {
   post              Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@unique([userId, postId])
+  @@index([postId])
+}
+
+// User subscribes to a question — gets web push notifications on new answers.
+model QuestionSubscription {
+  id                String    @id @default(cuid())
+  userId            String
+  postId            String
+  createdAt         DateTime  @default(now())
+
+  user              User      @relation("subscriptions", fields: [userId], references: [id], onDelete: Cascade)
+  post              Post      @relation("subscribers", fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([userId])
   @@index([postId])
 }
 

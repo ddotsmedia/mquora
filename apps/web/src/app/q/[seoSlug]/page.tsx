@@ -4,6 +4,7 @@ import { serverApiFetch } from '@/lib/api';
 import { LanguageBadge } from '@/components/language-badge';
 import { VoteButtons } from '@/components/vote-buttons';
 import { BookmarkButton } from '@/components/bookmark-button';
+import { SubscribeButton } from '@/components/subscribe-button';
 import { AnswerForm } from '@/components/answer-form';
 import { Comments } from '@/components/comments';
 import { ReportButton } from '@/components/report-button';
@@ -176,6 +177,7 @@ export default async function PostPage({ params, searchParams }: { params: Promi
         <div className="flex gap-4 mb-6">
           <VoteButtons targetId={post.id} targetType="POST" initialScore={post.voteScore} />
           <BookmarkButton postId={post.id} />
+          <SubscribeButton postId={post.id} />
           <span className="self-center"><FollowQuestionButton postId={post.id} initialCount={post.followerCount ?? 0} /></span>
           <span className="ml-auto self-center"><ReportButton targetId={post.id} targetType="POST" /></span>
         </div>
