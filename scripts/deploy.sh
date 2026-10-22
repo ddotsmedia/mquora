@@ -97,8 +97,10 @@ if ! timeout 120 $COMPOSE run -T --rm --no-deps api sh -c 'pnpm --filter @askvyo
 fi
 
 echo "Ensuring admin user exists..."
-$COMPOSE run -T --rm --no-deps api \
-  sh -c 'node packages/db/prisma/ensure-admin.mjs' || echo "WARNING: ensure-admin step failed (non-fatal)"
+if ! $COMPOSE run -T --rm --no-deps api sh -c 'node packages/db/prisma/ensure-admin.mjs'; then
+  echo "ERROR: ensure-admin failed — check logs above"
+  exit 1
+fi
 
 echo "Starting application services..."
 $COMPOSE up -d --remove-orphans web api worker
