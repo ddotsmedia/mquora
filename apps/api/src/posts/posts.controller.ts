@@ -28,8 +28,9 @@ export class PostsController {
 
   @Get(':seoSlug')
   @UseGuards(OptionalJwtGuard)
-  async findBySlug(@Param('seoSlug') seoSlug: string) {
-    return this.postsService.findBySlug(seoSlug);
+  async findBySlug(@Param('seoSlug') seoSlug: string, @Query('view') view?: string) {
+    // view=0: metadata/share-card fetches that must not count as a page view.
+    return this.postsService.findBySlug(seoSlug, view !== '0');
   }
 
   @Post()

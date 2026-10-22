@@ -100,7 +100,7 @@ export class PostsService {
     return { data, nextCursor };
   }
 
-  async findBySlug(seoSlug: string) {
+  async findBySlug(seoSlug: string, countView = true) {
     const post = await this.prisma.post.findUnique({
       where: { seoSlug },
       select: {
@@ -126,7 +126,7 @@ export class PostsService {
 
     if (!post || post.deletedAt) throw new NotFoundException('Post not found');
     // Count the view without slowing the response.
-    void this.prisma.post.update({ where: { id: post.id }, data: { viewCount: { increment: 1 } } }).catch(() => undefined);
+    if (countView) void this.prisma.post.update({ where: { id: post.id }, data: { viewCount: { increment: 1 } } }).catch(() => undefined);
     return post;
   }
 

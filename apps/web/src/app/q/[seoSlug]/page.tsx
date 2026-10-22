@@ -14,6 +14,7 @@ import { VerifiedBadge } from '@/components/verified-badge';
 import { FollowQuestionButton } from '@/components/follow-question-button';
 import { ReadMore } from '@/components/read-more';
 import { formatDistanceToNow } from 'date-fns';
+import { siteOrigin } from '@/lib/site';
 
 interface Post {
   id: string;
@@ -66,15 +67,18 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { seoSlug } = await params;
   try {
-    const post = await serverApiFetch<Post>(`/api/v1/posts/${seoSlug}`);
+    const post = await serverApiFetch<Post>(`/api/v1/posts/${seoSlug}?view=0`);
     return {
       title: `${post.title} — mquora`,
       description: post.body.substring(0, 160),
+      alternates: { canonical: `/q/${post.seoSlug}` },
       openGraph: {
         title: post.title,
         description: post.body.substring(0, 160),
         type: 'article',
+        url: `/q/${post.seoSlug}`,
       },
+      twitter: { card: 'summary_large_image', title: post.title, description: post.body.substring(0, 160) },
     };
   } catch {
     return { title: 'Post not found' };
@@ -103,13 +107,14 @@ export default async function PostPage({ params, searchParams }: { params: Promi
   if (!post || post.deletedAt) notFound();
 
   // Structured data so Google can show this as a Q&A rich result.
+  const origin = siteOrigin();
   const accepted = answers.find((a) => a.isAccepted);
   const toAnswer = (a: Answer) => ({
     '@type': 'Answer',
     text: a.body.slice(0, 2000),
     upvoteCount: a.voteScore,
     dateCreated: a.createdAt,
-    url: `/q/${post!.seoSlug}#answer-${a.id}`,
+    url: `${origin}/q/${post!.seoSlug}#answer-${a.id}`,
     author: { '@type': 'Person', name: a.author.displayName },
   });
   const jsonLd = {
@@ -127,10 +132,22 @@ export default async function PostPage({ params, searchParams }: { params: Promi
       suggestedAnswer: answers.filter((a) => !a.isAccepted).slice(0, 10).map(toAnswer),
     },
   };
+  const breadcrumbLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: origin },
+      ...(post.community
+        ? [{ '@type': 'ListItem', position: 2, name: post.community.name, item: `${origin}/c/${post.community.slug}` }]
+        : []),
+      { '@type': 'ListItem', position: post.community ? 3 : 2, name: post.title, item: `${origin}/q/${post.seoSlug}` },
+    ],
+  };
 
   return (
     <div className="max-w-3xl mx-auto">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd).replace(/</g, '\\u003c') }} />
       <article className="p-6">
         <div className="mb-4 flex items-center gap-2">
           <LanguageBadge language={post.language} />
