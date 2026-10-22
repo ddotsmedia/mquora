@@ -2,6 +2,7 @@ import { Controller, Post, Get, Body, Res, Req, UseGuards, HttpCode, Unauthorize
 import { Response, Request } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { EmailThrottleGuard } from '../guards/email-throttle.guard';
 import { AuthService } from './auth.service';
 import { RegisterDto } from '../dto/register.dto';
 import { LoginDto } from '../dto/login.dto';
@@ -11,13 +12,16 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post('register')
+  @UseGuards(EmailThrottleGuard)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   async register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
 
   @Post('login')
-  @Throttle({ default: { limit: 5, ttl: 900000 } })
+  @UseGuards(EmailThrottleGuard)
+  @Throttle({ default: { limit: 10, ttl: 900000 } })
+  // Throttle is per-email (not per-IP) so the web server's internal calls don't exhaust a shared quota.
   @HttpCode(200)
   async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.login(dto);
