@@ -158,7 +158,7 @@ jobs:
             "$VPS_USER@$VPS_HOST" \
             "GITHUB_ACTOR=$GITHUB_ACTOR GHCR_TOKEN=$GHCR_TOKEN bash /opt/askvyo/scripts/deploy.sh"
 
-      - name: Post VPS diagnostics to Gist on failure
+      - name: Commit VPS diagnostics to deploy-logs branch on failure
         if: failure() && steps.vps_deploy.conclusion == 'failure'
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
@@ -167,31 +167,42 @@ jobs:
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
           mkdir -p ~/.ssh
           printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
-          DIAG=$(ssh -i ~/.ssh/deploy_key -p "$VPS_PORT" -o StrictHostKeyChecking=accept-new \
-            -o LogLevel=ERROR "$VPS_USER@$VPS_HOST" bash <<'ENDSSH' 2>&1 || true
+          # Collect diagnostics from the VPS
+          ssh -i ~/.ssh/deploy_key -p "$VPS_PORT" -o StrictHostKeyChecking=accept-new \
+            -o LogLevel=ERROR "$VPS_USER@$VPS_HOST" 'bash -s' > /tmp/diag.txt 2>&1 <<'ENDSSH' || true
           echo "=== Running containers ==="
-          docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" 2>&1 || true
+          docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" || true
           echo "=== docker compose ps (askvyo) ==="
-          docker compose -p askvyo -f /opt/askvyo/docker-compose.prod.yml ps 2>&1 || true
+          docker compose -p askvyo -f /opt/askvyo/docker-compose.prod.yml ps || true
           echo "=== api logs (last 40) ==="
           docker logs --tail 40 askvyo-api-1 2>&1 || echo "(no api container)"
           echo "=== postgres logs (last 20) ==="
           docker logs --tail 20 askvyo-postgres-1 2>&1 || echo "(no postgres container)"
-          echo "=== all mquora/askvyo containers ==="
-          docker ps -a --filter 'label=com.docker.compose.project=mquora' --format "table {{.Names}}\t{{.Status}}" 2>&1 || true
+          echo "=== all project containers ==="
+          docker ps -a --filter 'label=com.docker.compose.project=mquora' --format "table {{.Names}}\t{{.Status}}" || true
           echo "=== disk / memory ==="
-          df -h / 2>&1 && free -m 2>&1
+          df -h / && free -m
           ENDSSH
-          )
-          BODY="**Deploy failure diagnostics** — run [$GITHUB_RUN_ID]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)
-\`\`\`
-$DIAG
-\`\`\`"
-          gh issue create --title "Deploy failure $(date -u +%Y-%m-%dT%H:%MZ)" \
-            --body "$BODY" --label "deploy-log" 2>/dev/null || \
-          echo "DIAG: $DIAG"
+          # Push the file to the deploy-logs branch via the GitHub API
+          CONTENT=$(base64 < /tmp/diag.txt | tr -d '\n')
+          SHA=$(gh api /repos/$GITHUB_REPOSITORY/contents/latest.txt \
+            --jq '.sha' -H 'Accept: application/vnd.github.v3+json' \
+            -X GET --field ref=deploy-logs 2>/dev/null || true)
+          if [ -n "$SHA" ]; then
+            EXTRA=", \"sha\": \"$SHA\""
+          else
+            EXTRA=""
+          fi
+          gh api /repos/$GITHUB_REPOSITORY/contents/latest.txt \
+            -X PUT \
+            -f message="deploy-log: run $GITHUB_RUN_ID" \
+            -f content="$CONTENT" \
+            -f branch=deploy-logs \
+            ${SHA:+-f sha="$SHA"} \
+            2>/dev/null || echo "Could not push log to deploy-logs branch"
 
       - name: Smoke test (API and web)
         run: |
