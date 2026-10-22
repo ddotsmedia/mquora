@@ -3,10 +3,12 @@ import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import { PrismaClient } from '@prisma/client';
 import { LanguageService } from '../shared/language.service';
+import { AiGatewayService } from '@askvyo/ai';
 
 @Injectable()
 export class AnswersService {
   private prisma = new PrismaClient();
+  private aiGateway = new AiGatewayService();
 
   constructor(
     private languageService: LanguageService,
@@ -139,5 +141,36 @@ export class AnswersService {
         data: { answerCount: { decrement: 1 } },
       }),
     ]);
+  }
+
+  async getAnswerSummary(postId: string) {
+    // Get all published answers for the post
+    const answers = await this.prisma.answer.findMany({
+      where: { postId, status: 'PUBLISHED', deletedAt: null },
+      select: { body: true },
+      orderBy: { voteScore: 'desc' },
+      take: 10,
+    });
+
+    if (answers.length === 0) {
+      return null;
+    }
+
+    // Combine answer bodies for summarization
+    const answerText = answers.map((a) => a.body).join('\n\n');
+
+    // Generate summary using AI gateway
+    const summary = await this.aiGateway.chat([
+      {
+        role: 'system',
+        content: 'You are a helpful assistant that summarizes Q&A discussions in 3 lines. Keep it concise and in Malayalam if the answers are in Malayalam.',
+      },
+      {
+        role: 'user',
+        content: `Summarize these answers in 3 lines:\n\n${answerText}`,
+      },
+    ]);
+
+    return summary || null;
   }
 }

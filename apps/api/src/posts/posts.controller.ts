@@ -15,6 +15,29 @@ export class PostsController {
     return this.postsService.findFeed(cursor, communityId, limit ? parseInt(limit, 10) : 20);
   }
 
+  @Get('question-of-day')
+  async questionOfDay() {
+    return this.postsService.getQuestionOfTheDay();
+  }
+
+  @Get('popular-this-week')
+  async popularThisWeek(@Query('limit') limit?: string) {
+    return this.postsService.getPopularThisWeek(limit ? parseInt(limit, 10) : 5);
+  }
+
+  @Get('recent')
+  async recentQuestions(@Query('limit') limit?: string, @Query('offset') offset?: string) {
+    return this.postsService.getRecentQuestions(
+      limit ? parseInt(limit, 10) : 20,
+      offset ? parseInt(offset, 10) : 0
+    );
+  }
+
+  @Get('by-category')
+  async questionsByCategory(@Query('limit') limit?: string) {
+    return this.postsService.getQuestionsByCategory(limit ? parseInt(limit, 10) : 10);
+  }
+
   @Get(':id/related')
   async findRelated(@Param('id') id: string, @Query('limit') limit?: string) {
     return this.postsService.getRelated(id, limit ? parseInt(limit, 10) : 5);

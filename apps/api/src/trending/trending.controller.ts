@@ -35,6 +35,11 @@ export class TrendingController {
 export class TagsController {
   constructor(private readonly trending: TrendingService) {}
 
+  @Get('trending')
+  trendingTopics(@Query('limit') limit?: string) {
+    return this.trending.trendingTopics(Number(limit) || 5);
+  }
+
   @Get()
   all(@Query('q') q?: string, @Query('limit') limit?: string) {
     return this.trending.allTags(q?.trim() || undefined, Number(limit));

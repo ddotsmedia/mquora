@@ -12,6 +12,12 @@ export class AnswersController {
     return this.answersService.findByPost(postId, cursor, limit ? parseInt(limit, 10) : 20, sort);
   }
 
+  @Get('posts/:postId/answer-summary')
+  async getAnswerSummary(@Param('postId') postId: string) {
+    const summary = await this.answersService.getAnswerSummary(postId);
+    return { summary };
+  }
+
   @Post('posts/:postId/answers')
   @UseGuards(JwtAuthGuard)
   async create(@Param('postId') postId: string, @Body() dto: Record<string, unknown>, @Req() req: Request) {

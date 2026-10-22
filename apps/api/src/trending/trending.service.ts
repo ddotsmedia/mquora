@@ -93,4 +93,26 @@ export class TrendingService {
     ]);
     return { communities, questions, answers, topics, members };
   }
+
+  // Trending topics from last 30 days
+  async trendingTopics(limit?: number) {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * DAY);
+    const rows = await this.prisma.tag.findMany({
+      where: {
+        posts: {
+          some: {
+            post: {
+              status: 'PUBLISHED',
+              deletedAt: null,
+              createdAt: { gte: thirtyDaysAgo },
+            },
+          },
+        },
+      },
+      select: { id: true, name: true, slug: true, postCount: true },
+      orderBy: { postCount: 'desc' },
+      take: clamp(limit, 5),
+    });
+    return { data: rows.map((t) => ({ ...t, _count: { posts: t.postCount } })) };
+  }
 }

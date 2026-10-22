@@ -5,6 +5,9 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { PostCard } from '@/components/post-card';
 import { TrendingSidebar } from '@/components/TrendingSidebar';
+import { PopularThisWeek } from '@/components/PopularThisWeek';
+import { RecentQuestions } from '@/components/RecentQuestions';
+import { QuestionsByCategory } from '@/components/QuestionsByCategory';
 import { apiFetch } from '@/lib/api';
 
 type Post = Parameters<typeof PostCard>[0] & { id: string };
@@ -91,61 +94,79 @@ export default function Home() {
 
       <div className="mx-auto max-w-7xl px-4 py-8">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="space-y-4 lg:col-span-2">
-            <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold text-[var(--text)]">Questions</h2>
-              <div className="flex gap-1 rounded-full border border-[var(--border)] bg-[var(--surface)] p-1">
-                {TABS.map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => setTab(t.id)}
-                    className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
-                      tab === t.id ? 'bg-[var(--primary)] text-white shadow-sm' : 'text-[var(--text-secondary)] hover:text-[var(--text)]'
-                    }`}
-                  >
-                    {t.label}
-                  </button>
-                ))}
+          <div className="space-y-6 lg:col-span-2">
+            {/* Popular This Week & Recent Questions */}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div>
+                <PopularThisWeek />
+              </div>
+              <div>
+                <RecentQuestions />
               </div>
             </div>
 
-            {loading ? (
-              <div className="space-y-4">
-                {[0, 1, 2].map((i) => (
-                  <div key={i} className="h-28 animate-pulse rounded-xl border border-[var(--border)] bg-[var(--surface-2)]" />
-                ))}
-              </div>
-            ) : posts.length > 0 ? (
-              <div className="space-y-4">
-                {posts.map((post) => (
-                  <PostCard key={post.id} {...post} />
-                ))}
-              </div>
-            ) : (
-              <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-12 text-center">
-                <div className="mb-4 text-4xl">🌱</div>
-                <h3 className="mb-2 font-malayalam text-xl font-semibold text-[var(--text)]">
-                  {tab === 'unanswered' ? 'എല്ലാ ചോദ്യങ്ങൾക്കും ഉത്തരമുണ്ട്' : 'ഇനിയും ചോദ്യങ്ങളില്ല'}
-                </h3>
-                <p className="mb-6 text-[var(--text-secondary)]">
-                  {tab === 'unanswered' ? 'Every question has an answer. Nice!' : 'Be the first to ask a question.'}
-                </p>
-                <Link href="/ask" className="inline-block rounded-full bg-[var(--primary)] px-6 py-3 font-semibold text-white transition hover:bg-[var(--primary-light)]">
-                  ചോദ്യം ചോദിക്കൂ
-                </Link>
-              </div>
-            )}
+            {/* Questions by Category */}
+            <div>
+              <QuestionsByCategory />
+            </div>
 
-            {nextCursor && !loading && (
-              <div className="pt-4 text-center">
-                <button
-                  onClick={() => load('latest', nextCursor)}
-                  className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-6 py-3 text-sm font-medium transition hover:bg-[var(--surface-2)]"
-                >
-                  കൂടുതൽ കാണുക
-                </button>
+            {/* Main question feed */}
+            <div>
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-lg font-semibold text-[var(--text)]">All Questions</h2>
+                <div className="flex gap-1 rounded-full border border-[var(--border)] bg-[var(--surface)] p-1">
+                  {TABS.map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => setTab(t.id)}
+                      className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                        tab === t.id ? 'bg-[var(--primary)] text-white shadow-sm' : 'text-[var(--text-secondary)] hover:text-[var(--text)]'
+                      }`}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            )}
+
+              {loading ? (
+                <div className="space-y-4">
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} className="h-28 animate-pulse rounded-xl border border-[var(--border)] bg-[var(--surface-2)]" />
+                  ))}
+                </div>
+              ) : posts.length > 0 ? (
+                <div className="space-y-4">
+                  {posts.map((post) => (
+                    <PostCard key={post.id} {...post} />
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-12 text-center">
+                  <div className="mb-4 text-4xl">🌱</div>
+                  <h3 className="mb-2 font-malayalam text-xl font-semibold text-[var(--text)]">
+                    {tab === 'unanswered' ? 'എല്ലാ ചോദ്യങ്ങൾക്കും ഉത്തരമുണ്ട്' : 'ഇനിയും ചോദ്യങ്ങളില്ല'}
+                  </h3>
+                  <p className="mb-6 text-[var(--text-secondary)]">
+                    {tab === 'unanswered' ? 'Every question has an answer. Nice!' : 'Be the first to ask a question.'}
+                  </p>
+                  <Link href="/ask" className="inline-block rounded-full bg-[var(--primary)] px-6 py-3 font-semibold text-white transition hover:bg-[var(--primary-light)]">
+                    ചോദ്യം ചോദിക്കൂ
+                  </Link>
+                </div>
+              )}
+
+              {nextCursor && !loading && (
+                <div className="pt-4 text-center">
+                  <button
+                    onClick={() => load('latest', nextCursor)}
+                    className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-6 py-3 text-sm font-medium transition hover:bg-[var(--surface-2)]"
+                  >
+                    കൂടുതൽ കാണുക
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           <aside className="hidden lg:block">

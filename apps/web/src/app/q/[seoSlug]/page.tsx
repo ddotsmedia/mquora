@@ -7,6 +7,7 @@ import { BookmarkButton } from '@/components/bookmark-button';
 import { AnswerForm } from '@/components/answer-form';
 import { Comments } from '@/components/comments';
 import { ReportButton } from '@/components/report-button';
+import { AnswerSummary } from '@/components/AnswerSummary';
 import Link from 'next/link';
 import { ShareButtons } from '@/components/share-buttons';
 import { AcceptButton } from '@/components/accept-button';
@@ -222,6 +223,8 @@ export default async function PostPage({ params, searchParams }: { params: Promi
             <span className="block text-sm text-[var(--text-secondary)]">People are waiting for a good answer.</span>
           </a>
         )}
+
+        {answers.length > 0 && <AnswerSummary postId={post!.id} />}
 
         <div className="space-y-6 mb-8">
           {answers.map((answer) => (

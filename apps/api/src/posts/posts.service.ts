@@ -304,4 +304,143 @@ export class PostsService {
       total,
     };
   }
+
+  async getQuestionOfTheDay() {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const candidates = await this.prisma.post.findMany({
+      where: {
+        status: 'PUBLISHED',
+        deletedAt: null,
+        createdAt: { gte: thirtyDaysAgo },
+        answers: { some: {} },
+      },
+      select: {
+        id: true,
+        seoSlug: true,
+        title: true,
+        viewCount: true,
+        _count: { select: { answers: true } },
+      },
+      orderBy: [{ viewCount: 'desc' }],
+      take: 50,
+    });
+
+    if (candidates.length === 0) return null;
+
+    // Filter: min 2 answers
+    const filtered = candidates.filter((c) => c._count.answers >= 2);
+    if (filtered.length === 0) return null;
+
+    // Pick random from filtered
+    const random = filtered[Math.floor(Math.random() * filtered.length)];
+    return {
+      id: random.id,
+      seoSlug: random.seoSlug,
+      title: random.title,
+      answerCount: random._count.answers,
+      viewCount: random.viewCount,
+    };
+  }
+
+  async getPopularThisWeek(limit = 5) {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    return this.prisma.post.findMany({
+      where: {
+        status: 'PUBLISHED',
+        deletedAt: null,
+        createdAt: { gte: sevenDaysAgo },
+      },
+      select: {
+        id: true,
+        seoSlug: true,
+        title: true,
+        viewCount: true,
+        language: true,
+        _count: { select: { answers: true } },
+      },
+      orderBy: [{ answerCount: 'desc' }, { viewCount: 'desc' }],
+      take: limit,
+    });
+  }
+
+  async getRecentQuestions(limit = 20, offset = 0) {
+    return this.prisma.post.findMany({
+      where: {
+        status: 'PUBLISHED',
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+        seoSlug: true,
+        title: true,
+        body: true,
+        language: true,
+        createdAt: true,
+        _count: { select: { answers: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      skip: offset,
+    });
+  }
+
+  async getQuestionsByCategory(limit = 10) {
+    const tags = await this.prisma.tag.findMany({
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        _count: { select: { posts: true } },
+      },
+      orderBy: { postCount: 'desc' },
+      take: limit,
+    });
+
+    // Get top post per tag
+    const result = await Promise.all(
+      tags.map(async (tag) => {
+        const topPost = await this.prisma.post.findFirst({
+          where: { tags: { some: { tagId: tag.id } }, status: 'PUBLISHED', deletedAt: null },
+          select: { id: true, seoSlug: true, title: true },
+          orderBy: { viewCount: 'desc' },
+        });
+        return {
+          id: tag.id,
+          name: tag.name,
+          slug: tag.slug,
+          questionCount: tag._count.posts,
+          featuredPost: topPost,
+        };
+      }),
+    );
+
+    return result;
+  }
+
+  async getTrendingTopics(limit = 5) {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const tags = await this.prisma.tag.findMany({
+      where: {
+        posts: {
+          some: {
+            post: {
+              status: 'PUBLISHED',
+              deletedAt: null,
+              createdAt: { gte: thirtyDaysAgo },
+            },
+          },
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        _count: { select: { posts: true } },
+      },
+      orderBy: { postCount: 'desc' },
+      take: limit,
+    });
+
+    return tags;
+  }
 }
