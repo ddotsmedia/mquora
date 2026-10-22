@@ -7,7 +7,7 @@ export class CreatePostDto {
   title!: string;
 
   @IsString()
-  @MinLength(20)
+  @MinLength(1)
   body!: string;
 
   @IsOptional()

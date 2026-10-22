@@ -15,7 +15,7 @@ interface Community {
 
 export default function AskPage() {
   const router = useRouter();
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const [communities, setCommunities] = useState<Community[]>([]);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
@@ -72,11 +72,13 @@ export default function AskPage() {
         .map((t) => t.trim())
         .filter(Boolean);
 
+      const token = session?.user?.accessToken;
       const res = await apiFetch<{ id: string; seoSlug: string }>('/api/v1/posts', {
         method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           title,
-          body,
+          body: body || title, // body min 20 chars — fall back to title if empty
           communityId,
           tags: tagArray,
         }),
