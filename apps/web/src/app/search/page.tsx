@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { PostCard } from '@/components/post-card';
 
 type Post = {
   id: string;
