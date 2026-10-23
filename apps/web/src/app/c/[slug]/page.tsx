@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { serverApiFetch } from '@/lib/api';
 import { PostCard } from '@/components/post-card';
 import { JoinButton } from '@/components/join-button';
+import { siteOrigin } from '@/lib/site';
 
 interface Community {
   id: string;
@@ -46,11 +47,15 @@ export async function generateMetadata({
     return {
       title: `${community.name} — askvyo`,
       description: community.description || `Join the ${community.name} community on askvyo`,
+      alternates: { canonical: `/c/${community.slug}` },
       openGraph: {
         title: community.name,
-        description: community.description,
+        description: community.description || `Join the ${community.name} community on askvyo`,
         type: 'website',
+        url: `/c/${community.slug}`,
+        siteName: 'askvyo',
       },
+      twitter: { card: 'summary', title: community.name, description: community.description || `Join ${community.name} on askvyo` },
     };
   } catch {
     return { title: 'Community not found' };
@@ -75,8 +80,19 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
 
   if (!community) notFound();
 
+  const origin = siteOrigin();
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: community.name,
+    url: `${origin}/c/${community.slug}`,
+    description: community.description || `${community.name} community on askvyo`,
+    memberOf: { '@type': 'WebSite', name: 'askvyo', url: origin },
+  };
+
   return (
     <div className="max-w-3xl mx-auto">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <div className="border-b border-[var(--border)] p-6 bg-[var(--surface)]">
         <h1 className="text-3xl font-bold text-[var(--text)]">{community.name}</h1>
         <p className="text-[var(--text-secondary)] mt-2">{community.description || 'No description'}</p>

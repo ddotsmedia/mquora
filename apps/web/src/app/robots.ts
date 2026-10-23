@@ -1,14 +1,26 @@
 import type { MetadataRoute } from 'next';
+import { siteOrigin } from '@/lib/site';
 
-// Plan §20: keep private, moderation and account pages out of search engines.
 export default function robots(): MetadataRoute.Robots {
-  const base = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3022').replace(/\/api(\/v1)?\/?$/, '').replace(/\/$/, '');
+  const base = siteOrigin();
   return {
     rules: [
       {
         userAgent: '*',
-        allow: '/',
-        disallow: ['/admin', '/api/', '/login', '/register', '/post-login', '/notifications', '/bookmarks', '/create', '/ask', '/settings', '/me'],
+        allow: ['/', '/q/', '/c/', '/t/', '/profile/', '/communities', '/tags', '/discover', '/leaderboard'],
+        disallow: [
+          '/admin/', '/api/', '/login', '/register', '/post-login',
+          '/notifications', '/bookmarks', '/ask', '/settings', '/me',
+          '/drafts', '/for-you', '/following',
+        ],
+      },
+      {
+        userAgent: 'GPTBot',
+        disallow: ['/'],
+      },
+      {
+        userAgent: 'CCBot',
+        disallow: ['/'],
       },
     ],
     sitemap: `${base}/sitemap.xml`,

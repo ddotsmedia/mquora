@@ -14,12 +14,16 @@ export const metadata: Metadata = {
   title: "askvyo - Malayalam Knowledge Community",
   appleWebApp: { capable: true, title: "askvyo", statusBarStyle: "default" },
   description: "A Malayalam-first knowledge community for learning, sharing, and discovering",
+  keywords: ['Malayalam Q&A', 'Malayalam questions', 'askvyo', 'Kerala knowledge community', 'ചോദ്യങ്ങൾ', 'Malayalam answers', 'Kerala community'],
   openGraph: {
     title: "askvyo",
     description: "A Malayalam-first knowledge community",
     type: "website",
+    siteName: "askvyo",
+    locale: "ml_IN",
+    alternateLocale: "en_IN",
   },
-  twitter: { card: "summary_large_image" },
+  twitter: { card: "summary_large_image", site: "@askvyo" },
 };
 
 export const viewport: Viewport = {

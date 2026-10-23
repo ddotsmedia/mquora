@@ -73,17 +73,19 @@ export async function generateMetadata({
   const { seoSlug } = await params;
   try {
     const post = await serverApiFetch<Post>(`/api/v1/posts/${seoSlug}?view=0`);
+    const desc = `${post.body.substring(0, 120)} — ${post.answerCount} answer${post.answerCount !== 1 ? 's' : ''} on askvyo`;
     return {
       title: `${post.title} — askvyo`,
-      description: post.body.substring(0, 160),
+      description: desc,
       alternates: { canonical: `/q/${post.seoSlug}` },
       openGraph: {
         title: post.title,
-        description: post.body.substring(0, 160),
+        description: desc,
         type: 'article',
-        url: `/q/${post.seoSlug}`,
+        url: `${siteOrigin()}/q/${post.seoSlug}`,
+        siteName: 'askvyo',
       },
-      twitter: { card: 'summary_large_image', title: post.title, description: post.body.substring(0, 160) },
+      twitter: { card: 'summary_large_image', title: post.title, description: desc },
     };
   } catch {
     return { title: 'Post not found' };

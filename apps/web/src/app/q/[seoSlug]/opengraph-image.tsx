@@ -1,27 +1,38 @@
-import { serverApiFetch } from '@/lib/api';
-import { OG_SIZE, pngResponse, renderCard, siteDomain } from '@/lib/og-card';
+import { ImageResponse } from 'next/og';
 
-export const runtime = 'nodejs';
-export const size = OG_SIZE;
+export const runtime = 'edge';
+export const alt = 'askvyo question';
+export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
-export const alt = 'Question on askvyo';
 
-interface PostSummary {
-  title: string;
-  answerCount: number;
-  viewCount: number;
-  community: { name: string } | null;
-}
-
-export default async function Image({ params }: { params: Promise<{ seoSlug: string }> }) {
-  const { seoSlug } = await params;
-  const post = await serverApiFetch<PostSummary>(`/api/v1/posts/${seoSlug}?view=0`).catch(() => null);
-  const answers = post?.answerCount ?? 0;
-  const buf = await renderCard({
-    kicker: post?.community?.name ?? 'ചോദ്യം · Question',
-    title: post?.title ?? 'അറിവ് പങ്കുവെക്കൂ',
-    meta: post ? `${answers} ${answers === 1 ? 'answer' : 'answers'}` : undefined,
-    domain: siteDomain(),
-  });
-  return pngResponse(buf);
+export default async function Image({ params }: { params: { seoSlug: string } }) {
+  const title = decodeURIComponent(params.seoSlug.replace(/-/g, ' '));
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #0D1712 0%, #1F6B45 100%)',
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-start',
+          justifyContent: 'center',
+          padding: '80px',
+          fontFamily: 'sans-serif',
+        }}
+      >
+        <div style={{ color: '#4ADE80', fontSize: 28, fontWeight: 700, marginBottom: 24, letterSpacing: 2 }}>
+          askvyo • Malayalam Q&A
+        </div>
+        <div style={{ color: '#ffffff', fontSize: 52, fontWeight: 800, lineHeight: 1.3, maxWidth: 1000 }}>
+          {title.length > 120 ? title.slice(0, 120) + '…' : title}
+        </div>
+        <div style={{ color: '#86EFAC', fontSize: 24, marginTop: 40 }}>
+          Ask. Answer. Learn. In Malayalam.
+        </div>
+      </div>
+    ),
+    { ...size },
+  );
 }

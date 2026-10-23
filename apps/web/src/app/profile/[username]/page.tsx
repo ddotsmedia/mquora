@@ -6,6 +6,7 @@ import { serverApiFetch, ApiError } from '@/lib/api';
 import { PostCard } from '@/components/post-card';
 import { FollowButton } from '@/components/follow-button';
 import { formatDistanceToNow } from 'date-fns';
+import { siteOrigin } from '@/lib/site';
 
 export const dynamic = 'force-dynamic';
 
@@ -73,9 +74,20 @@ export async function generateMetadata({ params }: { params: Promise<{ username:
   const { username } = await params;
   const user = await load(username).catch(() => null);
   if (!user) return { title: 'User not found' };
+  const description = user.bio
+    ? user.bio.slice(0, 160)
+    : `${user.displayName} has answered ${user.stats.answers} questions on askvyo, the Malayalam knowledge community.`;
   return {
     title: `${user.displayName} (@${user.username}) — askvyo`,
-    description: user.bio || `Profile of ${user.displayName} on askvyo`,
+    description,
+    alternates: { canonical: `/profile/${user.username}` },
+    openGraph: {
+      title: `${user.displayName} (@${user.username})`,
+      description,
+      type: 'profile',
+      url: `/profile/${user.username}`,
+    },
+    twitter: { card: 'summary_large_image', title: `${user.displayName} on askvyo`, description },
   };
 }
 
@@ -109,8 +121,20 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
     }
   }
 
+  const origin = siteOrigin();
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: user.displayName,
+    url: `${origin}/profile/${user.username}`,
+    identifier: user.username,
+    description: user.bio || undefined,
+    ...(user.knowsAbout?.length ? { knowsAbout: user.knowsAbout.map((t) => t.name) } : {}),
+  };
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
         <div className="flex flex-wrap items-start gap-4">
           <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[var(--primary)] text-xl font-bold text-white">
