@@ -77,21 +77,21 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
 
   return (
     <div className="max-w-3xl mx-auto">
-      <div className="border-b border-border p-6 bg-card">
-        <h1 className="text-3xl font-bold text-foreground">{community.name}</h1>
-        <p className="text-muted-foreground mt-2">{community.description || 'No description'}</p>
+      <div className="border-b border-[var(--border)] p-6 bg-[var(--surface)]">
+        <h1 className="text-3xl font-bold text-[var(--text)]">{community.name}</h1>
+        <p className="text-[var(--text-secondary)] mt-2">{community.description || 'No description'}</p>
         <div className="flex gap-4 mt-4 text-sm">
-          <span className="text-muted-foreground">{community.memberCount} members</span>
-          <span className="text-muted-foreground">{community.postCount} posts</span>
+          <span className="text-[var(--text-muted)]">{community.memberCount} members</span>
+          <span className="text-[var(--text-muted)]">{community.postCount} posts</span>
         </div>
         <JoinButton communityId={community.id} className="mt-4" />
       </div>
 
-      <div className="divide-y divide-border">
+      <div className="divide-y divide-[var(--border)]">
         {posts.length > 0 ? (
           posts.map((post) => <PostCard key={post.id} {...post} />)
         ) : (
-          <div className="p-8 text-center text-muted-foreground">
+          <div className="p-8 text-center text-[var(--text-muted)]">
             <p>No posts yet in this community.</p>
           </div>
         )}
