@@ -39,11 +39,11 @@ export function PostCard(props: PostCardProps) {
       <div className="flex items-start gap-3">
         {/* Vote column */}
         <div className="flex flex-col items-center gap-1 pt-0.5 shrink-0">
-          <button className="w-7 h-7 rounded-lg hover:bg-[var(--primary)]/10 hover:text-[var(--primary)] flex items-center justify-center transition-all">
+          <button className="w-9 h-9 rounded-lg hover:bg-[var(--primary)]/10 hover:text-[var(--primary)] flex items-center justify-center transition-all">
             <ChevronUp className="w-4 h-4" />
           </button>
           <span className="text-sm font-semibold text-[var(--text-secondary)]">{props.voteScore}</span>
-          <button className="w-7 h-7 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-500 flex items-center justify-center transition-all">
+          <button className="w-9 h-9 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-500 flex items-center justify-center transition-all">
             <ChevronDown className="w-4 h-4" />
           </button>
         </div>
@@ -75,11 +75,11 @@ export function PostCard(props: PostCardProps) {
 
           {/* Bottom row */}
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full bg-[var(--primary)] flex items-center justify-center text-white text-xs font-bold">
+            <div className="flex min-w-0 items-center gap-2">
+              <div className="w-6 h-6 rounded-full bg-[var(--primary)] flex shrink-0 items-center justify-center text-white text-xs font-bold">
                 {initials}
               </div>
-              <span className="text-xs text-[var(--text-secondary)]">{props.author.username}</span>
+              <span className="truncate text-xs text-[var(--text-secondary)]">{props.author.username}</span>
               <span className="text-[var(--border)]">·</span>
               <span className="text-xs text-[var(--text-muted)]">{timeAgo(props.createdAt)}</span>
             </div>

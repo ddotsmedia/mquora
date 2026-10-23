@@ -85,15 +85,15 @@ export default function Home() {
               Ask questions, share what you know, and learn from Malayalis everywhere — in Malayalam, English or Manglish.
             </p>
             <div className="mb-10 flex flex-wrap gap-3">
-              <Link href="/ask" className="rounded-full bg-[#D4A017] px-6 py-3 text-sm font-semibold text-[#17231C] shadow-lg shadow-black/20 transition hover:bg-[#E8BC45]">
+              <Link href="/ask" className="w-full rounded-full bg-[#D4A017] px-6 py-3 text-center text-sm font-semibold text-[#17231C] shadow-lg shadow-black/20 transition hover:bg-[#E8BC45] sm:w-auto">
                 ചോദ്യം ചോദിക്കൂ →
               </Link>
-              <Link href="/communities" className="rounded-full border border-white/25 bg-white/10 px-6 py-3 text-sm font-medium text-white backdrop-blur transition hover:bg-white/20">
+              <Link href="/communities" className="w-full rounded-full border border-white/25 bg-white/10 px-6 py-3 text-center text-sm font-medium text-white backdrop-blur transition hover:bg-white/20 sm:w-auto">
                 Explore communities
               </Link>
             </div>
             {statItems.length > 0 && (
-              <dl className="grid max-w-xl grid-cols-2 gap-4 sm:grid-cols-4">
+              <dl className="grid w-full grid-cols-2 gap-4 sm:grid-cols-4">
                 {statItems.map(([n, label]) => (
                   <div key={label as string} className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur">
                     <dd className="text-2xl font-bold text-white">{(n as number).toLocaleString()}</dd>
@@ -126,14 +126,14 @@ export default function Home() {
 
             {/* Main question feed */}
             <div>
-              <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+              <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <h2 className="text-lg font-semibold text-[var(--text)]">All Questions</h2>
-                <div className="flex gap-1 rounded-full border border-[var(--border)] bg-[var(--surface)] p-1">
+                <div className="flex gap-1 overflow-x-auto rounded-full border border-[var(--border)] bg-[var(--surface)] p-1 scrollbar-none">
                   {TABS.map((t) => (
                     <button
                       key={t.id}
                       onClick={() => setTab(t.id)}
-                      className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                      className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition ${
                         tab === t.id ? 'bg-[var(--primary)] text-white shadow-sm' : 'text-[var(--text-secondary)] hover:text-[var(--text)]'
                       }`}
                     >
@@ -183,7 +183,8 @@ export default function Home() {
             </div>
           </div>
 
-          <aside className="hidden lg:block">
+          {/* Sidebar — desktop: right column, mobile: below feed */}
+          <aside className="lg:block">
             <div className="space-y-4">
               <QuestionOfTheDay />
               <TrendingSidebar />

@@ -152,10 +152,10 @@ export default async function PostPage({ params, searchParams }: { params: Promi
   };
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="mx-auto max-w-3xl px-4 sm:px-0">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd).replace(/</g, '\\u003c') }} />
-      <article className="p-6">
+      <article className="p-4 sm:p-6">
         <div className="mb-4 flex items-center gap-2">
           <LanguageBadge language={post.language} />
           <span className="text-sm text-muted-foreground">{post.viewCount} views</span>
@@ -179,11 +179,11 @@ export default async function PostPage({ params, searchParams }: { params: Promi
           )}
         </div>
 
-        <div className="flex gap-4 mb-6">
+        <div className="flex flex-wrap gap-2 mb-6">
           <VoteButtons targetId={post.id} targetType="POST" initialScore={post.voteScore} />
           <BookmarkButton postId={post.id} />
           <SubscribeButton postId={post.id} />
-          <span className="self-center"><FollowQuestionButton postId={post.id} initialCount={post.followerCount ?? 0} /></span>
+          <FollowQuestionButton postId={post.id} initialCount={post.followerCount ?? 0} />
           <span className="ml-auto self-center"><ReportButton targetId={post.id} targetType="POST" /></span>
         </div>
 
@@ -239,9 +239,9 @@ export default async function PostPage({ params, searchParams }: { params: Promi
               {answer.isAccepted && (
                 <p className="text-sm text-green-600 dark:text-green-400 mb-2 font-semibold">✓ Accepted Answer</p>
               )}
-              <div className="flex gap-4">
+              <div className="flex gap-3">
                 <AnswerVoting answerId={answer.id} initialVoteCount={answer.voteCount ?? 0} />
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <div className="mb-3 text-sm text-muted-foreground">
                     <Link href={`/profile/${answer.author.username}`} className="font-semibold text-foreground hover:underline">{answer.author.displayName}</Link>
                     <VerifiedBadge show={answer.author.isVerified} />
@@ -273,7 +273,7 @@ export default async function PostPage({ params, searchParams }: { params: Promi
       </div>
 
       {related.length > 0 && (
-        <section className="mx-6 mb-10 rounded-xl border border-border bg-[var(--surface)] p-5">
+        <section className="mx-4 mb-10 rounded-xl border border-border bg-[var(--surface)] p-5 sm:mx-6">
           <h2 className="mb-3 font-semibold text-foreground">Related questions</h2>
           <ul className="space-y-2">
             {related.map((r) => (

@@ -28,7 +28,7 @@ function ThemeToggle() {
   return (
     <button
       onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-      className="w-9 h-9 rounded-full bg-[var(--surface-2)] hover:bg-[var(--border)] flex items-center justify-center transition-colors"
+      className="w-10 h-10 rounded-full bg-[var(--surface-2)] hover:bg-[var(--border)] flex items-center justify-center transition-colors"
     >
       {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
     </button>
@@ -147,10 +147,15 @@ export function Navbar() {
             </div>
           )}
 
+          {/* Mobile search icon */}
+          <Link href="/search" className="sm:hidden p-2.5 rounded-full hover:bg-[var(--surface-2)] transition-colors" aria-label="Search">
+            <Search size={20} />
+          </Link>
+
           {/* Mobile menu */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden p-2 rounded-full hover:bg-[var(--surface-2)] transition-colors"
+            className="md:hidden p-2.5 rounded-full hover:bg-[var(--surface-2)] transition-colors"
           >
             {mobileOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
@@ -164,7 +169,7 @@ export function Navbar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`block px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+              className={`block px-3 py-3 text-sm font-medium rounded-lg transition-colors ${
                 pathname === item.href
                   ? 'text-[var(--primary)] bg-[var(--surface-2)]'
                   : 'text-[var(--text)] hover:bg-[var(--surface-2)]'
@@ -175,7 +180,7 @@ export function Navbar() {
           ))}
           <Link
             href="/ask"
-            className="block w-full px-3 py-2 text-sm font-semibold text-[#17231C] bg-[var(--accent)] hover:bg-[var(--accent-light)] rounded-lg transition-colors text-center"
+            className="block w-full px-3 py-3 text-sm font-semibold text-[#17231C] bg-[var(--accent)] hover:bg-[var(--accent-light)] rounded-lg transition-colors text-center"
           >
             Ask a question
           </Link>
@@ -189,27 +194,27 @@ export function Navbar() {
                   Admin
                 </Link>
               )}
-              <Link href="/notifications" className="block px-3 py-2 text-sm text-[var(--text)] hover:bg-[var(--surface-2)] rounded-lg transition-colors">
+              <Link href="/notifications" className="block px-3 py-3 text-sm text-[var(--text)] hover:bg-[var(--surface-2)] rounded-lg transition-colors">
                 Notifications
               </Link>
-              <Link href="/drafts" className="block px-3 py-2 text-sm text-[var(--text)] hover:bg-[var(--surface-2)] rounded-lg transition-colors">
+              <Link href="/drafts" className="block px-3 py-3 text-sm text-[var(--text)] hover:bg-[var(--surface-2)] rounded-lg transition-colors">
                 Drafts
               </Link>
-              <Link href="/bookmarks" className="block px-3 py-2 text-sm text-[var(--text)] hover:bg-[var(--surface-2)] rounded-lg transition-colors">
+              <Link href="/bookmarks" className="block px-3 py-3 text-sm text-[var(--text)] hover:bg-[var(--surface-2)] rounded-lg transition-colors">
                 Saved
               </Link>
               <Link
                 href="/me"
-                className="block px-3 py-2 text-sm text-[var(--text)] hover:bg-[var(--surface-2)] rounded-lg transition-colors"
+                className="block px-3 py-3 text-sm text-[var(--text)] hover:bg-[var(--surface-2)] rounded-lg transition-colors"
               >
                 Profile
               </Link>
-              <Link href="/settings" className="block px-3 py-2 text-sm text-[var(--text)] hover:bg-[var(--surface-2)] rounded-lg transition-colors">
+              <Link href="/settings" className="block px-3 py-3 text-sm text-[var(--text)] hover:bg-[var(--surface-2)] rounded-lg transition-colors">
                 Settings
               </Link>
               <button
                 onClick={() => signOut()}
-                className="w-full text-left px-3 py-2 text-sm text-[var(--text)] hover:bg-[var(--surface-2)] rounded-lg transition-colors"
+                className="w-full text-left px-3 py-3 text-sm text-[var(--text)] hover:bg-[var(--surface-2)] rounded-lg transition-colors"
               >
                 Sign Out
               </button>
@@ -218,13 +223,13 @@ export function Navbar() {
             <>
               <Link
                 href="/login"
-                className="block px-3 py-2 text-sm text-[var(--text)] hover:bg-[var(--surface-2)] rounded-lg transition-colors"
+                className="block px-3 py-3 text-sm text-[var(--text)] hover:bg-[var(--surface-2)] rounded-lg transition-colors"
               >
                 Login
               </Link>
               <Link
                 href="/register"
-                className="block px-3 py-2 text-sm font-semibold text-white bg-[var(--primary)] rounded-lg transition-colors text-center"
+                className="block px-3 py-3 text-sm font-semibold text-white bg-[var(--primary)] rounded-lg transition-colors text-center"
               >
                 Register
               </Link>
