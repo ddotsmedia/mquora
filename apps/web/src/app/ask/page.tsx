@@ -61,8 +61,7 @@ export default function AskPage() {
     setLanguage(detectLanguage(title));
   }, [title]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submit = async (status: 'PUBLISHED' | 'DRAFT') => {
     setLoading(true);
     setError('');
 
@@ -73,18 +72,21 @@ export default function AskPage() {
         .filter(Boolean);
 
       const token = session?.user?.accessToken;
-      const res = await apiFetch<{ id: string; seoSlug: string }>('/api/v1/posts', {
+      const res = await apiFetch<{ id: string; seoSlug: string; status: string }>('/api/v1/posts', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           title,
-          body: body || title, // body min 20 chars — fall back to title if empty
+          body: body || title,
           communityId,
           tags: tagArray,
+          status,
         }),
       });
 
-      if (res.seoSlug) {
+      if (status === 'DRAFT') {
+        router.push('/drafts');
+      } else if (res.seoSlug) {
         router.push(`/q/${res.seoSlug}`);
       }
     } catch (err) {
@@ -92,6 +94,11 @@ export default function AskPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    submit('PUBLISHED');
   };
 
   if (status === 'loading') {
@@ -194,13 +201,23 @@ export default function AskPage() {
             <p className="text-xs text-muted-foreground mt-2">Add relevant tags to help others find your question</p>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full px-6 py-3 bg-[var(--primary)] hover:bg-[var(--primary-light)] disabled:opacity-50 text-white font-semibold rounded-lg transition-colors"
-          >
-            {loading ? 'ചോദ്യം സൃഷ്ടിക്കുന്നത്...' : 'ചോദ്യം പോസ്റ്റ് ചെയ്യൂ'}
-          </button>
+          <div className="flex gap-3">
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 px-6 py-3 bg-[var(--primary)] hover:bg-[var(--primary-light)] disabled:opacity-50 text-white font-semibold rounded-lg transition-colors"
+            >
+              {loading ? 'ചോദ്യം സൃഷ്ടിക്കുന്നത്...' : 'ചോദ്യം പോസ്റ്റ് ചെയ്യൂ'}
+            </button>
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => submit('DRAFT')}
+              className="px-5 py-3 border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--surface-2)] disabled:opacity-50 font-medium rounded-lg transition-colors"
+            >
+              Save Draft
+            </button>
+          </div>
         </form>
       </div>
     </div>

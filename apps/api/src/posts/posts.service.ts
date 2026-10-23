@@ -32,9 +32,9 @@ export class PostsService {
         type: type as string,
         ...contentProcessed,
         seoSlug,
-        status: 'PUBLISHED',
+        status: ((dto.status as string) === 'DRAFT' ? 'DRAFT' : 'PUBLISHED') as 'DRAFT' | 'PUBLISHED',
       },
-      select: { id: true, seoSlug: true, title: true, authorId: true },
+      select: { id: true, seoSlug: true, title: true, authorId: true, status: true },
     });
 
     if (tags && Array.isArray(tags) && tags.length > 0) {
@@ -415,6 +415,26 @@ export class PostsService {
     );
 
     return result;
+  }
+
+  async findMyDrafts(authorId: string) {
+    const data = await this.prisma.post.findMany({
+      where: { authorId, status: 'DRAFT', deletedAt: null },
+      select: {
+        id: true, seoSlug: true, title: true, body: true, createdAt: true, updatedAt: true,
+        community: { select: { id: true, slug: true, name: true } },
+        tags: { select: { tag: { select: { id: true, name: true, slug: true } } } },
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: 50,
+    });
+    return { data };
+  }
+
+  async publishDraft(id: string, authorId: string) {
+    const post = await this.prisma.post.findFirst({ where: { id, authorId, status: 'DRAFT', deletedAt: null } });
+    if (!post) throw new Error('Draft not found');
+    return this.prisma.post.update({ where: { id }, data: { status: 'PUBLISHED' }, select: { id: true, seoSlug: true } });
   }
 
   async getTrendingTopics(limit = 5) {

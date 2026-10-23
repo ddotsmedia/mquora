@@ -1,4 +1,4 @@
-import { IsString, MinLength, MaxLength, IsOptional, ArrayMaxSize } from 'class-validator';
+import { IsString, MinLength, MaxLength, IsOptional, ArrayMaxSize, IsIn } from 'class-validator';
 
 export class CreatePostDto {
   @IsString()
@@ -22,4 +22,8 @@ export class CreatePostDto {
   @IsString({ each: true })
   @ArrayMaxSize(5)
   tags?: string[];
+
+  @IsOptional()
+  @IsIn(['DRAFT', 'PUBLISHED'])
+  status?: 'DRAFT' | 'PUBLISHED';
 }

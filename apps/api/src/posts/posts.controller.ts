@@ -60,6 +60,20 @@ export class PostsController {
     return this.postsService.findBySlug(seoSlug, view !== '0');
   }
 
+  @Get('me/drafts')
+  @UseGuards(JwtAuthGuard)
+  async myDrafts(@Req() req: Request) {
+    const authorId = (req.user as Record<string, unknown>).id as string;
+    return this.postsService.findMyDrafts(authorId);
+  }
+
+  @Post(':id/publish')
+  @UseGuards(JwtAuthGuard)
+  async publishDraft(@Param('id') id: string, @Req() req: Request) {
+    const authorId = (req.user as Record<string, unknown>).id as string;
+    return this.postsService.publishDraft(id, authorId);
+  }
+
   @Post()
   @UseGuards(JwtAuthGuard)
   async create(@Body() dto: CreatePostDto, @Req() req: Request) {
