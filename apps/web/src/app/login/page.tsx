@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { AuthError } from 'next-auth';
 import { auth, signIn } from '@/auth';
-import { AuthCard, authButton, authInput } from '@/components/auth-card';
+import { AuthCard, authButton, authDivider, authInput, GoogleSignInButton } from '@/components/auth-card';
 
 // Server-side sign-in: no client JS, never cached, so stale browser bundles can't break login.
 export const dynamic = 'force-dynamic';
@@ -51,6 +51,8 @@ export default async function LoginPage({
       {sp.pending && <div className="mb-4 rounded-xl bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400">Your account is awaiting admin approval. Please check back soon.</div>}
       {sp.expired && !sp.error && <div className="mb-4 rounded-xl bg-amber-500/10 p-3 text-sm text-amber-700">Your session expired. Please log in again.</div>}
       {sp.registered && <div className="mb-4 rounded-xl bg-green-500/10 p-3 text-sm text-green-700">Account created. Please log in.</div>}
+      <GoogleSignInButton callbackUrl={cb || undefined} />
+      {authDivider}
       <form action={login} className="space-y-4">
         <input type="hidden" name="callbackUrl" value={cb} />
         <input type="email" name="email" placeholder="Email" autoComplete="username" className={authInput} required />

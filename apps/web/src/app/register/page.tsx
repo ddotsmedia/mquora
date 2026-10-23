@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
-import { AuthCard, authButton, authInput } from '@/components/auth-card';
+import { AuthCard, authButton, authDivider, authInput, GoogleSignInButton } from '@/components/auth-card';
 
 export const dynamic = 'force-dynamic';
 
@@ -54,6 +54,8 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
       footer={<>Already have an account? <Link href="/login" className="font-medium text-[var(--primary)] hover:underline">Log in</Link></>}
     >
       {sp.error && <div className="mb-4 rounded-xl bg-red-500/10 p-3 text-sm text-red-600">{sp.error}</div>}
+      <GoogleSignInButton />
+      {authDivider}
       <form action={register} className="space-y-4">
         <input name="displayName" placeholder="Your name" minLength={2} maxLength={100} autoComplete="name" className={authInput} required />
         <input name="username" placeholder="Username (letters, numbers, _)" minLength={2} maxLength={50} pattern="[A-Za-z0-9_]+" autoComplete="username" className={authInput} required />

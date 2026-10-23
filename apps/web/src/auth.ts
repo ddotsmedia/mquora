@@ -1,4 +1,4 @@
-import NextAuth from 'next-auth';
+import NextAuth, { type Account, type Profile } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 import './types/auth';
@@ -83,6 +83,35 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   pages: { signIn: '/login' },
   callbacks: {
+    async signIn({ user, account }) {
+      // OAuth providers: exchange the NextAuth user for real API tokens
+      if (account?.provider && account.provider !== 'credentials') {
+        try {
+          const res = await fetch(`${API}/api/v1/auth/oauth-signin`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: user.email,
+              name: user.name || user.email,
+              image: user.image,
+              provider: account.provider,
+            }),
+            cache: 'no-store',
+          });
+          if (!res.ok) return false;
+          const data = await res.json() as { accessToken: string; refreshToken: string; user: { id: string; email: string; username: string; displayName: string; role: string } };
+          // Stash tokens on the user object so the jwt callback can pick them up
+          (user as User).accessToken = data.accessToken;
+          (user as User).refreshToken = data.refreshToken;
+          (user as User).role = data.user.role;
+          user.id = data.user.id;
+          user.name = data.user.displayName;
+        } catch {
+          return false;
+        }
+      }
+      return true;
+    },
     async jwt({ token, user }) {
       if (user) {
         token.accessToken = (user as User).accessToken;

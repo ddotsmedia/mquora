@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, BadRequestException, ForbiddenException, UnauthorizedException, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaClient } from '@prisma/client';
 import * as argon2 from 'argon2';
@@ -87,6 +87,50 @@ export class AuthService {
 
   async logout(rawToken: string) {
     await this.prisma.session.deleteMany({ where: { tokenHash: hashToken(rawToken) } });
+  }
+
+  /** Called by NextAuth after a Google (or other OAuth) sign-in.
+   *  Creates the user on first visit; returns tokens like a normal login. */
+  async oauthSignin(dto: { email: string; name: string; image?: string; provider: string }) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let user = await (this.prisma as any).user.findUnique({
+      where: { email: dto.email },
+    }) as { id: string; email: string; username: string; displayName: string; role: string; deletedAt: Date | null; bannedAt: Date | null; bannedUntil: Date | null; isApproved: boolean } | null;
+
+    if (!user) {
+      // First Google sign-in — create account (auto-approved, no admin notification needed)
+      const base = dto.name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20) || 'user';
+      const suffix = Math.random().toString(36).slice(2, 7);
+      const username = `${base}${suffix}`;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      user = await (this.prisma as any).user.create({
+        data: {
+          email: dto.email,
+          displayName: dto.name,
+          username,
+          isApproved: true,
+          profile: { create: {} },
+        },
+        select: { id: true, email: true, username: true, displayName: true, role: true, deletedAt: true, bannedAt: true, bannedUntil: true, isApproved: true },
+      }) as typeof user;
+    } else {
+      if (user.deletedAt) throw new UnauthorizedException('Account deleted');
+      if (isBanned(user)) {
+        const until = user.bannedUntil ? ` until ${user.bannedUntil.toISOString().slice(0, 10)}` : ' permanently';
+        throw new ForbiddenException(`Account is suspended${until}`);
+      }
+      // Auto-approve existing un-approved users who now sign in via Google
+      if (!user.isApproved) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (this.prisma as any).user.update({ where: { id: user.id }, data: { isApproved: true } });
+      }
+    }
+
+    const tokens = await this.generateTokens(user!.id);
+    return {
+      ...tokens,
+      user: { id: user!.id, email: user!.email, username: user!.username, displayName: user!.displayName, role: user!.role },
+    };
   }
 
   async generateTokens(userId: string) {

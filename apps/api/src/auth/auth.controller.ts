@@ -60,6 +60,12 @@ export class AuthController {
     return { success: true };
   }
 
+  @Post('oauth-signin')
+  @HttpCode(200)
+  async oauthSignin(@Body() body: { email: string; name: string; image?: string; provider: string }) {
+    return this.authService.oauthSignin(body);
+  }
+
   @Get('health')
   health() {
     return { status: 'ok' };
