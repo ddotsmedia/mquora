@@ -27,8 +27,14 @@ export function SiteFooter() {
         </nav>
       </div>
       <p className="pb-4 text-center text-xs text-[var(--text-muted)]">© {new Date().getFullYear()} askvyo</p>
-      <div className="border-t border-[var(--border)]">
-        <p className="py-3 text-center text-xs text-[var(--text-muted)]">Built and managed by Ddotsmedia Technologies LLC</p>
+      <div>
+        <div className="h-[3px] bg-gradient-to-r from-red-500 via-yellow-400 via-green-500 via-blue-500 via-indigo-500 to-pink-500" />
+        <div className="bg-[#0f172a] py-3 text-center text-xs text-slate-500">
+          Built and managed by{' '}
+          <span className="bg-gradient-to-r from-sky-400 via-violet-400 to-pink-400 bg-clip-text font-semibold text-transparent">
+            Ddotsmedia Technologies LLC
+          </span>
+        </div>
       </div>
     </footer>
   );
