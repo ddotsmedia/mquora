@@ -61,7 +61,7 @@ export function PostCard(props: PostCardProps) {
 
           {/* Title */}
           <Link href={`/q/${props.seoSlug}`}>
-            <h3 className="font-semibold text-[var(--text)] group-hover:text-[var(--primary)] transition-colors leading-snug mb-2 font-malayalam line-clamp-2">
+            <h3 lang={props.language === 'MALAYALAM' || props.language === 'MIXED' ? 'ml' : undefined} className="font-semibold text-[var(--text)] group-hover:text-[var(--primary)] transition-colors leading-snug mb-2 font-malayalam line-clamp-2">
               {props.title}
             </h3>
           </Link>

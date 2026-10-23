@@ -7,6 +7,7 @@ import { PostCard } from '@/components/post-card';
 import { FollowButton } from '@/components/follow-button';
 import { formatDistanceToNow } from 'date-fns';
 import { siteOrigin } from '@/lib/site';
+import { MessageCircle } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -105,7 +106,7 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
     { label: 'Reputation', value: user.reputationScore },
     { label: 'Questions', value: user.stats.posts },
     { label: 'Answers', value: user.stats.answers },
-    { label: 'Total Views', value: user.stats.views },
+    { label: 'Content Views', value: user.stats.views },
     { label: 'Followers', value: user.stats.followers },
   ];
 
@@ -159,8 +160,9 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
             ) : (
               <>
                 <FollowButton userId={user.id} />
-                <Link href={`/q/new?to=${encodeURIComponent(user.username)}`} className="rounded-full border border-[var(--border)] px-4 py-1.5 text-sm text-[var(--primary)] hover:bg-[var(--primary)]/10">
-                  Ask
+                <Link href={`/ask?to=${encodeURIComponent(user.username)}`} className="flex items-center gap-1.5 rounded-full bg-[var(--primary)] px-4 py-1.5 text-sm text-white hover:bg-[var(--primary-light)] transition-colors">
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  Ask {user.displayName.split(' ')[0]}
                 </Link>
               </>
             )}

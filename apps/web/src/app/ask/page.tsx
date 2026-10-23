@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
@@ -15,6 +15,8 @@ interface Community {
 
 export default function AskPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const requestedUser = searchParams.get('to');
   const { data: session, status } = useSession();
   const [communities, setCommunities] = useState<Community[]>([]);
   const [title, setTitle] = useState('');
@@ -24,6 +26,7 @@ export default function AskPage() {
   const [language, setLanguage] = useState('ENGLISH');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [similarQuestions, setSimilarQuestions] = useState<Array<{id:string;seoSlug:string;title:string;answerCount:number}>>([]);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -61,6 +64,22 @@ export default function AskPage() {
     setLanguage(detectLanguage(title));
   }, [title]);
 
+  useEffect(() => {
+    if (title.length < 10) {
+      setSimilarQuestions([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const res = await apiFetch<{data: Array<{id:string;seoSlug:string;title:string;answerCount:number}>}>('/api/v1/posts/search?q=' + encodeURIComponent(title) + '&limit=5');
+        setSimilarQuestions(res.data || []);
+      } catch {
+        // silently ignore
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [title]);
+
   const submit = async (status: 'PUBLISHED' | 'DRAFT') => {
     setLoading(true);
     setError('');
@@ -87,6 +106,17 @@ export default function AskPage() {
       if (status === 'DRAFT') {
         router.push('/drafts');
       } else if (res.seoSlug) {
+        if (requestedUser && res.id) {
+          try {
+            await apiFetch(`/api/v1/posts/${res.id}/request-answer`, {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${token}` },
+              body: JSON.stringify({ username: requestedUser }),
+            });
+          } catch {
+            // silently ignore
+          }
+        }
         router.push(`/q/${res.seoSlug}`);
       }
     } catch (err) {
@@ -121,7 +151,12 @@ export default function AskPage() {
     <div className="min-h-screen bg-background py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold text-foreground mb-2">നിങ്ങളുടെ ചോദ്യം ചോദിക്കൂ</h1>
-        <p className="text-muted-foreground mb-8">Share your question and get answers from the community</p>
+        <p className="text-muted-foreground mb-4">Share your question and get answers from the community</p>
+        {requestedUser && (
+          <div className="mb-4 rounded-lg border border-[var(--primary)]/30 bg-[var(--primary)]/5 px-4 py-3 text-sm">
+            <span className="text-[var(--text-secondary)]">Asking <span className="font-semibold text-[var(--primary)]">@{requestedUser}</span> to answer your question</span>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="bg-card border border-border rounded-lg p-8 space-y-6">
           {error && (
@@ -146,6 +181,21 @@ export default function AskPage() {
                 language="ml-IN"
                 placeholder="Click mic to ask in Malayalam"
               />
+              {similarQuestions.length > 0 && (
+                <div className="mt-2 rounded-lg border border-[var(--border)] bg-[var(--surface-2)] p-3">
+                  <p className="mb-2 text-xs font-semibold text-[var(--text-muted)]">സമാന ചോദ്യങ്ങൾ (Similar questions)</p>
+                  <ul className="space-y-1.5">
+                    {similarQuestions.map((q) => (
+                      <li key={q.id}>
+                        <a href={`/q/${q.seoSlug}`} target="_blank" rel="noopener noreferrer" className="text-sm text-[var(--primary)] hover:underline">
+                          {q.title}
+                          <span className="ml-2 text-xs text-[var(--text-muted)]">{q.answerCount} answers</span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
             <div className="mt-2 flex items-center gap-2">
               <span className="text-xs text-muted-foreground">Detected language:</span>

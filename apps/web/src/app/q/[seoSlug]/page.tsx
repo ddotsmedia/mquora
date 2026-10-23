@@ -1,3 +1,5 @@
+export const revalidate = 60;
+
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { serverApiFetch } from '@/lib/api';
@@ -161,7 +163,7 @@ export default async function PostPage({ params, searchParams }: { params: Promi
           <span className="text-sm text-muted-foreground">{post.viewCount} views</span>
         </div>
 
-        <h1 className="text-3xl font-bold text-foreground mb-4">{post.title}</h1>
+        <h1 lang={post.language === 'MALAYALAM' || post.language === 'MIXED' ? 'ml' : undefined} className="text-3xl font-bold text-foreground mb-4">{post.title}</h1>
 
         <div className="flex items-center gap-4 mb-6 text-sm text-muted-foreground">
           <div>
@@ -187,7 +189,7 @@ export default async function PostPage({ params, searchParams }: { params: Promi
           <span className="ml-auto self-center"><ReportButton targetId={post.id} targetType="POST" /></span>
         </div>
 
-        <div className="prose dark:prose-invert max-w-none mb-6">
+        <div lang={post.language === 'MALAYALAM' || post.language === 'MIXED' ? 'ml' : undefined} className="prose dark:prose-invert max-w-none mb-6">
           <p className="text-foreground whitespace-pre-wrap">{post.body}</p>
         </div>
 
