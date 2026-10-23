@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { apiFetch } from '@/lib/api';
 import { LanguageBadge } from '@/components/language-badge';
 import { VoiceInput } from '@/components/VoiceInput';
@@ -13,7 +13,7 @@ interface Community {
   slug: string;
 }
 
-export default function AskPage() {
+function AskPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestedUser = searchParams.get('to');
@@ -271,5 +271,13 @@ export default function AskPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function AskPage() {
+  return (
+    <Suspense>
+      <AskPageInner />
+    </Suspense>
   );
 }
