@@ -214,4 +214,29 @@ export class NotificationsService {
       throw new InternalServerErrorException('Failed to create notification');
     }
   }
+
+  async list(userId: string, limit = 50) {
+    const data = await this.prisma.notification.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      take: Math.min(limit, 100),
+    });
+    return { data };
+  }
+
+  async markRead(userId: string, notificationId: string) {
+    await this.prisma.notification.updateMany({
+      where: { id: notificationId, userId },
+      data: { readAt: new Date() },
+    });
+    return { success: true };
+  }
+
+  async markAllRead(userId: string) {
+    await this.prisma.notification.updateMany({
+      where: { userId, readAt: null },
+      data: { readAt: new Date() },
+    });
+    return { success: true };
+  }
 }
