@@ -3,6 +3,8 @@ import Link from 'next/link';
 const LINKS = [
   ['About', '/about'],
   ['Guidelines', '/guidelines'],
+  ['Discover', '/discover'],
+  ['Search', '/search'],
   ['Topics', '/tags'],
   ['Communities', '/communities'],
   ['Leaderboard', '/leaderboard'],

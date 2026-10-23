@@ -1,30 +1,63 @@
-import type { Metadata } from 'next';
-import Link from 'next/link';
-import { serverApiFetch } from '@/lib/api';
+'use client';
 
-export const metadata: Metadata = {
-  title: 'Top contributors — askvyo',
-  description: 'The most helpful members of the Malayalam knowledge community, ranked by reputation.',
-  alternates: { canonical: '/leaderboard' },
-};
-export const revalidate = 300;
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { apiFetch } from '@/lib/api';
 
 type Row = { id: string; username: string; displayName: string; reputationScore: number; badges: { badge: { id: string; name: string } }[] };
+type Period = 'all' | 'month' | 'week';
 
-export default async function LeaderboardPage() {
-  let rows: Row[] = [];
-  try {
-    rows = (await serverApiFetch<{ data: Row[] }>('/api/v1/reputation/leaderboard?limit=50')).data;
-  } catch (e) {
-    console.error('leaderboard load failed', e);
-  }
+const PERIODS: { id: Period; label: string }[] = [
+  { id: 'all', label: 'All time' },
+  { id: 'month', label: 'This month' },
+  { id: 'week', label: 'This week' },
+];
+
+export default function LeaderboardPage() {
+  const [rows, setRows] = useState<Row[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState<Period>('all');
+
+  useEffect(() => {
+    setLoading(true);
+    apiFetch<{ data: Row[] }>(`/api/v1/reputation/leaderboard?limit=50&period=${period}`)
+      .then((r) => setRows(r.data ?? []))
+      .catch(() => setRows([]))
+      .finally(() => setLoading(false));
+  }, [period]);
+
   const medal = ['🥇', '🥈', '🥉'];
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      <h1 className="text-2xl font-bold text-[var(--text)]">Top contributors</h1>
-      <p className="mb-6 text-sm text-[var(--text-secondary)]">Reputation is earned through helpful answers, accepted answers and upvotes.</p>
-      {rows.length === 0 ? (
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--text)]">Top contributors</h1>
+          <p className="text-sm text-[var(--text-secondary)]">Reputation is earned through helpful answers, accepted answers and upvotes.</p>
+        </div>
+        {/* Period filter */}
+        <div className="flex gap-1 rounded-full border border-[var(--border)] bg-[var(--surface)] p-1">
+          {PERIODS.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => setPeriod(p.id)}
+              className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                period === p.id ? 'bg-[var(--primary)] text-white shadow-sm' : 'text-[var(--text-secondary)] hover:text-[var(--text)]'
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="space-y-2">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="h-16 animate-pulse rounded-xl border border-[var(--border)] bg-[var(--surface)]" />
+          ))}
+        </div>
+      ) : rows.length === 0 ? (
         <div className="rounded-xl border border-dashed border-[var(--border)] p-10 text-center text-[var(--text-muted)]">No contributors yet.</div>
       ) : (
         <ol className="divide-y divide-[var(--border)] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)]">

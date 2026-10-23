@@ -9,12 +9,13 @@ import { PopularThisWeek } from '@/components/PopularThisWeek';
 import { RecentQuestions } from '@/components/RecentQuestions';
 import { QuestionsByCategory } from '@/components/QuestionsByCategory';
 import { apiFetch } from '@/lib/api';
+import { QuestionOfTheDay } from '@/components/QuestionOfTheDay';
 
 type Post = Parameters<typeof PostCard>[0] & { id: string };
 type Stats = { communities: number; questions: number; answers: number; topics: number; members: number };
-type Tab = 'latest' | 'top' | 'unanswered';
+type Tab = 'latest' | 'top' | 'unanswered' | 'foryou';
 
-const TABS: { id: Tab; label: string; path: string }[] = [
+const PUBLIC_TABS: { id: Tab; label: string; path: string }[] = [
   { id: 'latest', label: 'Latest', path: '/api/v1/posts?limit=20' },
   { id: 'top', label: 'Top this week', path: '/api/v1/trending/posts?limit=20' },
   { id: 'unanswered', label: 'Unanswered', path: '/api/v1/trending/unanswered?limit=20' },
@@ -28,16 +29,29 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<Stats | null>(null);
 
+  const TABS: { id: Tab; label: string; path: string }[] = [
+    ...(session ? [{ id: 'foryou' as Tab, label: '✨ For You', path: '/api/v1/feed/for-you?limit=20' }] : []),
+    ...PUBLIC_TABS,
+  ];
+
   useEffect(() => {
     apiFetch<Stats>('/api/v1/trending/stats').then(setStats).catch(() => setStats(null));
   }, []);
 
   const load = useCallback(async (which: Tab, cursor?: string) => {
-    const base = TABS.find((t) => t.id === which)!.path;
-    const res = await apiFetch<{ data: Post[]; nextCursor?: string | null }>(cursor ? `${base}&cursor=${encodeURIComponent(cursor)}` : base);
+    const tabDef = TABS.find((t) => t.id === which) ?? PUBLIC_TABS.find((t) => t.id === which)!;
+    const base = tabDef.path;
+    const headers: Record<string, string> = {};
+    if (which === 'foryou' && session?.user?.accessToken) {
+      headers['Authorization'] = `Bearer ${session.user.accessToken}`;
+    }
+    const res = await apiFetch<{ data: Post[]; nextCursor?: string | null }>(
+      cursor ? `${base}&cursor=${encodeURIComponent(cursor)}` : base,
+      { headers }
+    );
     setPosts((prev) => (cursor ? [...prev, ...(res.data ?? [])] : res.data ?? []));
     setNextCursor(which === 'latest' ? res.nextCursor ?? null : null);
-  }, []);
+  }, [session]);
 
   useEffect(() => {
     setLoading(true);
@@ -170,7 +184,10 @@ export default function Home() {
           </div>
 
           <aside className="hidden lg:block">
-            <TrendingSidebar />
+            <div className="space-y-4">
+              <QuestionOfTheDay />
+              <TrendingSidebar />
+            </div>
           </aside>
         </div>
       </div>

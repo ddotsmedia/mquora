@@ -108,6 +108,9 @@ export function Navbar() {
                   Admin
                 </Link>
               )}
+              <Link href="/drafts" className="text-sm text-[var(--text-secondary)] hover:text-[var(--text)] transition-colors">
+                Drafts
+              </Link>
               <Link href="/bookmarks" className="text-sm text-[var(--text-secondary)] hover:text-[var(--text)] transition-colors">
                 Saved
               </Link>
@@ -188,6 +191,9 @@ export function Navbar() {
               )}
               <Link href="/notifications" className="block px-3 py-2 text-sm text-[var(--text)] hover:bg-[var(--surface-2)] rounded-lg transition-colors">
                 Notifications
+              </Link>
+              <Link href="/drafts" className="block px-3 py-2 text-sm text-[var(--text)] hover:bg-[var(--surface-2)] rounded-lg transition-colors">
+                Drafts
               </Link>
               <Link href="/bookmarks" className="block px-3 py-2 text-sm text-[var(--text)] hover:bg-[var(--surface-2)] rounded-lg transition-colors">
                 Saved
