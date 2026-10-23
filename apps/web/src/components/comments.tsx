@@ -29,10 +29,13 @@ export function Comments({ postId, answerId, initialCount = 0 }: { postId?: stri
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(() => {
-    apiFetch<{ data: Comment[] }>(listPath, { cache: 'no-store' })
+    apiFetch<{ data: Comment[] }>(listPath, {
+      cache: 'no-store',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    })
       .then((r) => setItems(r.data))
       .catch(() => setItems([]));
-  }, [listPath]);
+  }, [listPath, token]);
 
   useEffect(() => {
     if (open && items === null) load();
