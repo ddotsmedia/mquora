@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { AuthError } from 'next-auth';
-import { auth, signIn } from '@/auth';
+import { auth } from '@/auth';
 import { AuthCard, authButton, authInput } from '@/components/auth-card';
 
 export const dynamic = 'force-dynamic';
@@ -25,21 +24,28 @@ async function register(formData: FormData) {
     const msg = Array.isArray(data.message) ? data.message.join(', ') : data.message || 'Registration failed';
     redirect(`/register?error=${encodeURIComponent(msg)}`);
   }
-  try {
-    await signIn('credentials', { email, password, redirectTo: '/post-login' });
-  } catch (e) {
-    if (e instanceof AuthError) {
-      // Registration succeeded but auto-login failed. Log the error type for debugging.
-      console.error('[register] signIn AuthError after successful registration:', e.type, e.message);
-      redirect('/login?registered=1');
-    }
-    throw e; // NEXT_REDIRECT on success (not an error)
-  }
+  // Registration now requires admin approval before login is possible.
+  redirect('/register?pending=1');
 }
 
-export default async function RegisterPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+export default async function RegisterPage({ searchParams }: { searchParams: Promise<{ error?: string; pending?: string }> }) {
   const [sp, session] = await Promise.all([searchParams, auth()]);
   if (session?.user?.accessToken && !session.error) redirect('/');
+
+  if (sp.pending) {
+    return (
+      <AuthCard
+        title="Registration submitted"
+        subtitle="Your account is awaiting admin approval."
+        footer={<><Link href="/login" className="font-medium text-[var(--primary)] hover:underline">Back to login</Link></>}
+      >
+        <div className="rounded-xl bg-emerald-500/10 p-4 text-sm text-emerald-600 dark:text-emerald-400">
+          <p className="font-semibold mb-1">Thank you for registering!</p>
+          <p>An admin will review your account shortly. You'll be able to log in once approved.</p>
+        </div>
+      </AuthCard>
+    );
+  }
 
   return (
     <AuthCard

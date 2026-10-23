@@ -18,9 +18,16 @@ enum UserRole {
 
 enum ContentStatus {
   DRAFT
+  PENDING_REVIEW
   PUBLISHED
   REMOVED
   DELETED
+}
+
+enum AdminNotifType {
+  USER_REGISTRATION
+  NEW_QUESTION
+  COMMAND
 }
 
 enum VoteType {
@@ -82,6 +89,7 @@ model User {
   role                  UserRole        @default(USER)
   reputationScore       Int             @default(0)
   isVerified            Boolean         @default(false)
+  isApproved            Boolean         @default(false)
   bannedAt              DateTime?
   bannedUntil           DateTime?
   deletedAt             DateTime?
@@ -659,6 +667,22 @@ model DuplicateCandidate {
   @@index([sourcePostId])
   @@index([targetPostId])
   @@index([status])
+}
+
+model AdminNotification {
+  id                String          @id @default(cuid())
+  type              AdminNotifType
+  title             String
+  body              String
+  link              String?
+  isRead            Boolean         @default(false)
+  relatedUserId     String?
+  relatedPostId     String?
+  createdAt         DateTime        @default(now())
+
+  @@index([isRead])
+  @@index([createdAt])
+  @@index([type])
 }
 
 model NotificationSubscription {

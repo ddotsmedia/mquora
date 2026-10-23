@@ -54,7 +54,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
 
         if (!res.ok) {
-          console.error('[auth] authorize login failed:', res.status, await res.text().catch(() => ''));
+          const body = await res.json().catch(() => ({})) as { message?: string };
+          const msg = typeof body.message === 'string' ? body.message : '';
+          console.error('[auth] authorize login failed:', res.status, msg);
+          if (res.status === 403 && msg.toLowerCase().includes('pending')) {
+            // Throw so NextAuth propagates an CredentialsSignin error with a distinguishable cause
+            throw new Error('PENDING_APPROVAL');
+          }
           return null;
         }
         const data = await res.json();

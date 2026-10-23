@@ -32,7 +32,8 @@ export class PostsService {
         type: type as string,
         ...contentProcessed,
         seoSlug,
-        status: ((dto.status as string) === 'DRAFT' ? 'DRAFT' : 'PUBLISHED') as 'DRAFT' | 'PUBLISHED',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        status: ((dto.status as string) === 'DRAFT' ? 'DRAFT' : 'PENDING_REVIEW') as any,
       },
       select: { id: true, seoSlug: true, title: true, authorId: true, status: true },
     });
@@ -54,6 +55,21 @@ export class PostsService {
     if (communityId) await this.prisma.community.update({ where: { id: communityId as string }, data: { postCount: { increment: 1 } } }).catch(() => undefined);
     await this.prisma.questionFollow.create({ data: { userId: authorId, postId: post.id } }).catch(() => undefined);
     await this.prisma.post.update({ where: { id: post.id }, data: { followerCount: 1 } }).catch(() => undefined);
+
+    // Notify admins about new question pending review (fire-and-forget)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((post.status as string) === 'PENDING_REVIEW') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (this.prisma as any).adminNotification.create({ // eslint-disable-line
+        data: {
+          type: 'NEW_QUESTION',
+          title: 'New question pending review',
+          body: `"${post.title}" is awaiting approval`,
+          link: `/admin/content?id=${post.id}`,
+          relatedPostId: post.id,
+        },
+      }).catch(() => undefined);
+    }
 
     await this.embeddingQueue.add(
       { type: 'POST', id: post.id, text: `${title} ${body}` },

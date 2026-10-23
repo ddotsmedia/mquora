@@ -730,4 +730,69 @@ export class AdminService {
     await this.audit(actor.id, 'USERS_EXPORT', 'USER', 'all', { rows: rows.length });
     return [head.join(','), ...lines].join('\n');
   }
+
+  // ── Admin notifications ──────────────────────────────────────────────────
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private get an(): any { return (this.prisma as any).adminNotification; }
+
+  async getAdminNotifications(unreadOnly = false) {
+    const where = unreadOnly ? { isRead: false } : {};
+    const [items, unreadCount] = await Promise.all([
+      this.an.findMany({ where, orderBy: { createdAt: 'desc' }, take: 100 }),
+      this.an.count({ where: { isRead: false } }),
+    ]);
+    return { items, unreadCount };
+  }
+
+  async markAdminNotificationRead(id: string) {
+    await this.an.update({ where: { id }, data: { isRead: true } });
+    return { success: true };
+  }
+
+  async markAllAdminNotificationsRead() {
+    await this.an.updateMany({ where: { isRead: false }, data: { isRead: true } });
+    return { success: true };
+  }
+
+  // ── Approval ─────────────────────────────────────────────────────────────
+
+  async approveUser(actor: Actor, userId: string) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const user = await (this.prisma as any).user.update({
+      where: { id: userId },
+      data: { isApproved: true },
+      select: { id: true, username: true, displayName: true },
+    }) as { id: string; username: string; displayName: string };
+    await this.an.updateMany({
+      where: { type: 'USER_REGISTRATION', relatedUserId: userId, isRead: false },
+      data: { isRead: true },
+    });
+    await this.audit(actor.id, 'USER_APPROVED', 'USER', userId, { username: user.username });
+    return { success: true, user };
+  }
+
+  async rejectUser(actor: Actor, userId: string) {
+    await this.prisma.user.update({ where: { id: userId }, data: { deletedAt: new Date() } });
+    await this.an.updateMany({
+      where: { type: 'USER_REGISTRATION', relatedUserId: userId, isRead: false },
+      data: { isRead: true },
+    });
+    await this.audit(actor.id, 'USER_REJECTED', 'USER', userId, {});
+    return { success: true };
+  }
+
+  async approveContent(actor: Actor, postId: string) {
+    const post = await this.prisma.post.update({
+      where: { id: postId },
+      data: { status: 'PUBLISHED' },
+      select: { id: true, title: true },
+    });
+    await this.an.updateMany({
+      where: { type: 'NEW_QUESTION', relatedPostId: postId, isRead: false },
+      data: { isRead: true },
+    });
+    await this.audit(actor.id, 'CONTENT_APPROVED', 'POST', postId, { title: post.title });
+    return { success: true, post };
+  }
 }

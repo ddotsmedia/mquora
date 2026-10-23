@@ -2,8 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { apiFetch } from '@/lib/api';
+import { useSession } from 'next-auth/react';
 import {
   BarChart3,
+  Bell,
   Flag,
   LayoutDashboard,
   Newspaper,
@@ -23,6 +27,12 @@ export const sections = [
     items: [
       { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
+    ],
+  },
+  {
+    title: 'Approvals',
+    items: [
+      { href: '/admin/notifications', label: 'Notifications', icon: Bell, badge: true },
     ],
   },
   {
@@ -54,6 +64,24 @@ export const sections = [
 
 export default function AdminNav() {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    const token = session?.user?.accessToken;
+    if (!token) return;
+    const load = () => {
+      apiFetch<{ unreadCount: number }>('/api/v1/admin/notifications?unreadOnly=true', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((r) => setUnreadCount(r.unreadCount ?? 0))
+        .catch(() => undefined);
+    };
+    load();
+    const interval = setInterval(load, 30_000);
+    return () => clearInterval(interval);
+  }, [session?.user?.accessToken]);
+
   return (
     <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-4">
       {sections.map((s) => (
@@ -63,6 +91,7 @@ export default function AdminNav() {
             {s.items.map((item) => {
               const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
               const Icon = item.icon;
+              const count = (item as { badge?: boolean }).badge ? unreadCount : 0;
               return (
                 <Link
                   key={item.href}
@@ -74,7 +103,12 @@ export default function AdminNav() {
                   }`}
                 >
                   <Icon className={`h-4 w-4 ${active ? 'text-[var(--accent)]' : ''}`} />
-                  {item.label}
+                  <span className="flex-1">{item.label}</span>
+                  {count > 0 && (
+                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                      {count > 99 ? '99+' : count}
+                    </span>
+                  )}
                 </Link>
               );
             })}

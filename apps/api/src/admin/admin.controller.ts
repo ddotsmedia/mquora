@@ -200,4 +200,38 @@ export class AdminController {
   getAnalytics() {
     return this.admin.getAnalytics();
   }
+
+  // ── Admin notifications ────────────────────────────────────────────────────
+
+  @Get('notifications')
+  getAdminNotifications(@Query('unreadOnly') unreadOnly?: string) {
+    return this.admin.getAdminNotifications(unreadOnly === 'true');
+  }
+
+  @Post('notifications/:id/read')
+  markAdminNotificationRead(@Param('id') id: string) {
+    return this.admin.markAdminNotificationRead(id);
+  }
+
+  @Post('notifications/read-all')
+  markAllAdminNotificationsRead() {
+    return this.admin.markAllAdminNotificationsRead();
+  }
+
+  // ── Approval endpoints ─────────────────────────────────────────────────────
+
+  @Post('users/:id/approve')
+  approveUser(@Req() req: { user: Actor }, @Param('id') id: string) {
+    return this.admin.approveUser(this.actor(req), id);
+  }
+
+  @Post('users/:id/reject')
+  rejectUser(@Req() req: { user: Actor }, @Param('id') id: string) {
+    return this.admin.rejectUser(this.actor(req), id);
+  }
+
+  @Post('content/:id/approve')
+  approveContent(@Req() req: { user: Actor }, @Param('id') id: string) {
+    return this.admin.approveContent(this.actor(req), id);
+  }
 }

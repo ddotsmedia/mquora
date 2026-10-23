@@ -23,28 +23,43 @@ export class AuthService {
     if (existing) throw new BadRequestException('Email or username already exists');
 
     const passwordHash = await argon2.hash(dto.password);
-    const user = await this.prisma.user.create({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const user = await (this.prisma as any).user.create({
       data: {
         email: dto.email,
         displayName: dto.displayName,
         username: dto.username,
         passwordHash,
+        isApproved: false,
         profile: { create: {} },
       },
-      select: { id: true, email: true, username: true, role: true },
+      select: { id: true, email: true, username: true, role: true, displayName: true },
+    }) as { id: string; email: string; username: string; role: string; displayName: string };
+
+    // Notify admins about new registration
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (this.prisma as any).adminNotification.create({
+      data: {
+        type: 'USER_REGISTRATION',
+        title: 'New user registration',
+        body: `${dto.displayName} (@${dto.username}) registered and is awaiting approval`,
+        link: `/admin/users/${user.id}`,
+        relatedUserId: user.id,
+      },
     });
 
-    const tokens = await this.generateTokens(user.id);
-    return { ...tokens, user };
+    return { pending: true, message: 'Registration successful. Your account is awaiting admin approval before you can log in.' };
   }
 
   async login(dto: LoginDto) {
-    const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const user = await (this.prisma as any).user.findUnique({ where: { email: dto.email } }) as any;
     if (!user || !user.passwordHash) throw new UnauthorizedException('Invalid credentials');
     if (user.deletedAt) throw new UnauthorizedException('Account deleted');
 
     const valid = await argon2.verify(user.passwordHash, dto.password);
     if (!valid) throw new UnauthorizedException('Invalid credentials');
+    if (!user.isApproved) throw new ForbiddenException('Your account is pending admin approval. You will be notified once approved.');
     if (isBanned(user)) {
       const until = user.bannedUntil ? ` until ${user.bannedUntil.toISOString().slice(0, 10)}` : ' permanently';
       throw new ForbiddenException(`Account is suspended${until}`);
