@@ -1,4 +1,5 @@
 import { IsOptional, IsString, IsUrl, MaxLength, MinLength, ValidateIf } from 'class-validator';
+import { IsNotEmpty } from 'class-validator';
 
 export class UpdateMeDto {
   @IsOptional() @IsString() @MinLength(2) @MaxLength(60) displayName?: string;
@@ -10,4 +11,9 @@ export class UpdateMeDto {
   @ValidateIf((o: UpdateMeDto) => !!o.website)
   @IsUrl({ require_protocol: true, protocols: ['http', 'https'] })
   website?: string;
+}
+
+export class ChangePasswordDto {
+  @IsNotEmpty() @IsString() currentPassword: string = '';
+  @IsNotEmpty() @IsString() @MinLength(8) @MaxLength(72) newPassword: string = '';
 }

@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import * as argon2 from 'argon2';
 import { PrismaClient } from '@prisma/client';
 import { UpdateMeDto } from './users.dto';
 
@@ -107,6 +108,17 @@ export class UsersService {
       orderBy: { displayName: 'asc' },
     });
     return { data };
+  }
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { passwordHash: true } });
+    if (!user) throw new NotFoundException('User not found');
+    if (!user.passwordHash) throw new BadRequestException('This account uses social login — password cannot be changed here');
+    const valid = await argon2.verify(user.passwordHash, currentPassword);
+    if (!valid) throw new UnauthorizedException('Current password is incorrect');
+    const newHash = await argon2.hash(newPassword);
+    await this.prisma.user.update({ where: { id: userId }, data: { passwordHash: newHash } });
+    return { ok: true };
   }
 
   // A user's answers with the question they belong to (profile "Answers" tab).

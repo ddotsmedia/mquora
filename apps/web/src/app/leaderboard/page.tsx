@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
+import { ReputationBadge } from '@/components/reputation-badge';
 
 type Row = { id: string; username: string; displayName: string; reputationScore: number; badges: { badge: { id: string; name: string } }[] };
 type Period = 'all' | 'month' | 'week';
@@ -65,7 +66,10 @@ export default function LeaderboardPage() {
             <li key={u.id} className="flex items-center gap-4 p-4">
               <span className="w-8 text-center text-lg tabular-nums text-[var(--text-muted)]">{medal[i] ?? i + 1}</span>
               <div className="min-w-0 flex-1">
-                <Link href={`/profile/${u.username}`} className="font-medium text-[var(--text)] hover:underline">{u.displayName}</Link>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Link href={`/profile/${u.username}`} className="font-medium text-[var(--text)] hover:underline">{u.displayName}</Link>
+                  <ReputationBadge score={u.reputationScore} size="sm" />
+                </div>
                 <p className="text-xs text-[var(--text-muted)]">@{u.username}</p>
                 {u.badges.length > 0 && (
                   <div className="mt-1 flex flex-wrap gap-1">

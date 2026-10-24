@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Param, Patch, Query, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
-import { UpdateMeDto } from './users.dto';
+import { UpdateMeDto, ChangePasswordDto } from './users.dto';
 import { UsersService } from './users.service';
 
 const uid = (req: Request) => (req.user as { id: string }).id;
@@ -27,6 +27,12 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   updateMe(@Req() req: Request, @Body() dto: UpdateMeDto) {
     return this.users.updateMe(uid(req), dto);
+  }
+
+  @Patch('me/password')
+  @UseGuards(JwtAuthGuard)
+  changePassword(@Req() req: Request, @Body() dto: ChangePasswordDto) {
+    return this.users.changePassword(uid(req), dto.currentPassword, dto.newPassword);
   }
 
   @Get(':username/answers')
