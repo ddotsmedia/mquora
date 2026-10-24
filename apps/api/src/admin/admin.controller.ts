@@ -234,4 +234,21 @@ export class AdminController {
   approveContent(@Req() req: { user: Actor }, @Param('id') id: string) {
     return this.admin.approveContent(this.actor(req), id);
   }
+
+  // ── Duplicate question management ──────────────────────────────────────────
+
+  @Get('duplicates')
+  listDuplicates(@Query('status') status?: string) {
+    return this.admin.listDuplicateCandidates(status || 'PENDING');
+  }
+
+  @Post('duplicates/:id/dismiss')
+  dismissDuplicate(@Req() req: { user: Actor }, @Param('id') id: string) {
+    return this.admin.dismissDuplicate(this.actor(req), id);
+  }
+
+  @Post('questions/merge')
+  mergeQuestions(@Req() req: { user: Actor }, @Body() body: { sourcePostId: string; targetPostId: string }) {
+    return this.admin.mergeQuestions(this.actor(req), body.sourcePostId, body.targetPostId);
+  }
 }

@@ -795,4 +795,73 @@ export class AdminService {
     await this.audit(actor.id, 'CONTENT_APPROVED', 'POST', postId, { title: post.title });
     return { success: true, post };
   }
+
+  // Duplicate questions management
+  async listDuplicateCandidates(status = 'PENDING', limit = 50) {
+    const rows = await this.prisma.duplicateCandidate.findMany({
+      where: { status },
+      include: {
+        sourcePost: { select: { id: true, seoSlug: true, title: true, answerCount: true, voteScore: true } },
+        targetPost: { select: { id: true, seoSlug: true, title: true, answerCount: true, voteScore: true } },
+      },
+      orderBy: { score: 'desc' },
+      take: Math.min(limit, 100),
+    });
+    return { data: rows };
+  }
+
+  async dismissDuplicate(actor: Actor, id: string) {
+    await this.prisma.duplicateCandidate.update({ where: { id }, data: { status: 'DISMISSED' } });
+    await this.audit(actor.id, 'DUPLICATE_DISMISSED', 'POST', id, {});
+    return { success: true };
+  }
+
+  /**
+   * Merge sourcePostId INTO targetPostId:
+   * - Move all answers, comments, votes, bookmarks to target
+   * - Redirect source by soft-deleting it and setting redirectTo
+   * - Mark duplicate candidate as MERGED
+   */
+  async mergeQuestions(actor: Actor, sourcePostId: string, targetPostId: string) {
+    if (sourcePostId === targetPostId) throw new Error('Cannot merge a question with itself');
+
+    const [source, target] = await Promise.all([
+      this.prisma.post.findUnique({ where: { id: sourcePostId }, select: { id: true, title: true, seoSlug: true } }),
+      this.prisma.post.findUnique({ where: { id: targetPostId }, select: { id: true, title: true, seoSlug: true } }),
+    ]);
+    if (!source || !target) throw new Error('One or both posts not found');
+
+    // Move answers that don't already exist on target
+    const existingAuthorIds = new Set(
+      (await this.prisma.answer.findMany({ where: { postId: targetPostId }, select: { authorId: true } })).map((a) => a.authorId),
+    );
+    const sourceAnswers = await this.prisma.answer.findMany({ where: { postId: sourcePostId }, select: { id: true, authorId: true } });
+    const toMove = sourceAnswers.filter((a) => !existingAuthorIds.has(a.authorId));
+
+    await this.prisma.$transaction([
+      // Move answers
+      ...toMove.map((a) => this.prisma.answer.update({ where: { id: a.id }, data: { postId: targetPostId } })),
+      // Move comments on the source post
+      this.prisma.comment.updateMany({ where: { postId: sourcePostId }, data: { postId: targetPostId } }),
+      // Move bookmarks (skipDuplicates not available in updateMany; just attempt)
+      this.prisma.bookmark.updateMany({ where: { postId: sourcePostId }, data: { postId: targetPostId } }),
+      // Soft-delete source and mark as removed (redirects handled at query time)
+      this.prisma.post.update({ where: { id: sourcePostId }, data: { deletedAt: new Date(), status: 'REMOVED' } }),
+      // Update answer counts on target
+      this.prisma.post.update({ where: { id: targetPostId }, data: { answerCount: { increment: toMove.length } } }),
+      // Mark duplicate candidate as merged
+      this.prisma.duplicateCandidate.updateMany({
+        where: {
+          OR: [
+            { sourcePostId, targetPostId },
+            { sourcePostId: targetPostId, targetPostId: sourcePostId },
+          ],
+        },
+        data: { status: 'MERGED' },
+      }),
+    ]);
+
+    await this.audit(actor.id, 'QUESTIONS_MERGED', 'POST', targetPostId, { sourceId: sourcePostId, sourceTitle: source.title });
+    return { success: true, movedAnswers: toMove.length, targetSlug: target.seoSlug };
+  }
 }

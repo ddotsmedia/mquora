@@ -37,6 +37,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <Link href="/admin/config" className="whitespace-nowrap text-[var(--text-secondary)]">Flags</Link>
             <Link href="/admin/communities" className="whitespace-nowrap text-[var(--text-secondary)]">Communities</Link>
             <Link href="/admin/announcements" className="whitespace-nowrap text-[var(--text-secondary)]">Announce</Link>
+            <Link href="/admin/duplicates" className="whitespace-nowrap text-[var(--text-secondary)]">Duplicates</Link>
             <Link href="/admin/system" className="whitespace-nowrap text-[var(--text-secondary)]">System</Link>
           </nav>
           <div className="hidden text-sm text-[var(--text-secondary)] md:block">Malayalam-first community · Admin</div>
