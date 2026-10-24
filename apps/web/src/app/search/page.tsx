@@ -9,16 +9,50 @@ import { VoiceInput } from '@/components/VoiceInput';
 type Post = {
   id: string;
   title: string;
-  body: string;
+  body?: string;
   seoSlug: string;
-  viewCount: number;
+  viewCount?: number;
   community?: { id: string; slug: string; name: string };
 };
 
 type SearchResponse = {
-  posts: Post[];
-  total: number;
+  data: Post[];
+  nextCursor: string | null;
+  searchType?: string;
 };
+
+// Basic Manglish → Malayalam transliteration map for common patterns.
+// Converts romanised Malayalam (e.g. "veedu", "ente") to script before searching.
+const MANGLISH_MAP: [RegExp, string][] = [
+  [/thiru/gi, 'തിരു'], [/tha/gi, 'ത'], [/thi/gi, 'തി'], [/thu/gi, 'തു'], [/the/gi, 'തെ'], [/tho/gi, 'തൊ'],
+  [/sha/gi, 'ശ'], [/shi/gi, 'ശി'], [/shu/gi, 'ശു'], [/sh/gi, 'ശ'],
+  [/cha/gi, 'ച'], [/chi/gi, 'ചി'], [/chu/gi, 'ചു'], [/ch/gi, 'ച'],
+  [/nna/gi, 'ന്ന'], [/nn/gi, 'ന്ന'],
+  [/aa/gi, 'ആ'], [/ee/gi, 'ഈ'], [/oo/gi, 'ഊ'],
+  [/veedu/gi, 'വീട്'], [/veetu/gi, 'വീട്'], [/loan/gi, 'ലോൺ'],
+  [/ente/gi, 'എന്റെ'], [/njan/gi, 'ഞാൻ'], [/njaan/gi, 'ഞാൻ'],
+  [/ka/gi, 'ക'], [/ki/gi, 'കി'], [/ku/gi, 'കു'], [/ke/gi, 'കെ'], [/ko/gi, 'കൊ'],
+  [/pa/gi, 'പ'], [/pi/gi, 'പി'], [/pu/gi, 'പു'],
+  [/ma/gi, 'മ'], [/mi/gi, 'മി'], [/mu/gi, 'മു'],
+  [/na/gi, 'ന'], [/ni/gi, 'നി'], [/nu/gi, 'നു'],
+  [/va/gi, 'വ'], [/vi/gi, 'വി'], [/vu/gi, 'വ'],
+  [/la/gi, 'ല'], [/li/gi, 'ലി'], [/lu/gi, 'ലു'],
+  [/ra/gi, 'ര'], [/ri/gi, 'രി'], [/ru/gi, 'രു'],
+];
+
+function hasMalayalam(text: string) {
+  return /[ഀ-ൿ]/.test(text);
+}
+
+// Returns original query + transliterated variant (if input is Manglish).
+function buildSearchQuery(input: string): string {
+  if (hasMalayalam(input) || input.trim().length < 3) return input;
+  let ml = input;
+  for (const [pat, rep] of MANGLISH_MAP) ml = ml.replace(pat, rep);
+  // If transliteration changed something meaningful, search both
+  if (ml !== input && ml.length > 2) return `${input} ${ml}`;
+  return input;
+}
 
 function SearchPageContent() {
   const searchParams = useSearchParams();
@@ -43,13 +77,11 @@ function SearchPageContent() {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiFetch<SearchResponse>('/api/v1/posts/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: q, limit, offset: off }),
-      });
-      setResults(data.posts);
-      setTotal(data.total);
+      const expanded = buildSearchQuery(q);
+      const params = new URLSearchParams({ q: expanded, limit: String(limit), cursor: String(off) });
+      const data = await apiFetch<SearchResponse>(`/api/v1/search?${params}`);
+      setResults(data.data);
+      setTotal(data.data.length + off);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Search failed');
     } finally {
@@ -121,7 +153,7 @@ function SearchPageContent() {
                     {post.community && (
                       <span className="text-[var(--text-secondary)]">{post.community.name}</span>
                     )}
-                    <span>{post.viewCount} views</span>
+                    {post.viewCount != null && <span>{post.viewCount} views</span>}
                   </div>
                 </Link>
               </div>
