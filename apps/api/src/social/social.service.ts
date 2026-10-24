@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
 const POST_CARD = {
@@ -174,6 +174,11 @@ export class SocialService {
   }
 
   async getAnswerRequests(userId: string, postId: string) {
+    // Only the question's author may see who was asked to answer it.
+    const post = await this.prisma.post.findUnique({ where: { id: postId, deletedAt: null }, select: { authorId: true } });
+    if (!post) throw new NotFoundException('Question not found');
+    if (post.authorId !== userId) throw new ForbiddenException('Only the question author can see answer requests');
+
     const requests = await this.prisma.answerRequest.findMany({
       where: { postId },
       select: {

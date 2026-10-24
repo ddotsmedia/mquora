@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { CheckCircle, XCircle, User, FileText, Loader2, ExternalLink } from 'lucide-react';
-import Link from 'next/link';
 
 interface PendingUser {
   id: string;

@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import sharp from 'sharp';
+import sharp, { type OverlayOptions } from 'sharp';
 export { siteDomain } from './site';
 
 // Share-card renderer. Uses sharp (libvips + Pango/HarfBuzz) because next/og (satori)
@@ -65,7 +65,7 @@ export async function renderCard({ kicker, title, meta, domain }: CardInput): Pr
     </svg>`,
   );
 
-  const layers: sharp.OverlayOptions[] = [];
+  const layers: OverlayOptions[] = [];
   let y = pad;
   if (kicker) {
     const k = await textLayer(

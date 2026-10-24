@@ -2,16 +2,6 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 
-// Web Speech API TypeScript declarations
-declare global {
-  interface Window {
-    SpeechRecognition: new () => SpeechRecognition;
-    webkitSpeechRecognition: new () => SpeechRecognition;
-  }
-  var SpeechRecognition: new () => SpeechRecognition;
-  var webkitSpeechRecognition: new () => SpeechRecognition;
-}
-
 interface SpeechRecognition extends EventTarget {
   continuous: boolean;
   interimResults: boolean;

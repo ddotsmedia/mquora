@@ -12,12 +12,12 @@ interface VoiceAskProps {
 
 type RecognitionState = 'idle' | 'listening' | 'processing' | 'error';
 
-declare global {
-  interface Window {
-    SpeechRecognition?: new () => SpeechRecognition;
-    webkitSpeechRecognition?: new () => SpeechRecognition;
-  }
-}
+type SpeechCtor = new () => SpeechRecognition;
+// Read the browser constructor without augmenting the global Window type (conflicts with useWebSpeech).
+const speechCtor = (): SpeechCtor | undefined => {
+  const w = window as unknown as { SpeechRecognition?: SpeechCtor; webkitSpeechRecognition?: SpeechCtor };
+  return w.SpeechRecognition || w.webkitSpeechRecognition;
+};
 
 interface SpeechRecognition extends EventTarget {
   lang: string;
@@ -63,11 +63,11 @@ export function VoiceAsk({ onTranscript, lang = 'ml-IN', disabled = false }: Voi
   const interimRef = useRef('');
 
   useEffect(() => {
-    setSupported(!!(window.SpeechRecognition || window.webkitSpeechRecognition));
+    setSupported(!!speechCtor());
   }, []);
 
   const start = useCallback(() => {
-    const Ctor = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const Ctor = speechCtor();
     if (!Ctor) return;
 
     const rec = new Ctor();
