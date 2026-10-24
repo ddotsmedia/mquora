@@ -107,6 +107,13 @@ else
   echo "WARNING: ADMIN_PASSWORD not set in PROD_ENV; skipping admin reset."
 fi
 
+# Always ensure the admin account is approved regardless of whether password was reset.
+# This is a no-op if already approved; safe to run on every deploy.
+echo "Ensuring admin account approval status..."
+if ! $COMPOSE run -T --rm --no-deps -e ADMIN_EMAIL api sh -c 'node packages/db/prisma/fix-admin-approval.mjs'; then
+  echo "WARNING: fix-admin-approval failed (non-fatal — check if admin account exists)"
+fi
+
 echo "Starting application services..."
 $COMPOSE up -d --remove-orphans web api worker
 
