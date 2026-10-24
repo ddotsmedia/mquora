@@ -4,6 +4,7 @@ import { useTheme } from 'next-themes';
 import { useSession, signOut } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import { NotificationBell } from './notification-bell';
+import { LanguageToggle } from '@/lib/i18n';
 import { useState } from 'react';
 import Link from 'next/link';
 import { Menu, X, Moon, Sun, Search, Plus } from 'lucide-react';
@@ -92,6 +93,7 @@ export function Navbar() {
         {/* Actions */}
         <div className="flex items-center gap-2 ml-auto">
           <NotificationBell />
+          <LanguageToggle className="hidden md:flex" />
           <ThemeToggle />
           <Link
             href="/ask"
