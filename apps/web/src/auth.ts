@@ -33,17 +33,28 @@ async function refreshAccessToken(refreshToken: string): Promise<{ accessToken: 
   }
 }
 
+// The visitor's address as seen by nginx. nginx appends it as the last X-Forwarded-For entry,
+// so that entry cannot be forged by the client (earlier entries can).
+function clientIp(headers: Headers): string {
+  const parts = (headers.get('x-forwarded-for') || '').split(',').map((s) => s.trim()).filter(Boolean);
+  return parts[parts.length - 1] || '';
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Credentials({
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         if (!credentials.email || !credentials.password) return null;
 
         let res: Response;
         try {
           res = await fetch(`${API}/api/v1/auth/login`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Internal-Secret': process.env.INTERNAL_API_SECRET || '',
+              'X-Client-IP': clientIp(request.headers),
+            },
             // API rejects unknown fields (csrfToken etc.), so send only these two
             body: JSON.stringify({ email: credentials.email, password: credentials.password }),
             cache: 'no-store',
