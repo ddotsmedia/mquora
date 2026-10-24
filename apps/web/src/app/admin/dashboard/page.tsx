@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Ban, FileText, MessageSquare, ShieldAlert, Users } from 'lucide-react';
+import { Ban, Clock, FileText, MessageSquare, ShieldAlert, Users } from 'lucide-react';
 import { adminFetch } from '@/lib/admin-server';
 import { Badge, EmptyState, PageHeader, Panel, StatCard, formatDate } from '@/components/admin/ui';
 import { ActivityChart, HorizontalBars, type DailyPoint } from '@/components/admin/Charts';
@@ -16,11 +16,12 @@ type AuditRow = { id: string; action: string; targetType: string | null; created
 const sum = (rows: DailyPoint[], k: keyof Omit<DailyPoint, 'date'>) => rows.reduce((a, r) => a + r[k], 0);
 
 export default async function DashboardPage() {
-  const [stats, ts, reports, audit] = await Promise.all([
+  const [stats, ts, reports, audit, pending] = await Promise.all([
     adminFetch<Stats>('/stats'),
     adminFetch<{ days: DailyPoint[] }>('/timeseries', { query: { days: 30 } }),
     adminFetch<{ data: Report[] }>('/reports', { query: { status: 'PENDING', limit: 5 } }),
     adminFetch<{ data: AuditRow[] }>('/audit-log', { query: { limit: 6 } }),
+    adminFetch<{ userTotal: number; postTotal: number }>('/pending').catch(() => ({ userTotal: 0, postTotal: 0 })),
   ]);
 
   const days = ts.days;
@@ -33,11 +34,14 @@ export default async function DashboardPage() {
     <div className="space-y-6">
       <PageHeader title="Overview" description="Live numbers for the community. Charts cover the last 30 days (UTC)." />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <StatCard label="Total users" value={stats.users.total} icon={Users} tone="green" delta={newUsers7 - newUsersPrev7} hint={`${stats.users.today} joined today`} />
         <StatCard label="Posts today" value={stats.posts.today} icon={FileText} tone="gold" hint={`${stats.posts.total.toLocaleString()} published`} />
         <StatCard label="Pending reports" value={stats.reports.pending} icon={ShieldAlert} tone="rose" hint={`${stats.reports.underReview} under review`} />
         <StatCard label="Answers (30d)" value={sum(days, 'answers')} icon={MessageSquare} tone="sky" hint={`${sum(days, 'logins')} sign-ins`} />
+        <Link href="/admin/pending">
+          <StatCard label="Waiting approval" value={pending.userTotal + pending.postTotal} icon={Clock} tone="gold" hint={`${pending.userTotal} users · ${pending.postTotal} posts`} />
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">

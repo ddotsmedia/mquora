@@ -42,8 +42,16 @@ export class AdminController {
   }
 
   @Get('users')
-  getUsers(@Query() q: UsersQueryDto) {
-    return this.admin.getUsers({ q: q.q, role: q.role, page: q.page, limit: q.limit });
+  getUsers(@Query() q: UsersQueryDto & { pending?: string }) {
+    return this.admin.getUsers({ q: q.q, role: q.role, page: q.page, limit: q.limit, pending: q.pending === 'true' });
+  }
+
+  @Get('pending')
+  getPending() {
+    return Promise.all([
+      this.admin.getUsers({ pending: true, limit: 20 }),
+      this.admin.getContent({ status: 'PENDING_REVIEW' as any, limit: 20 }),
+    ]).then(([users, posts]) => ({ users: users.data, userTotal: users.total, posts: posts.data, postTotal: posts.total }));
   }
 
   // Declared before users/:id so "export" is not treated as an id.

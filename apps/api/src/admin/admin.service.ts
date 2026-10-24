@@ -134,7 +134,7 @@ export class AdminService {
 
   // ---------- users ----------
 
-  async getUsers(opts: { q?: string; role?: UserRole; page?: number; limit?: number }) {
+  async getUsers(opts: { q?: string; role?: UserRole; page?: number; limit?: number; pending?: boolean }) {
     const where: Prisma.UserWhereInput = { deletedAt: null };
     const q = opts.q?.trim();
     if (q) {
@@ -145,6 +145,8 @@ export class AdminService {
       ];
     }
     if (opts.role) where.role = opts.role;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (opts.pending) (where as any).isApproved = false;
 
     const [rows, total] = await this.prisma.$transaction([
       this.prisma.user.findMany({

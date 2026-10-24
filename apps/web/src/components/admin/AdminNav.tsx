@@ -19,6 +19,7 @@ import {
   Tags,
   Megaphone,
   Activity,
+  Clock,
 } from 'lucide-react';
 
 export const sections = [
@@ -32,6 +33,7 @@ export const sections = [
   {
     title: 'Approvals',
     items: [
+      { href: '/admin/pending', label: 'Waiting', icon: Clock, badge: true },
       { href: '/admin/notifications', label: 'Notifications', icon: Bell, badge: true },
     ],
   },
