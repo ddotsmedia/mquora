@@ -98,6 +98,7 @@ model User {
 
   profile               UserProfile?
   sessions              Session[]
+  passwordResetTokens   PasswordResetToken[]
   identities            Identity[]
   posts                 Post[]
   answers               Answer[]
@@ -722,4 +723,17 @@ model AnswerRequest {
   @@index([postId])
   @@index([requesteeId])
   @@index([requesterId])
+}
+
+model PasswordResetToken {
+  id          String    @id @default(cuid())
+  userId      String
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

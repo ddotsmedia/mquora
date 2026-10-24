@@ -36,7 +36,7 @@ async function login(formData: FormData) {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; expired?: string; registered?: string; pending?: string; callbackUrl?: string }>;
+  searchParams: Promise<{ error?: string; expired?: string; registered?: string; pending?: string; reset?: string; callbackUrl?: string }>;
 }) {
   const sp = await searchParams;
   const cb = safe(sp.callbackUrl);
@@ -54,6 +54,7 @@ export default async function LoginPage({
       {sp.pending && <div className="mb-4 rounded-xl bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400">Your account is awaiting admin approval. Please check back soon.</div>}
       {sp.expired && !sp.error && <div className="mb-4 rounded-xl bg-amber-500/10 p-3 text-sm text-amber-700">Your session expired. Please log in again.</div>}
       {sp.registered && <div className="mb-4 rounded-xl bg-green-500/10 p-3 text-sm text-green-700">Account created. Please log in.</div>}
+      {sp.reset && <div className="mb-4 rounded-xl bg-green-500/10 p-3 text-sm text-green-700">Password updated. Log in with your new password.</div>}
       <GoogleSignInButton callbackUrl={cb || undefined} />
       {authDivider}
       <form action={login} className="space-y-4">
@@ -62,6 +63,7 @@ export default async function LoginPage({
         <input type="password" name="password" placeholder="Password" autoComplete="current-password" className={authInput} required />
         <button type="submit" className={authButton}>Log in</button>
       </form>
+      <p className="mt-4 text-center text-sm"><Link href="/forgot-password" className="text-[var(--primary)] hover:underline">Forgot password?</Link></p>
     </AuthCard>
   );
 }

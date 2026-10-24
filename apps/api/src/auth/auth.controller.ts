@@ -8,6 +8,7 @@ import { verifyTurnstile } from '../shared/turnstile';
 import { AuthService } from './auth.service';
 import { RegisterDto } from '../dto/register.dto';
 import { LoginDto } from '../dto/login.dto';
+import { ForgotPasswordDto, ResetPasswordDto } from '../dto/password-reset.dto';
 
 @Controller('api/v1/auth')
 export class AuthController {
@@ -83,6 +84,23 @@ export class AuthController {
   @HttpCode(200)
   async googleOneTap(@Body() body: { credential: string }) {
     return this.authService.googleOneTap(body.credential);
+  }
+
+  @Post('password-reset/request')
+  @UseGuards(EmailThrottleGuard)
+  @Throttle({ default: { limit: 5, ttl: 900000 } })
+  @HttpCode(200)
+  async requestPasswordReset(@Body() dto: ForgotPasswordDto) {
+    await this.authService.requestPasswordReset(dto.email);
+    return { message: 'If an account exists for that email, a reset link has been sent.' };
+  }
+
+  // No per-email throttle here: the web server calls this from one shared IP, and the 256-bit token
+  // already makes guessing infeasible.
+  @Post('password-reset/confirm')
+  @HttpCode(200)
+  async confirmPasswordReset(@Body() dto: ResetPasswordDto) {
+    return this.authService.confirmPasswordReset(dto.token, dto.newPassword);
   }
 
   @Get('health')

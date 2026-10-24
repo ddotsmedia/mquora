@@ -6,6 +6,7 @@ import { createHash, randomBytes } from 'crypto';
 import { RegisterDto } from '../dto/register.dto';
 import { LoginDto } from '../dto/login.dto';
 import { isBanned } from '../shared/ban';
+import { sendMail } from '../shared/mailer';
 
 // Refresh tokens are 256-bit random values; a fast deterministic hash is enough to look them up.
 const hashToken = (raw: string) => createHash('sha256').update(raw).digest('hex');
@@ -13,6 +14,7 @@ const hashToken = (raw: string) => createHash('sha256').update(raw).digest('hex'
 const ACCESS_TTL = '15m';
 const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const ROTATION_GRACE_MS = 30 * 1000;
+const RESET_TTL_MS = 30 * 60 * 1000;
 
 @Injectable()
 export class AuthService {
@@ -106,6 +108,60 @@ export class AuthService {
 
   async logout(rawToken: string) {
     await this.prisma.session.deleteMany({ where: { tokenHash: hashToken(rawToken) } });
+  }
+
+  // Emails a single-use reset link. Always returns normally so the response never reveals whether the account exists.
+  async requestPasswordReset(email: string): Promise<void> {
+    const user = await this.prisma.user.findFirst({
+      where: { email, deletedAt: null, isApproved: true, NOT: { passwordHash: null } },
+      select: { id: true, email: true, displayName: true },
+    });
+    if (!user) return;
+
+    const raw = randomBytes(32).toString('hex');
+    await this.prisma.$transaction([
+      this.prisma.passwordResetToken.deleteMany({ where: { userId: user.id, usedAt: null } }),
+      this.prisma.passwordResetToken.create({
+        data: { userId: user.id, tokenHash: hashToken(raw), expiresAt: new Date(Date.now() + RESET_TTL_MS) },
+      }),
+    ]);
+
+    const base = (process.env.NEXTAUTH_URL || process.env.SITE_URL || '').replace(/\/$/, '');
+    const link = `${base}/reset-password?token=${raw}`;
+    try {
+      await sendMail(
+        user.email,
+        'Reset your askvyo password',
+        `Hi ${user.displayName},\n\nUse this link to set a new password. It expires in 30 minutes and can be used once:\n\n${link}\n\nIf you did not ask for this, you can ignore this email. Your password stays the same.`,
+      );
+    } catch (error) {
+      // Logged, not thrown: the caller's response must not depend on delivery.
+      console.error('[auth] password reset email failed:', error);
+    }
+  }
+
+  // Sets a new password from a valid reset token, then signs the user out everywhere.
+  async confirmPasswordReset(rawToken: string, newPassword: string) {
+    const row = await this.prisma.passwordResetToken.findUnique({
+      where: { tokenHash: hashToken(rawToken) },
+      select: { id: true, userId: true, expiresAt: true },
+    });
+    if (!row || row.expiresAt < new Date()) throw new BadRequestException('This reset link is invalid or has expired');
+
+    // Claim the token atomically so two concurrent submissions cannot both succeed.
+    const claimed = await this.prisma.passwordResetToken.updateMany({
+      where: { id: row.id, usedAt: null },
+      data: { usedAt: new Date() },
+    });
+    if (claimed.count === 0) throw new BadRequestException('This reset link is invalid or has expired');
+
+    const passwordHash = await argon2.hash(newPassword);
+    await this.prisma.$transaction([
+      this.prisma.user.update({ where: { id: row.userId }, data: { passwordHash } }),
+      this.prisma.session.deleteMany({ where: { userId: row.userId } }),
+      this.prisma.passwordResetToken.deleteMany({ where: { userId: row.userId, usedAt: null } }),
+    ]);
+    return { ok: true };
   }
 
   // Revokes the session an access token was issued from, so the token stops working immediately.
