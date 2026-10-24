@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+const cn = (...parts: Array<string | false | null | undefined>) => parts.filter(Boolean).join(' ');
 
 export type BadgeTier = 'bronze' | 'silver' | 'gold' | 'platinum' | 'diamond';
 
