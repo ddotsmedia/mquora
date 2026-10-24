@@ -6,10 +6,13 @@ import { UserThrottleGuard } from '../guards/user-throttle.guard';
 import { AdminGuard } from '../guards/admin.guard';
 import { ModerationService } from './moderation.service';
 
+// Fixed reasons so admins can filter and count them. Keep in sync with REPORT_REASONS in report-button.tsx.
+const REPORT_REASONS = ['Spam', 'Abusive or hateful', 'Misinformation', 'Off-topic', 'Dangerous or illegal', 'Other'];
+
 class SubmitReportDto {
   @IsIn(['POST', 'ANSWER', 'COMMENT', 'USER']) targetType!: 'POST' | 'ANSWER' | 'COMMENT' | 'USER';
   @IsString() @MinLength(1) targetId!: string;
-  @IsString() @MinLength(2) @MaxLength(100) reason!: string;
+  @IsIn(REPORT_REASONS) reason!: string;
   @IsOptional() @IsString() @MaxLength(1000) details?: string;
 }
 

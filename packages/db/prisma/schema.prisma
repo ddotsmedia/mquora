@@ -28,6 +28,7 @@ enum AdminNotifType {
   USER_REGISTRATION
   NEW_QUESTION
   COMMAND
+  CONTENT_REPORT
 }
 
 enum VoteType {

@@ -3,6 +3,7 @@ import { LanguageBadge } from './language-badge';
 import { MessageCircle, Eye, ChevronUp, ChevronDown, FileText } from 'lucide-react';
 import { timeAgo } from '@/lib/time-ago';
 import { BookmarkButton } from './bookmark-button';
+import { ReportButton } from './report-button';
 
 interface PostCardProps {
   id: string;
@@ -98,6 +99,7 @@ export function PostCard(props: PostCardProps) {
                   {props.viewCount || 0}
                 </span>
               </div>
+              <ReportButton targetId={props.id} targetType="POST" />
               <BookmarkButton postId={props.id} />
             </div>
           </div>

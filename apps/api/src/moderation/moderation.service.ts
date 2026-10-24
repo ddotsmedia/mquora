@@ -15,6 +15,10 @@ export class ModerationService {
     reason: string,
     details?: string,
   ) {
+    if (!(await this.targetExists(targetType, targetId))) {
+      throw new NotFoundException('This content no longer exists');
+    }
+
     // One open report per user per item.
     const existing = await this.prisma.report.findFirst({
       where: { reporterId, targetId, targetType, status: { in: ['PENDING', 'UNDER_REVIEW'] } },
@@ -45,7 +49,35 @@ export class ModerationService {
       });
     }
 
+    // Alert admins on the first report and when the item reaches review, not on every report.
+    if (reportCount === 1 || reportCount === 3) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (this.prisma as any).adminNotification.create({
+        data: {
+          type: 'CONTENT_REPORT',
+          title: reportCount === 1 ? 'New content report' : 'Content needs review',
+          body: `${reportCount} report${reportCount === 1 ? '' : 's'} on a ${targetType.toLowerCase()}: ${reason}`,
+          link: '/admin/moderation?status=PENDING',
+        },
+      });
+    }
+
     return report;
+  }
+
+  // Only live content can be reported, so reports cannot point at deleted or invented IDs.
+  private async targetExists(targetType: 'POST' | 'ANSWER' | 'COMMENT' | 'USER', targetId: string): Promise<boolean> {
+    const where = { id: targetId, deletedAt: null };
+    switch (targetType) {
+      case 'POST':
+        return !!(await this.prisma.post.findFirst({ where, select: { id: true } }));
+      case 'ANSWER':
+        return !!(await this.prisma.answer.findFirst({ where, select: { id: true } }));
+      case 'COMMENT':
+        return !!(await this.prisma.comment.findFirst({ where, select: { id: true } }));
+      case 'USER':
+        return !!(await this.prisma.user.findFirst({ where, select: { id: true } }));
+    }
   }
 
   async getReports(status?: string, cursor?: string, limit = 20) {

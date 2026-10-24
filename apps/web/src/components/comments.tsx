@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 import { apiFetch, ApiError } from '@/lib/api';
 import { timeAgo } from '@/lib/time-ago';
+import { ReportButton } from './report-button';
 
 type Author = { id: string; username: string; displayName: string };
 type Reply = { id: string; body: string; createdAt: string; author: Author };
@@ -95,6 +96,9 @@ export function Comments({ postId, answerId, initialCount = 0 }: { postId?: stri
         — <Link href={`/profile/${c.author.username}`} className="text-[var(--primary)] hover:underline">{c.author.displayName}</Link> · {timeAgo(c.createdAt)}
         {!isReply && token && (
           <button onClick={() => setReplyTo(replyTo === c.id ? null : c.id)} className="ml-2 hover:text-[var(--primary)]">Reply</button>
+        )}
+        {token && c.author.id !== me && (
+          <span className="ml-2 align-middle"><ReportButton targetId={c.id} targetType="COMMENT" /></span>
         )}
         {(c.author.id === me || canModerate) && (
           <button onClick={() => remove(c.id)} className="ml-2 hover:text-red-600">Delete</button>
