@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { serverApiFetch } from '@/lib/api';
 
 export const metadata: Metadata = {
-  title: 'Topics — askvyo',
+  title: 'Topics people ask about — askvyo',
   description: 'Browse every topic people ask about on askvyo.',
   alternates: { canonical: '/tags' },
 };

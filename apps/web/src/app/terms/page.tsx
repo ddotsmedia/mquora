@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { StaticPage } from '@/components/static-page';
 
-export const metadata: Metadata = { title: 'Terms of use — askvyo', alternates: { canonical: '/terms' } };
+export const metadata: Metadata = { title: 'Terms of use for askvyo members', description: 'The terms for using askvyo, the Malayalam-first question and answer community.', alternates: { canonical: '/terms' } };
 
 export default function TermsPage() {
   return (

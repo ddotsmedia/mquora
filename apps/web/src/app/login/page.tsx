@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { AuthError } from 'next-auth';
@@ -6,6 +7,7 @@ import { AuthCard, authButton, authDivider, authInput, GoogleSignInButton } from
 
 // Server-side sign-in: no client JS, never cached, so stale browser bundles can't break login.
 export const dynamic = 'force-dynamic';
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 // Same-site relative paths only. Browsers read "//host" and "/\host" both as protocol-relative, so reject both,
 // along with control characters.

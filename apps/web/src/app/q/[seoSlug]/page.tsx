@@ -83,7 +83,7 @@ export async function generateMetadata({
     const post = await serverApiFetch<Post>(`/api/v1/posts/${seoSlug}?view=0`);
     const desc = `${post.body.substring(0, 120)} — ${post.answerCount} answer${post.answerCount !== 1 ? 's' : ''} on askvyo`;
     return {
-      title: `${post.title} — askvyo`,
+      title: `${post.title.length > 50 ? post.title.slice(0, 50).trimEnd() + '…' : post.title} — askvyo`,
       description: desc,
       alternates: { canonical: `/q/${post.seoSlug}` },
       openGraph: {

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { StaticPage } from '@/components/static-page';
 
-export const metadata: Metadata = { title: 'Community guidelines — askvyo', alternates: { canonical: '/guidelines' } };
+export const metadata: Metadata = { title: 'Community guidelines for askvyo members', description: 'Rules for asking, answering and commenting respectfully on askvyo.', alternates: { canonical: '/guidelines' } };
 
 export default function GuidelinesPage() {
   return (

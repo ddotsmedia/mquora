@@ -4,7 +4,7 @@ import { serverApiFetch } from '@/lib/api';
 import { PostCard } from '@/components/post-card';
 
 export const metadata: Metadata = {
-  title: 'Discover — askvyo',
+  title: 'Discover trending Malayalam questions — askvyo',
   description: 'Trending questions, popular topics and unanswered questions in the Malayalam community.',
   alternates: { canonical: '/discover' },
 };

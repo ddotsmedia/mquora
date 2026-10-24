@@ -46,7 +46,7 @@ export async function generateMetadata({
   try {
     const community = await serverApiFetch<Community>(`/api/v1/communities/${slug}`);
     return {
-      title: `${community.name} — askvyo`,
+      title: `${community.name} questions and answers — askvyo`,
       description: community.description || `Join the ${community.name} community on askvyo`,
       alternates: { canonical: `/c/${community.slug}` },
       openGraph: {

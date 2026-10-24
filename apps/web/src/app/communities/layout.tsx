@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Communities — askvyo',
+  title: 'Malayalam communities on askvyo — Kerala, UAE, jobs',
   description: 'Browse Malayalam communities on askvyo: Kerala, UAE, jobs, education, technology, health and more.',
   alternates: { canonical: '/communities' },
 };

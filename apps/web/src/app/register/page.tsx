@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
@@ -6,6 +7,7 @@ import { AuthCard, authDivider, GoogleSignInButton } from '@/components/auth-car
 import { RegisterForm } from '@/components/register-form';
 
 export const dynamic = 'force-dynamic';
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 export default async function RegisterPage({ searchParams }: { searchParams: Promise<{ error?: string; pending?: string }> }) {
   const [sp, session] = await Promise.all([searchParams, auth()]);

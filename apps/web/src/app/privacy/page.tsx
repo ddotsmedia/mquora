@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { StaticPage } from '@/components/static-page';
 
-export const metadata: Metadata = { title: 'Privacy policy — askvyo', alternates: { canonical: '/privacy' } };
+export const metadata: Metadata = { title: 'askvyo privacy policy — how we use your data', description: 'How askvyo collects, uses and protects your personal information.', alternates: { canonical: '/privacy' } };
 
 export default function PrivacyPage() {
   return (

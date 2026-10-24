@@ -9,8 +9,8 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: '*',
         allow: ['/', '/q/', '/c/', '/t/', '/profile/', '/communities', '/tags', '/discover', '/leaderboard'],
         disallow: [
-          '/admin/', '/api/', '/login', '/register', '/post-login',
-          '/notifications', '/bookmarks', '/ask', '/settings', '/me',
+          '/admin/', '/api/', '/post-login',
+          '/notifications', '/bookmarks', '/settings', '/me',
           '/drafts', '/for-you', '/following',
         ],
       },

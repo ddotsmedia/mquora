@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { StaticPage } from '@/components/static-page';
 
-export const metadata: Metadata = { title: 'About — askvyo', description: 'askvyo is a Malayalam-first question and answer community.', alternates: { canonical: '/about' } };
+export const metadata: Metadata = { title: 'About askvyo — Malayalam Q&A community', description: 'askvyo is a Malayalam-first question and answer community. Ask, answer and learn in Malayalam, English or Manglish.', alternates: { canonical: '/about' } };
 
 export default function AboutPage() {
   return (
