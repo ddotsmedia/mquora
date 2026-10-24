@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { LanguageBadge } from './language-badge';
-import { MessageCircle, Eye, ChevronUp, ChevronDown } from 'lucide-react';
+import { MessageCircle, Eye, ChevronUp, ChevronDown, FileText } from 'lucide-react';
 import { timeAgo } from '@/lib/time-ago';
 import { BookmarkButton } from './bookmark-button';
 
@@ -9,6 +9,7 @@ interface PostCardProps {
   title: string;
   seoSlug: string;
   body?: string;
+  type?: string;
   voteScore: number;
   answerCount: number;
   commentCount?: number;
@@ -53,6 +54,11 @@ export function PostCard(props: PostCardProps) {
           {/* Badges */}
           <div className="flex items-center gap-2 mb-2 flex-wrap">
             <LanguageBadge language={props.language} />
+            {props.type === 'ARTICLE' && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
+                <FileText className="h-2.5 w-2.5" /> Article
+              </span>
+            )}
             <span className="text-xs text-[var(--text-muted)]">in</span>
             <Link href={`/c/${props.community?.slug}`} className="text-xs font-medium text-[var(--primary)] hover:underline">
               {props.community?.name || 'General'}

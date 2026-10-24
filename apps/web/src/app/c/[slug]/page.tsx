@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import { serverApiFetch } from '@/lib/api';
 import { PostCard } from '@/components/post-card';
 import { JoinButton } from '@/components/join-button';
@@ -100,7 +101,21 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
           <span className="text-[var(--text-muted)]">{community.memberCount} members</span>
           <span className="text-[var(--text-muted)]">{community.postCount} posts</span>
         </div>
-        <JoinButton communityId={community.id} className="mt-4" />
+        <div className="mt-4 flex flex-wrap gap-2">
+          <JoinButton communityId={community.id} />
+          <Link
+            href={`/ask?communityId=${community.id}`}
+            className="rounded-full border border-[var(--border)] bg-[var(--surface-2)] px-4 py-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--primary)] hover:border-[var(--primary)] transition-colors"
+          >
+            Ask a question
+          </Link>
+          <Link
+            href={`/create/article?communityId=${community.id}`}
+            className="rounded-full border border-[var(--border)] bg-[var(--surface-2)] px-4 py-1.5 text-sm text-[var(--text-secondary)] hover:text-amber-600 hover:border-amber-500 transition-colors"
+          >
+            ✍️ Write article
+          </Link>
+        </div>
       </div>
 
       <div className="divide-y divide-[var(--border)]">

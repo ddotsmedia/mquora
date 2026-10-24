@@ -96,6 +96,13 @@ export function Navbar() {
           <LanguageToggle className="hidden md:flex" />
           <ThemeToggle />
           <Link
+            href="/create/article"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-2 border border-[var(--border)] text-[var(--text-secondary)] hover:text-amber-600 hover:border-amber-500 text-sm rounded-full transition-all"
+            title="Write an article"
+          >
+            ✍️
+          </Link>
+          <Link
             href="/ask"
             className="hidden sm:flex items-center gap-1.5 px-4 py-2 bg-[var(--accent)] hover:bg-[var(--accent-light)] text-[#17231C] font-semibold text-sm rounded-full transition-all shadow-sm"
           >

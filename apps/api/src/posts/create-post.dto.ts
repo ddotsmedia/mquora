@@ -3,11 +3,12 @@ import { IsString, MinLength, MaxLength, IsOptional, ArrayMaxSize, IsIn } from '
 export class CreatePostDto {
   @IsString()
   @MinLength(10)
-  @MaxLength(200)
+  @MaxLength(300)
   title!: string;
 
   @IsString()
   @MinLength(1)
+  @MaxLength(100000)
   body!: string;
 
   @IsOptional()

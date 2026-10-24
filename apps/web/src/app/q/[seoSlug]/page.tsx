@@ -29,6 +29,7 @@ interface Post {
   seoSlug: string;
   title: string;
   body: string;
+  type?: string;
   language: string;
   voteScore: number;
   voteCount?: number;
@@ -161,8 +162,13 @@ export default async function PostPage({ params, searchParams }: { params: Promi
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd).replace(/</g, '\\u003c') }} />
       <article className="p-4 sm:p-6">
-        <div className="mb-4 flex items-center gap-2">
+        <div className="mb-4 flex items-center gap-2 flex-wrap">
           <LanguageBadge language={post.language} />
+          {post.type === 'ARTICLE' && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
+              ✍️ Article
+            </span>
+          )}
           <span className="text-sm text-muted-foreground">{post.viewCount} views</span>
         </div>
 
@@ -221,7 +227,9 @@ export default async function PostPage({ params, searchParams }: { params: Promi
 
       <div className="border-t border-border p-6">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-2xl font-bold text-foreground">{answers.length} {answers.length === 1 ? 'Answer' : 'Answers'}</h2>
+          <h2 className="text-2xl font-bold text-foreground">
+            {answers.length} {post.type === 'ARTICLE' ? (answers.length === 1 ? 'Response' : 'Responses') : (answers.length === 1 ? 'Answer' : 'Answers')}
+          </h2>
           {answers.length > 1 && (
             <div className="flex gap-1 rounded-full border border-border bg-[var(--surface)] p-1 text-xs">
               {(['suggested', 'recent'] as const).map((s) => (
@@ -282,10 +290,12 @@ export default async function PostPage({ params, searchParams }: { params: Promi
           ))}
         </div>
 
-        <div id="your-answer" className="scroll-mt-20 border-t border-border pt-6">
-          <h3 className="text-lg font-semibold text-foreground mb-4">Your Answer</h3>
-          <AnswerForm postId={post.id} />
-        </div>
+        {post.type !== 'ARTICLE' && (
+          <div id="your-answer" className="scroll-mt-20 border-t border-border pt-6">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Your Answer</h3>
+            <AnswerForm postId={post.id} />
+          </div>
+        )}
       </div>
 
       {related.length > 0 && (
