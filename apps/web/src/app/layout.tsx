@@ -57,10 +57,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         />
       </head>
       <body className={`${sansFont.variable} ${malayalamFont.variable} font-sans bg-[var(--bg)] text-[var(--text)] min-h-screen`}>
+        <a href="#main-content" className="skip-link">Skip to content</a>
         <Providers>
           <PublicOnly><Navbar /></PublicOnly>
           <GoogleOneTap />
-          <main>{children}</main>
+          <main id="main-content">{children}</main>
           <PublicOnly><SiteFooter /></PublicOnly>
           <Toaster richColors position="top-center" />
         </Providers>

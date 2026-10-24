@@ -18,6 +18,8 @@ import { AcceptButton } from '@/components/accept-button';
 import { VerifiedBadge } from '@/components/verified-badge';
 import { FollowQuestionButton } from '@/components/follow-question-button';
 import { ReadMore } from '@/components/read-more';
+import { CollapsedAnswer } from '@/components/collapsed-answer';
+import { AnswerQuoteCard } from '@/components/answer-quote-card';
 import { formatDistanceToNow } from 'date-fns';
 import { siteOrigin } from '@/lib/site';
 
@@ -237,34 +239,41 @@ export default async function PostPage({ params, searchParams }: { params: Promi
 
         <div className="space-y-6 mb-8">
           {answers.map((answer) => (
-            <div key={answer.id} id={`answer-${answer.id}`} className={`rounded-xl border p-4 bg-[var(--surface)] ${answer.isAccepted ? 'border-green-600/50 ring-1 ring-green-600/20' : 'border-border'}`}>
-              {answer.isAccepted && (
-                <p className="text-sm text-green-600 dark:text-green-400 mb-2 font-semibold">✓ Accepted Answer</p>
-              )}
-              <div className="flex gap-3">
-                <AnswerVoting answerId={answer.id} initialVoteCount={answer.voteCount ?? 0} />
-                <div className="flex-1 min-w-0">
-                  <div className="mb-3 text-sm text-muted-foreground">
-                    <Link href={`/profile/${answer.author.username}`} className="font-semibold text-foreground hover:underline">{answer.author.displayName}</Link>
-                    <VerifiedBadge show={answer.author.isVerified} />
-                    {answer.author.profile?.credential && <span className="text-[var(--text-secondary)]"> · {answer.author.profile.credential}</span>}
-                    <p className="text-xs">
-                      {answer.updatedAt && new Date(answer.updatedAt).getTime() - new Date(answer.createdAt).getTime() > 60_000
-                        ? `Updated ${formatDistanceToNow(new Date(answer.updatedAt), { addSuffix: true })}`
-                        : formatDistanceToNow(new Date(answer.createdAt), { addSuffix: true })}
-                    </p>
-                  </div>
-                  <ReadMore text={answer.body} />
-                  <div className="mt-4 text-sm text-muted-foreground">
-                    <div className="mt-2 flex items-center gap-3">
-                      <AcceptButton answerId={answer.id} questionAuthorId={post.author.id} accepted={answer.isAccepted} />
-                      <ReportButton targetId={answer.id} targetType="ANSWER" />
+            <CollapsedAnswer key={answer.id} voteScore={answer.voteScore}>
+              <div id={`answer-${answer.id}`} className={`rounded-xl border p-4 bg-[var(--surface)] ${answer.isAccepted ? 'border-green-600/50 ring-1 ring-green-600/20' : 'border-border'}`}>
+                {answer.isAccepted && (
+                  <p className="text-sm text-green-600 dark:text-green-400 mb-2 font-semibold">✓ Accepted Answer</p>
+                )}
+                <div className="flex gap-3">
+                  <AnswerVoting answerId={answer.id} initialVoteCount={answer.voteCount ?? 0} />
+                  <div className="flex-1 min-w-0">
+                    <div className="mb-3 text-sm text-muted-foreground">
+                      <Link href={`/profile/${answer.author.username}`} className="font-semibold text-foreground hover:underline">{answer.author.displayName}</Link>
+                      <VerifiedBadge show={answer.author.isVerified} />
+                      {answer.author.profile?.credential && <span className="text-[var(--text-secondary)]"> · {answer.author.profile.credential}</span>}
+                      <p className="text-xs">
+                        {answer.updatedAt && new Date(answer.updatedAt).getTime() - new Date(answer.createdAt).getTime() > 60_000
+                          ? `Updated ${formatDistanceToNow(new Date(answer.updatedAt), { addSuffix: true })}`
+                          : formatDistanceToNow(new Date(answer.createdAt), { addSuffix: true })}
+                      </p>
                     </div>
+                    <ReadMore text={answer.body} />
+                    <div className="mt-4 text-sm text-muted-foreground">
+                      <div className="mt-2 flex flex-wrap items-center gap-3">
+                        <AcceptButton answerId={answer.id} questionAuthorId={post.author.id} accepted={answer.isAccepted} />
+                        <ReportButton targetId={answer.id} targetType="ANSWER" />
+                        <AnswerQuoteCard
+                          answerId={answer.id}
+                          authorName={answer.author.displayName}
+                          questionTitle={post.title}
+                        />
+                      </div>
+                    </div>
+                    <Comments answerId={answer.id} initialCount={answer.commentCount ?? 0} />
                   </div>
-                  <Comments answerId={answer.id} initialCount={answer.commentCount ?? 0} />
                 </div>
               </div>
-            </div>
+            </CollapsedAnswer>
           ))}
         </div>
 
