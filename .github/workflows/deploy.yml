@@ -101,12 +101,16 @@ jobs:
           PUBLIC_DOMAIN: ${{ vars.PUBLIC_DOMAIN || secrets.PUBLIC_DOMAIN }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
           GHCR_TOKEN: ${{ secrets.GHCR_PULL_TOKEN || secrets.GITHUB_TOKEN }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
         run: |
           mkdir -p .deploy
           printf '%s\n' "$PROD_ENV" > .deploy/prod.env
           printf 'GITHUB_REPOSITORY=%s\nIMAGE_TAG=%s\n' "$GITHUB_REPOSITORY" "$GITHUB_SHA" >> .deploy/prod.env
           # Inject GHCR credentials into prod.env so deploy.sh can docker login without env forwarding tricks
           printf 'GHCR_TOKEN=%s\nGITHUB_ACTOR=%s\n' "$GHCR_TOKEN" "$GITHUB_ACTOR" >> .deploy/prod.env
+          # Inject Google OAuth credentials
+          printf 'GOOGLE_CLIENT_ID=%s\nGOOGLE_CLIENT_SECRET=%s\n' "$GOOGLE_CLIENT_ID" "$GOOGLE_CLIENT_SECRET" >> .deploy/prod.env
           # Public domain (repo variable PUBLIC_DOMAIN, e.g. askvyo.com) overrides the URL settings in PROD_ENV.
           if [ -n "$PUBLIC_DOMAIN" ]; then
             {
