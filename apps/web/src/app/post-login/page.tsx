@@ -9,7 +9,7 @@ export default async function PostLogin({ searchParams }: { searchParams: Promis
   const { callbackUrl: cb } = await searchParams;
   const session = await auth();
   if (!session?.user?.accessToken || session.error) redirect('/login?expired=1');
-  if (cb && cb.startsWith('/') && !cb.startsWith('//')) redirect(cb);
+  if (cb && cb.startsWith('/') && !/^\/[\/\\]/.test(cb) && !/[\x00-\x1f\\]/.test(cb)) redirect(cb);
   const role = session.user?.role;
   const staff = role === 'ADMIN' || role === 'COMMUNITY_MODERATOR';
   // New members pick their interests first.

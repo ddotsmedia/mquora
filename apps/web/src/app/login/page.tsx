@@ -7,7 +7,10 @@ import { AuthCard, authButton, authDivider, authInput, GoogleSignInButton } from
 // Server-side sign-in: no client JS, never cached, so stale browser bundles can't break login.
 export const dynamic = 'force-dynamic';
 
-const safe = (cb?: string) => (cb && cb.startsWith('/') && !cb.startsWith('//') ? cb : '');
+// Same-site relative paths only. Browsers read "//host" and "/\host" both as protocol-relative, so reject both,
+// along with control characters.
+const safe = (cb?: string) =>
+  cb && cb.startsWith('/') && !/^\/[\/\\]/.test(cb) && !/[\x00-\x1f\\]/.test(cb) ? cb : '';
 
 async function login(formData: FormData) {
   'use server';

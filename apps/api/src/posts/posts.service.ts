@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import { PrismaClient } from '@prisma/client';
@@ -20,6 +20,7 @@ export class PostsService {
 
   async create(dto: Record<string, unknown>, authorId: string) {
     const { body, title, type, communityId, tags } = dto;
+    await this.assertCanPostIn(communityId as string | undefined, authorId);
     const contentProcessed = this.languageService.processContent(`${title} ${body}`);
     const seoSlug = `${this.nanoid()}-${slug(title as string, { lower: true }).slice(0, 50)}`;
 
@@ -459,6 +460,22 @@ export class PostsService {
   }
 
   /** Determine post status: DRAFT → DRAFT; spam → PENDING_REVIEW; trusted user → PUBLISHED; else PENDING_REVIEW */
+  // A post may go into a community only if it exists and is public, or the author is a member.
+  private async assertCanPostIn(communityId: string | undefined, userId: string): Promise<void> {
+    if (!communityId) return;
+    const community = await this.prisma.community.findFirst({
+      where: { id: communityId, deletedAt: null },
+      select: { isPublic: true },
+    });
+    if (!community) throw new BadRequestException('Community not found');
+    if (community.isPublic) return;
+    const member = await this.prisma.communityMember.findUnique({
+      where: { communityId_userId: { communityId, userId } },
+      select: { id: true },
+    });
+    if (!member) throw new ForbiddenException('You must join this community to post in it');
+  }
+
   private async resolvePostStatus(dto: Record<string, unknown>, authorId: string): Promise<string> {
     if ((dto.status as string) === 'DRAFT') return 'DRAFT';
 
