@@ -1,8 +1,9 @@
-import { Controller, Post, Get, Body, Res, Req, UseGuards, HttpCode, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Get, Body, Res, Req, UseGuards, HttpCode, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { EmailThrottleGuard } from '../guards/email-throttle.guard';
+import { verifyTurnstile } from '../shared/turnstile';
 import { AuthService } from './auth.service';
 import { RegisterDto } from '../dto/register.dto';
 import { LoginDto } from '../dto/login.dto';
@@ -14,7 +15,10 @@ export class AuthController {
   @Post('register')
   @UseGuards(EmailThrottleGuard)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
-  async register(@Body() dto: RegisterDto) {
+  async register(@Body() dto: RegisterDto & { 'cf-turnstile-response'?: string }) {
+    const token = dto['cf-turnstile-response'];
+    const ok = await verifyTurnstile(token);
+    if (!ok) throw new BadRequestException('Bot verification failed. Please try again.');
     return this.authService.register(dto);
   }
 
