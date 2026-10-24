@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!tag) return { title: 'Topic not found' };
   return {
     title: `#${tag.name} questions — askvyo`,
-    description: `${tag.postCount} questions about ${tag.name} in the Malayalam community.`,
+    description: `${tag.postCount} Malayalam questions about ${tag.name}, answered by Kerala and Gulf Malayalis on askvyo.`,
     alternates: { canonical: `/t/${tag.slug}` },
   };
 }

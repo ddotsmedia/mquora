@@ -47,11 +47,11 @@ export async function generateMetadata({
     const community = await serverApiFetch<Community>(`/api/v1/communities/${slug}`);
     return {
       title: `${community.name} questions and answers — askvyo`,
-      description: community.description || `Join the ${community.name} community on askvyo`,
+      description: community.description || `${community.name} questions and answers in Malayalam on askvyo. Ask, answer and learn with Kerala and Gulf Malayalis.`,
       alternates: { canonical: `/c/${community.slug}` },
       openGraph: {
         title: community.name,
-        description: community.description || `Join the ${community.name} community on askvyo`,
+        description: community.description || `${community.name} questions and answers in Malayalam on askvyo. Ask, answer and learn with Kerala and Gulf Malayalis.`,
         type: 'website',
         url: `/c/${community.slug}`,
         siteName: 'askvyo',

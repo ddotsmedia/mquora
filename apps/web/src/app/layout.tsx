@@ -12,10 +12,14 @@ import { siteOrigin } from "@/lib/site";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteOrigin()),
-  title: "askvyo - Malayalam Knowledge Community",
+  title: "askvyo — Malayalam Q&A and Knowledge Community",
   appleWebApp: { capable: true, title: "askvyo", statusBarStyle: "default" },
-  description: "A Malayalam-first knowledge community for learning, sharing, and discovering",
-  keywords: ['Malayalam Q&A', 'Malayalam questions', 'askvyo', 'Kerala knowledge community', 'ചോദ്യങ്ങൾ', 'Malayalam answers', 'Kerala community'],
+  description: "Malayalam Q&A for Kerala and Gulf Malayalis. Ask questions, get answers and share knowledge in Malayalam, English or Manglish.",
+  keywords: [
+    'Malayalam Q&A', 'Malayalam questions', 'Malayalam questions and answers', 'Malayalam Q&A community',
+    'Kerala questions', 'UAE Malayalam questions', 'Gulf Malayali Q&A', 'NRI questions Malayalam',
+    'askvyo', 'Kerala knowledge community', 'ചോദ്യങ്ങൾ', 'ചോദ്യോത്തരം', 'Malayalam answers', 'Kerala community',
+  ],
   openGraph: {
     title: "askvyo",
     description: "A Malayalam-first knowledge community",

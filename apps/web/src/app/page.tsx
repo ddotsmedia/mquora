@@ -82,7 +82,7 @@ export default function Home() {
             </span>
             <h1 className="mb-3 font-malayalam text-4xl font-bold leading-tight text-white md:text-5xl">അറിവ് പങ്കുവെക്കൂ</h1>
             <p className="mb-8 max-w-2xl text-lg text-white/75">
-              Ask questions, share what you know, and learn from Malayalis everywhere — in Malayalam, English or Manglish.
+              Malayalam Q&amp;A for Kerala and Gulf Malayalis. Ask questions, share what you know, and learn from Malayalis everywhere — in Malayalam, English or Manglish.
             </p>
             <div className="mb-10 flex flex-wrap gap-3">
               <Link href="/ask" className="w-full rounded-full bg-[#D4A017] px-6 py-3 text-center text-sm font-semibold text-[#17231C] shadow-lg shadow-black/20 transition hover:bg-[#E8BC45] sm:w-auto">
