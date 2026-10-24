@@ -1,4 +1,4 @@
-import NextAuth, { type Account, type Profile } from 'next-auth';
+import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 import './types/auth';
