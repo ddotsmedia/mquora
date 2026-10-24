@@ -103,7 +103,6 @@ jobs:
           GHCR_TOKEN: ${{ secrets.GHCR_PULL_TOKEN || secrets.GITHUB_TOKEN }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
         run: |
           mkdir -p .deploy
           printf '%s\n' "$PROD_ENV" > .deploy/prod.env
@@ -112,8 +111,12 @@ jobs:
           printf 'GHCR_TOKEN=%s\nGITHUB_ACTOR=%s\n' "$GHCR_TOKEN" "$GITHUB_ACTOR" >> .deploy/prod.env
           # Inject Google OAuth credentials
           printf 'GOOGLE_CLIENT_ID=%s\nGOOGLE_CLIENT_SECRET=%s\n' "$GOOGLE_CLIENT_ID" "$GOOGLE_CLIENT_SECRET" >> .deploy/prod.env
-          # Inject NextAuth secret (both NEXTAUTH_SECRET and AUTH_SECRET for NextAuth v5)
-          printf 'NEXTAUTH_SECRET=%s\nAUTH_SECRET=%s\n' "$NEXTAUTH_SECRET" "$NEXTAUTH_SECRET" >> .deploy/prod.env
+          # Extract the first non-empty NEXTAUTH_SECRET from PROD_ENV and write AUTH_SECRET
+          # (PROD_ENV may have duplicate lines; grep -m1 picks the first real value)
+          _ns=$(grep -m1 '^NEXTAUTH_SECRET=.\+' .deploy/prod.env | cut -d= -f2-)
+          if [ -n "$_ns" ]; then
+            printf 'AUTH_SECRET=%s\n' "$_ns" >> .deploy/prod.env
+          fi
           # Public domain (repo variable PUBLIC_DOMAIN, e.g. askvyo.com) overrides the URL settings in PROD_ENV.
           if [ -n "$PUBLIC_DOMAIN" ]; then
             {
