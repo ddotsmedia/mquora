@@ -44,7 +44,7 @@ export default async function CommunitiesPage({ searchParams }: { searchParams: 
                 <td className="px-3 py-3 tabular-nums">{c.postCount.toLocaleString()}</td>
                 <td className="px-3 py-3 text-[var(--text-secondary)]">{formatDate(c.createdAt)}</td>
                 <td className="px-3 py-3">
-                  <CommunityRowActions id={c.id} name={c.name} isPublic={c.isPublic} />
+                  <CommunityRowActions id={c.id} name={c.name} isPublic={c.isPublic} description={c.description} />
                 </td>
               </tr>
             ))}

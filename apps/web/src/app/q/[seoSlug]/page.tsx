@@ -20,6 +20,7 @@ import { FollowQuestionButton } from '@/components/follow-question-button';
 import { ReadMore } from '@/components/read-more';
 import { CollapsedAnswer } from '@/components/collapsed-answer';
 import { AnswerQuoteCard } from '@/components/answer-quote-card';
+import { ReputationBadge } from '@/components/reputation-badge';
 import { AskToAnswer } from '@/components/ask-to-answer';
 import { formatDistanceToNow } from 'date-fns';
 import { siteOrigin } from '@/lib/site';
@@ -67,6 +68,7 @@ interface Answer {
     username: string;
     displayName: string;
     isVerified?: boolean;
+    reputationScore?: number;
     profile?: { credential: string | null } | null;
   };
 }
@@ -263,11 +265,17 @@ export default async function PostPage({ params, searchParams }: { params: Promi
                     <div className="mb-3 text-sm text-muted-foreground">
                       <Link href={`/profile/${answer.author.username}`} className="font-semibold text-foreground hover:underline">{answer.author.displayName}</Link>
                       <VerifiedBadge show={answer.author.isVerified} />
+                      {answer.author.reputationScore != null && answer.author.reputationScore > 0 && (
+                        <ReputationBadge score={answer.author.reputationScore} size="sm" showLabel />
+                      )}
                       {answer.author.profile?.credential && <span className="text-[var(--text-secondary)]"> · {answer.author.profile.credential}</span>}
-                      <p className="text-xs">
-                        {answer.updatedAt && new Date(answer.updatedAt).getTime() - new Date(answer.createdAt).getTime() > 60_000
-                          ? `Updated ${formatDistanceToNow(new Date(answer.updatedAt), { addSuffix: true })}`
-                          : formatDistanceToNow(new Date(answer.createdAt), { addSuffix: true })}
+                      <p className="text-xs flex items-center gap-1.5">
+                        {formatDistanceToNow(new Date(answer.createdAt), { addSuffix: true })}
+                        {answer.updatedAt && new Date(answer.updatedAt).getTime() - new Date(answer.createdAt).getTime() > 60_000 && (
+                          <span className="inline-flex items-center gap-0.5 rounded bg-[var(--surface-2)] px-1.5 py-0.5 text-[10px] text-[var(--text-muted)]" title={`Last edited ${new Date(answer.updatedAt).toLocaleString()}`}>
+                            ✏️ edited
+                          </span>
+                        )}
                       </p>
                     </div>
                     <ReadMore text={answer.body} />

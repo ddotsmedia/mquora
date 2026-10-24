@@ -89,7 +89,7 @@ export function NewCommunityForm() {
   );
 }
 
-export function CommunityRowActions({ id, name, isPublic }: { id: string; name: string; isPublic: boolean }) {
+export function CommunityRowActions({ id, name, isPublic, description }: { id: string; name: string; isPublic: boolean; description?: string | null }) {
   return (
     <div className="flex flex-wrap justify-end gap-2">
       <ActionButton
@@ -98,6 +98,18 @@ export function CommunityRowActions({ id, name, isPublic }: { id: string; name: 
           const next = window.prompt('New community name', name)?.trim();
           if (!next || next === name) return { ok: false, message: 'Rename cancelled' };
           return updateCommunityAction(id, { name: next });
+        }}
+      />
+      <ActionButton
+        label="Set rules"
+        run={async () => {
+          const current = description ?? '';
+          const next = window.prompt(
+            'Enter community rules (one per line, e.g. "1. Be respectful").\nThese display on the community page.\n\nCurrent description:',
+            current,
+          );
+          if (next === null) return { ok: false, message: 'Cancelled' };
+          return updateCommunityAction(id, { description: next || undefined });
         }}
       />
       <ActionButton label={isPublic ? 'Make private' : 'Make public'} run={() => updateCommunityAction(id, { isPublic: !isPublic })} />

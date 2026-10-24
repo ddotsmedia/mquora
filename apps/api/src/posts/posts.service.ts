@@ -33,7 +33,7 @@ export class PostsService {
         ...contentProcessed,
         seoSlug,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        status: ((dto.status as string) === 'DRAFT' ? 'DRAFT' : 'PENDING_REVIEW') as any,
+        status: await this.resolvePostStatus(dto, authorId) as any,
       },
       select: { id: true, seoSlug: true, title: true, authorId: true, status: true },
     });
@@ -456,6 +456,30 @@ export class PostsService {
     const post = await this.prisma.post.findFirst({ where: { id, authorId, status: 'DRAFT', deletedAt: null } });
     if (!post) throw new Error('Draft not found');
     return this.prisma.post.update({ where: { id }, data: { status: 'PUBLISHED' }, select: { id: true, seoSlug: true } });
+  }
+
+  /** Determine post status: DRAFT → DRAFT; spam → PENDING_REVIEW; trusted user → PUBLISHED; else PENDING_REVIEW */
+  private async resolvePostStatus(dto: Record<string, unknown>, authorId: string): Promise<string> {
+    if ((dto.status as string) === 'DRAFT') return 'DRAFT';
+
+    // Spam auto-flag: URLs, excessive repeated chars, or very short body → always pending review
+    const body = String(dto.body ?? '');
+    const title = String(dto.title ?? '');
+    const hasUrl = /https?:\/\//i.test(body) || /https?:\/\//i.test(title);
+    const hasRepeatedChars = /(.)\1{4,}/.test(body); // 5+ same char in a row
+    const tooShort = body.replace(/\s/g, '').length < 15;
+    if (hasUrl || hasRepeatedChars || tooShort) return 'PENDING_REVIEW';
+
+    // Trust level: isApproved AND 3+ published posts → publish directly
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: authorId },
+        select: { isApproved: true, _count: { select: { posts: { where: { status: 'PUBLISHED' as any } } } } },
+      });
+      if (user?.isApproved && (user._count?.posts ?? 0) >= 3) return 'PUBLISHED';
+    } catch { /* fallback */ }
+
+    return 'PENDING_REVIEW';
   }
 
   private async pingIndexNow(seoSlug: string): Promise<void> {

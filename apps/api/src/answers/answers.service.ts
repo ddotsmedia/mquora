@@ -95,7 +95,7 @@ export class AnswersService {
       where: whereClause,
       select: {
         id: true, body: true, language: true, voteScore: true, isAccepted: true, commentCount: true, createdAt: true, updatedAt: true,
-        author: { select: { id: true, username: true, displayName: true, isVerified: true, profile: { select: { credential: true } } } },
+        author: { select: { id: true, username: true, displayName: true, isVerified: true, reputationScore: true, profile: { select: { credential: true } } } },
       },
       orderBy: recent ? [{ createdAt: 'desc' }] : [{ isAccepted: 'desc' }, { voteScore: 'desc' }, { createdAt: 'asc' }],
       take: limit + 1,

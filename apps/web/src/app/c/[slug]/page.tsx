@@ -118,6 +118,25 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
         </div>
       </div>
 
+      {/* Community Rules — parsed from description lines starting with a number */}
+      {community.description && (() => {
+        const ruleLines = community.description.split('\n').filter((l) => /^\d+[\.\)]\s/.test(l.trim()));
+        if (ruleLines.length < 2) return null;
+        return (
+          <div className="border-b border-[var(--border)] bg-[var(--surface-2)] px-6 py-4">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[var(--text-muted)]">Community Rules</h2>
+            <ol className="space-y-2">
+              {ruleLines.map((line, i) => (
+                <li key={i} className="flex gap-2 text-sm text-[var(--text-secondary)]">
+                  <span className="shrink-0 font-semibold text-[var(--primary)]">{i + 1}.</span>
+                  <span>{line.replace(/^\d+[\.\)]\s+/, '')}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        );
+      })()}
+
       <div className="divide-y divide-[var(--border)]">
         {posts.length > 0 ? (
           posts.map((post) => <PostCard key={post.id} {...post} />)

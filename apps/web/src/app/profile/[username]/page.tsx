@@ -8,6 +8,7 @@ import { FollowButton } from '@/components/follow-button';
 import { formatDistanceToNow } from 'date-fns';
 import { siteOrigin } from '@/lib/site';
 import { MessageCircle } from 'lucide-react';
+import { ReputationBadge } from '@/components/reputation-badge';
 
 export const dynamic = 'force-dynamic';
 
@@ -145,6 +146,7 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-bold text-[var(--text)]">{user.displayName}</h1>
               {user.isVerified && <span title="Verified" className="text-base text-[var(--primary)]">✔</span>}
+              <ReputationBadge score={user.reputationScore} showLabel />
             </div>
             <p className="text-sm text-[var(--text-secondary)]">
               @{user.username} · joined {formatDistanceToNow(new Date(user.createdAt), { addSuffix: true })}
