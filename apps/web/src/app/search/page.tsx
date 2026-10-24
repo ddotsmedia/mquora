@@ -196,7 +196,7 @@ function SearchPageContent() {
 
 export default function SearchPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<h1 className="font-malayalam mb-4 text-3xl font-bold text-[var(--text)]">തിരയുക</h1>}>
       <SearchPageContent />
     </Suspense>
   );

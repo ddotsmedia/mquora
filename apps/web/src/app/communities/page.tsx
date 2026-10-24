@@ -33,7 +33,7 @@ export default function CommunitiesPage() {
     <div className="mx-auto max-w-5xl px-4 py-8">
       <header className="mb-8">
         <h1 className="font-malayalam text-3xl font-bold text-[var(--text)]">കൂട്ടായ്മകൾ</h1>
-        <p className="mt-1 text-[var(--text-secondary)]">Communities — join the ones you care about to see them in your feed.</p>
+        <h2 className="mt-1 font-normal text-[var(--text-secondary)]">Communities — join the ones you care about to see them in your feed.</h2>
       </header>
 
       {/* Search */}

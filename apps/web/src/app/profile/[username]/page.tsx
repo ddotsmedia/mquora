@@ -217,6 +217,7 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
       </section>
 
       <section className="mt-6">
+        <h2 className="sr-only">Questions and answers by {user.displayName}</h2>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex gap-1 rounded-full border border-[var(--border)] bg-[var(--surface)] p-1 text-sm">
             {(['questions', 'answers'] as const).map((t) => (

@@ -22,7 +22,7 @@ export default async function TagsPage({ searchParams }: { searchParams: Promise
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-[var(--text)]">Topics</h1>
-          <p className="text-sm text-[var(--text-secondary)]">Every tag used on questions, most popular first.</p>
+          <h2 className="text-sm font-normal text-[var(--text-secondary)]">Every tag used on questions, most popular first.</h2>
         </div>
         <form action="/tags" className="flex gap-2">
           <input name="q" defaultValue={q} placeholder="Find a topic…"

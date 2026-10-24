@@ -34,7 +34,7 @@ export default function LeaderboardPage() {
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-[var(--text)]">Top contributors</h1>
-          <p className="text-sm text-[var(--text-secondary)]">Reputation is earned through helpful answers, accepted answers and upvotes.</p>
+          <h2 className="text-sm font-normal text-[var(--text-secondary)]">Reputation is earned through helpful answers, accepted answers and upvotes.</h2>
         </div>
         {/* Period filter */}
         <div className="flex gap-1 rounded-full border border-[var(--border)] bg-[var(--surface)] p-1">

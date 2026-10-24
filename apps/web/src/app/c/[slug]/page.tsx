@@ -96,6 +96,7 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
       <div className="border-b border-[var(--border)] p-6 bg-[var(--surface)]">
         <h1 className="text-3xl font-bold text-[var(--text)]">{community.name}</h1>
+        <h2 className="sr-only">Latest Malayalam questions and answers in {community.name}</h2>
         <p className="text-[var(--text-secondary)] mt-2">{community.description || 'No description'}</p>
         <div className="flex gap-4 mt-4 text-sm">
           <span className="text-[var(--text-muted)]">{community.memberCount} members</span>

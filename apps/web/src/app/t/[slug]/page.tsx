@@ -41,7 +41,7 @@ export default async function TagDetailPage({ params }: { params: Promise<{ slug
       <header className="mb-6 mt-2 flex items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-[var(--text)]">#{tag.name}</h1>
-          <p className="text-sm text-[var(--text-secondary)]">{tag.postCount} question{tag.postCount === 1 ? '' : 's'}</p>
+          <h2 className="text-sm font-normal text-[var(--text-secondary)]">{tag.postCount} question{tag.postCount === 1 ? '' : 's'} about #{tag.name}</h2>
         </div>
         <div className="flex gap-2">
           <FollowTopicButton slug={tag.slug} />
