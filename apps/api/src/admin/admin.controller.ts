@@ -42,7 +42,7 @@ export class AdminController {
   }
 
   @Get('users')
-  getUsers(@Query() q: UsersQueryDto & { pending?: string }) {
+  getUsers(@Query() q: UsersQueryDto) {
     return this.admin.getUsers({ q: q.q, role: q.role, page: q.page, limit: q.limit, pending: q.pending === 'true' });
   }
 

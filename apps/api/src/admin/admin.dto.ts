@@ -10,6 +10,7 @@ export class PageQueryDto {
 export class UsersQueryDto extends PageQueryDto {
   @IsOptional() @IsString() @MaxLength(100) q?: string;
   @IsOptional() @IsEnum(UserRole) role?: UserRole;
+  @IsOptional() @IsIn(['true', 'false']) pending?: string;
 }
 
 export class ContentQueryDto extends PageQueryDto {
