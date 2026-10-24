@@ -1,21 +1,22 @@
 import { Injectable, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { SubscribePushDto, UnsubscribePushDto, SendTestNotificationDto, PushNotificationPayload } from './notifications.dto';
-
-// web-push library would be installed: npm install web-push
-// import * as webpush from 'web-push';
+import * as webpush from 'web-push';
 
 @Injectable()
 export class NotificationsService {
   private prisma = new PrismaClient();
 
   constructor() {
-    // Configure web-push with VAPID keys
-    // webpush.setVapidDetails(
-    //   process.env.VAPID_SUBJECT || 'mailto:support@askvyo.com',
-    //   process.env.VAPID_PUBLIC_KEY || '',
-    //   process.env.VAPID_PRIVATE_KEY || '',
-    // );
+    if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+      webpush.setVapidDetails(
+        process.env.VAPID_SUBJECT || 'mailto:support@askvyo.com',
+        process.env.VAPID_PUBLIC_KEY,
+        process.env.VAPID_PRIVATE_KEY,
+      );
+    } else {
+      console.warn('VAPID keys not configured — push notifications disabled');
+    }
   }
 
   async subscribeToPush(userId: string, dto: SubscribePushDto) {
@@ -124,20 +125,15 @@ export class NotificationsService {
     subscription: { endpoint: string; p256dh: string; auth: string },
     payload: PushNotificationPayload,
   ) {
-    // This would use the web-push library:
-    // const pushSubscription = {
-    //   endpoint: subscription.endpoint,
-    //   keys: {
-    //     p256dh: subscription.p256dh,
-    //     auth: subscription.auth,
-    //   },
-    // };
-    //
-    // await webpush.sendNotification(pushSubscription, JSON.stringify(payload));
+    const pushSubscription = {
+      endpoint: subscription.endpoint,
+      keys: {
+        p256dh: subscription.p256dh,
+        auth: subscription.auth,
+      },
+    };
 
-    // For now, just log it (web-push would be added via npm)
-    console.log('Would send notification to:', subscription.endpoint, payload);
-    return Promise.resolve();
+    await webpush.sendNotification(pushSubscription, JSON.stringify(payload));
   }
 
   async sendTestNotification(dto: SendTestNotificationDto) {
