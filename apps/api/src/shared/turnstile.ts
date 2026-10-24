@@ -1,6 +1,7 @@
 /**
  * Verifies a Cloudflare Turnstile token server-side.
- * Returns true if verification passes or if Turnstile is not configured.
+ * Returns true only when verification succeeds, or when Turnstile is not configured.
+ * If Turnstile is configured, a verification outage rejects the request (fails closed).
  */
 export async function verifyTurnstile(token: string | undefined): Promise<boolean> {
   const secret = process.env.TURNSTILE_SECRET_KEY;
@@ -19,7 +20,6 @@ export async function verifyTurnstile(token: string | undefined): Promise<boolea
     const data = (await res.json()) as { success: boolean };
     return data.success === true;
   } catch {
-    // Network error verifying — allow through to avoid blocking all users
-    return true;
+    return false;
   }
 }

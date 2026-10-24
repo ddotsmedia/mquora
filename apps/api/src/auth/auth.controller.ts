@@ -1,4 +1,5 @@
-import { Controller, Post, Get, Body, Res, Req, UseGuards, HttpCode, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Get, Body, Res, Req, Headers, UseGuards, HttpCode, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { assertInternalSecret } from '../shared/internal-secret';
 import { Response, Request } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
@@ -60,13 +61,21 @@ export class AuthController {
         // ignore
       }
     }
+    // Also revoke the session behind the caller's access token, so it stops working immediately.
+    const sid = (req.user as { sid?: string } | undefined)?.sid;
+    if (sid) await this.authService.revokeSession(sid);
     res.clearCookie('refreshToken');
     return { success: true };
   }
 
+  // Called only by the web server after NextAuth verified the provider sign-in. Internal-only.
   @Post('oauth-signin')
   @HttpCode(200)
-  async oauthSignin(@Body() body: { email: string; name: string; image?: string; provider: string }) {
+  async oauthSignin(
+    @Headers('x-internal-secret') secret: string | undefined,
+    @Body() body: { email: string; name: string; image?: string; provider: string },
+  ) {
+    assertInternalSecret(secret);
     return this.authService.oauthSignin(body);
   }
 

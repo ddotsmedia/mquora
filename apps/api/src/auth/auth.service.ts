@@ -10,6 +10,10 @@ import { isBanned } from '../shared/ban';
 // Refresh tokens are 256-bit random values; a fast deterministic hash is enough to look them up.
 const hashToken = (raw: string) => createHash('sha256').update(raw).digest('hex');
 
+const ACCESS_TTL = '15m';
+const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const ROTATION_GRACE_MS = 30 * 1000;
+
 @Injectable()
 export class AuthService {
   private prisma = new PrismaClient();
@@ -20,7 +24,10 @@ export class AuthService {
     const existing = await this.prisma.user.findFirst({
       where: { OR: [{ email: dto.email }, { username: dto.username }] },
     });
-    if (existing) throw new BadRequestException('Email or username already exists');
+    // Same response whether or not the account exists, so registration cannot be used to enumerate accounts.
+    if (existing) {
+      return { pending: true, message: 'Registration successful. Your account is awaiting admin approval before you can log in.' };
+    }
 
     const passwordHash = await argon2.hash(dto.password);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -74,6 +81,8 @@ export class AuthService {
 
   // Issues a new access token for a valid refresh token. The refresh token is not rotated, so
   // concurrent server renders that refresh at the same time all succeed.
+  // Rotates the refresh token: a new one is issued and the used one stays valid for a short grace
+  // window so concurrent server renders that refresh at the same moment do not log the user out.
   async refresh(rawToken: string) {
     const session = await this.prisma.session.findUnique({ where: { tokenHash: hashToken(rawToken) } });
     if (!session || new Date() > session.expiresAt) throw new UnauthorizedException('Invalid refresh token');
@@ -82,11 +91,26 @@ export class AuthService {
       select: { deletedAt: true, bannedAt: true, bannedUntil: true },
     });
     if (!user || user.deletedAt || isBanned(user)) throw new UnauthorizedException('Session no longer valid');
-    return { accessToken: this.jwtService.sign({ sub: session.userId }, { expiresIn: '15m' }) };
+
+    const newRaw = randomBytes(32).toString('hex');
+    const newSession = await this.prisma.session.create({
+      data: { userId: session.userId, tokenHash: hashToken(newRaw), expiresAt: new Date(Date.now() + REFRESH_TTL_MS) },
+    });
+    await this.prisma.session.update({
+      where: { id: session.id },
+      data: { expiresAt: new Date(Date.now() + ROTATION_GRACE_MS) },
+    });
+    const accessToken = this.jwtService.sign({ sub: session.userId, sid: newSession.id }, { expiresIn: ACCESS_TTL });
+    return { accessToken, refreshToken: newRaw };
   }
 
   async logout(rawToken: string) {
     await this.prisma.session.deleteMany({ where: { tokenHash: hashToken(rawToken) } });
+  }
+
+  // Revokes the session an access token was issued from, so the token stops working immediately.
+  async revokeSession(sessionId: string) {
+    await this.prisma.session.deleteMany({ where: { id: sessionId } });
   }
 
   /** Called by NextAuth after a Google (or other OAuth) sign-in.
@@ -119,10 +143,9 @@ export class AuthService {
         const until = user.bannedUntil ? ` until ${user.bannedUntil.toISOString().slice(0, 10)}` : ' permanently';
         throw new ForbiddenException(`Account is suspended${until}`);
       }
-      // Auto-approve existing un-approved users who now sign in via Google
+      // Pending accounts must still be approved by an admin, whichever provider they sign in with.
       if (!user.isApproved) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (this.prisma as any).user.update({ where: { id: user.id }, data: { isApproved: true } });
+        throw new ForbiddenException('Your account is pending admin approval. You will be notified once approved.');
       }
     }
 
@@ -137,25 +160,28 @@ export class AuthService {
     if (!credential) throw new BadRequestException('credential required');
 
     // Verify the Google-issued JWT via Google's tokeninfo endpoint (no extra package needed)
-    let payload: { email?: string; name?: string; picture?: string; aud?: string };
+    let payload: { email?: string; email_verified?: string | boolean; name?: string; picture?: string; aud?: string };
     try {
       const res = await fetch(
         `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`,
         { cache: 'no-store' },
       );
       if (!res.ok) throw new UnauthorizedException('Invalid Google credential');
-      payload = await res.json();
+      payload = (await res.json()) as typeof payload;
     } catch {
       throw new UnauthorizedException('Failed to verify Google credential');
     }
 
-    // Validate audience matches our client ID
+    // The token must have been issued to this app. Fails closed when the client ID is not configured,
+    // otherwise a Google token minted for any other site could be replayed here.
     const clientId = process.env.GOOGLE_CLIENT_ID;
-    if (clientId && payload.aud !== clientId) {
+    if (!clientId) throw new UnauthorizedException('Google sign-in is not configured');
+    if (payload.aud !== clientId) {
       throw new UnauthorizedException('Credential audience mismatch');
     }
 
     if (!payload.email) throw new UnauthorizedException('No email in credential');
+    if (String(payload.email_verified) !== 'true') throw new UnauthorizedException('Google email is not verified');
 
     // Reuse the same OAuth sign-in flow
     return this.oauthSignin({
@@ -167,7 +193,6 @@ export class AuthService {
   }
 
   async generateTokens(userId: string) {
-    const accessToken = this.jwtService.sign({ sub: userId }, { expiresIn: '15m' });
     const refreshTokenRaw = randomBytes(32).toString('hex');
     const tokenHash = hashToken(refreshTokenRaw);
 
@@ -175,10 +200,11 @@ export class AuthService {
       data: {
         userId,
         tokenHash,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        expiresAt: new Date(Date.now() + REFRESH_TTL_MS),
       },
     });
 
+    const accessToken = this.jwtService.sign({ sub: userId, sid: session.id }, { expiresIn: ACCESS_TTL });
     return { accessToken, refreshToken: refreshTokenRaw, sessionId: session.id };
   }
 }

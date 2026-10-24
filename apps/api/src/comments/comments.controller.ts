@@ -3,6 +3,7 @@ import { Request } from 'express';
 import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { UserThrottleGuard } from '../guards/user-throttle.guard';
 import { CommentsService } from './comments.service';
 
 class CreateCommentDto {
@@ -29,7 +30,7 @@ export class CommentsController {
   }
 
   @Post('comments')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, UserThrottleGuard)
   @Throttle({ default: { limit: 10, ttl: 60_000 } }) // anti-spam: 10 comments a minute
   async create(@Body() dto: CreateCommentDto, @Req() req: Request) {
     return this.commentsService.create(dto, actor(req).id);

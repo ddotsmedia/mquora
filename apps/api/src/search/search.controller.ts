@@ -1,5 +1,8 @@
 import { Controller, Get, Post, Body, Query } from '@nestjs/common';
 import { SearchService } from './search.service';
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { UserThrottleGuard } from '../guards/user-throttle.guard';
 
 @Controller('api/v1/search')
 export class SearchController {
@@ -23,6 +26,7 @@ export class SearchController {
 
   // POST alias so future callers can pass body too
   @Post()
+  @UseGuards(JwtAuthGuard, UserThrottleGuard)
   async searchPost(@Body() body: { query?: string; q?: string; limit?: number; offset?: number; language?: string }) {
     const q = body.query || body.q || '';
     return this.searchService.search(q, {

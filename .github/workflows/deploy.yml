@@ -117,6 +117,13 @@ jobs:
           if [ -n "$_ns" ]; then
             printf 'AUTH_SECRET=%s\n' "$_ns" >> .deploy/prod.env
           fi
+          # Shared secret that lets the web server (only) call the API's internal auth endpoints.
+          # Derived from NEXTAUTH_SECRET unless PROD_ENV sets INTERNAL_API_SECRET explicitly.
+          if ! grep -q '^INTERNAL_API_SECRET=.\{32,\}' .deploy/prod.env; then
+            if [ -z "$_ns" ]; then echo "NEXTAUTH_SECRET is required"; exit 1; fi
+            _is=$(printf 'askvyo-internal:%s' "$_ns" | sha256sum | cut -d' ' -f1)
+            printf 'INTERNAL_API_SECRET=%s\n' "$_is" >> .deploy/prod.env
+          fi
           # Public domain (repo variable PUBLIC_DOMAIN, e.g. askvyo.com) overrides the URL settings in PROD_ENV.
           if [ -n "$PUBLIC_DOMAIN" ]; then
             {
@@ -170,9 +177,21 @@ jobs:
             "$VPS_USER@$VPS_HOST" bash -x /opt/askvyo/scripts/deploy.sh 2>&1
 
       - name: Smoke test (API and web)
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || 22 }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
         run: |
           sleep 20
-          curl -fsS --max-time 15 "http://${{ secrets.VPS_HOST }}:3024/health"
-          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "http://${{ secrets.VPS_HOST }}:3022/")
+          # API and web now listen on 127.0.0.1 only, so the smoke test runs on the VPS itself.
+          mkdir -p ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          ssh -i ~/.ssh/deploy_key -p "$VPS_PORT" -o StrictHostKeyChecking=accept-new \
+            "$VPS_USER@$VPS_HOST" bash -s <<'REMOTE'
+          set -eu
+          curl -fsS --max-time 15 "http://127.0.0.1:3024/health"
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "http://127.0.0.1:3022/")
           echo "web status: $code"
           [ "$code" -lt 500 ]
+          REMOTE

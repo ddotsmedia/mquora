@@ -17,7 +17,7 @@ const API = process.env.API_INTERNAL_URL || 'http://localhost:3041';
 const ACCESS_TTL_MS = 14 * 60 * 1000; // API access tokens live 15m; renew a minute early
 
 // Gets a fresh API access token. Returns null if the refresh token is no longer valid.
-async function refreshAccessToken(refreshToken: string): Promise<string | null> {
+async function refreshAccessToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string } | null> {
   try {
     const res = await fetch(`${API}/api/v1/auth/refresh`, {
       method: 'POST',
@@ -26,8 +26,8 @@ async function refreshAccessToken(refreshToken: string): Promise<string | null> 
       cache: 'no-store',
     });
     if (!res.ok) return null;
-    const data = (await res.json()) as { accessToken?: string };
-    return data.accessToken ?? null;
+    const data = (await res.json()) as { accessToken?: string; refreshToken?: string };
+    return data.accessToken && data.refreshToken ? { accessToken: data.accessToken, refreshToken: data.refreshToken } : null;
   } catch {
     return null;
   }
@@ -123,7 +123,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         try {
           const res = await fetch(`${API}/api/v1/auth/oauth-signin`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'X-Internal-Secret': process.env.INTERNAL_API_SECRET || '' },
             body: JSON.stringify({
               email: user.email,
               name: user.name || user.email,
@@ -167,7 +167,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         delete token.accessToken;
         return token;
       }
-      token.accessToken = fresh;
+      token.accessToken = fresh.accessToken;
+      token.refreshToken = fresh.refreshToken; // refresh tokens rotate on every use
       token.accessTokenExpires = Date.now() + ACCESS_TTL_MS;
       delete token.error;
       return token;

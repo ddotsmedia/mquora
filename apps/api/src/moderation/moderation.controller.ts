@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Param, Query, UseGuards, Req } from '@nest
 import { Request } from 'express';
 import { IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { UserThrottleGuard } from '../guards/user-throttle.guard';
 import { AdminGuard } from '../guards/admin.guard';
 import { ModerationService } from './moderation.service';
 
@@ -22,14 +23,14 @@ export class ModerationController {
   constructor(private moderationService: ModerationService) {}
 
   @Post('report')
-  @UseGuards(JwtAuthGuard) // reporter must be a real user (Report.reporterId is a foreign key)
+  @UseGuards(JwtAuthGuard, UserThrottleGuard) // reporter must be a real user (Report.reporterId is a foreign key)
   async submitReport(@Body() dto: SubmitReportDto, @Req() req: Request) {
     const reporterId = (req.user as { id: string }).id;
     return this.moderationService.submitReport(reporterId, dto.targetType, dto.targetId, dto.reason, dto.details);
   }
 
   @Get('reports')
-  @UseGuards(AdminGuard)
+  @UseGuards(JwtAuthGuard, AdminGuard)
   async getReports(
     @Query('status') status?: string,
     @Query('cursor') cursor?: string,
@@ -39,7 +40,7 @@ export class ModerationController {
   }
 
   @Post('reports/:id/resolve')
-  @UseGuards(AdminGuard)
+  @UseGuards(JwtAuthGuard, AdminGuard)
   async resolveReport(@Param('id') id: string, @Body() dto: ResolveReportDto, @Req() req: Request) {
     const moderatorId = (req.user as Record<string, unknown>).id as string;
     const action = dto.action as unknown as 'DISMISS' | 'WARN' | 'REMOVE' | 'BAN';

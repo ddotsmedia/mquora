@@ -96,10 +96,15 @@ if ! timeout 120 $COMPOSE run -T --rm --no-deps api sh -c 'pnpm --filter @askvyo
   exit 1
 fi
 
-echo "Ensuring admin user exists..."
-if ! $COMPOSE run -T --rm --no-deps api sh -c 'node packages/db/prisma/ensure-admin.mjs'; then
-  echo "ERROR: ensure-admin failed — check logs above"
-  exit 1
+# Admin password is reset from PROD_ENV (ADMIN_PASSWORD) only; never from a built-in default.
+if [ -n "${ADMIN_PASSWORD:-}" ]; then
+  echo "Ensuring admin user exists..."
+  if ! $COMPOSE run -T --rm --no-deps -e ADMIN_PASSWORD -e ADMIN_EMAIL api sh -c 'node packages/db/prisma/ensure-admin.mjs'; then
+    echo "ERROR: ensure-admin failed — check logs above"
+    exit 1
+  fi
+else
+  echo "WARNING: ADMIN_PASSWORD not set in PROD_ENV; skipping admin reset."
 fi
 
 echo "Starting application services..."

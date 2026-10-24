@@ -84,7 +84,7 @@ export class CommunitiesService {
       select: { createdBy: true },
     });
 
-    if (!community || (community.createdBy !== userId && (await this.isAdmin(userId)))) {
+    if (!community || (community.createdBy !== userId && !(await this.isAdmin(userId)))) {
       throw new BadRequestException('Not authorized');
     }
 

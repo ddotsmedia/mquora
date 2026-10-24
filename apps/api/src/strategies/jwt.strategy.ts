@@ -23,7 +23,16 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       select: { id: true, email: true, username: true, role: true, deletedAt: true, bannedAt: true, bannedUntil: true },
     });
     if (!user || user.deletedAt || isBanned(user)) return null;
+
+    // Tokens issued after the session change carry a session id: reject them once that session
+    // is logged out or rotated out. Older tokens without one remain valid until they expire.
+    const sid = typeof payload.sid === 'string' ? payload.sid : undefined;
+    if (sid) {
+      const session = await this.prisma.session.findUnique({ where: { id: sid }, select: { userId: true, expiresAt: true } });
+      if (!session || session.userId !== user.id || session.expiresAt < new Date()) return null;
+    }
+
     const { bannedAt: _bannedAt, bannedUntil: _bannedUntil, ...actor } = user;
-    return actor;
+    return { ...actor, sid };
   }
 }

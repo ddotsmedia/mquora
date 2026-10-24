@@ -2,6 +2,7 @@ import { Controller, Get, UseGuards } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { MetricsService } from './metrics.service';
 import { AdminGuard } from '../guards/admin.guard';
+import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 
 @Controller('metrics')
 export class MetricsController {
@@ -10,7 +11,7 @@ export class MetricsController {
   constructor(private metricsService: MetricsService) {}
 
   @Get()
-  @UseGuards(AdminGuard)
+  @UseGuards(JwtAuthGuard, AdminGuard)
   async getMetrics(): Promise<string> {
     // Get active users in last 24 hours
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);

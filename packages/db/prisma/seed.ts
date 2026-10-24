@@ -29,7 +29,9 @@ async function main() {
   ]);
 
   // Create admin user
-  const adminHash = await argon2.hash('admin123');
+  const seedAdminPassword = process.env.SEED_ADMIN_PASSWORD;
+  if (!seedAdminPassword || seedAdminPassword.length < 12) throw new Error('SEED_ADMIN_PASSWORD (min 12 chars) must be set');
+  const adminHash = await argon2.hash(seedAdminPassword);
   const adminUser = await prisma.user.create({
     data: {
       email: 'admin@askvyo.com',

@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { UserThrottleGuard } from '../guards/user-throttle.guard';
 import { NotificationsService } from './notifications.service';
 import { SubscribePushDto, UnsubscribePushDto, SendTestNotificationDto } from './notifications.dto';
 
@@ -71,7 +72,7 @@ export class NotificationsController {
   }
 
   @Post('send-test')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, UserThrottleGuard)
   @HttpCode(HttpStatus.OK)
   async sendTest(@Body() dto: SendTestNotificationDto, @Req() req: Request) {
     const requesterId = (req.user as Record<string, unknown>).id as string;

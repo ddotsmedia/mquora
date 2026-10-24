@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { UserThrottleGuard } from '../guards/user-throttle.guard';
 import { OptionalJwtGuard } from '../guards/optional-jwt.guard';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './create-post.dto';
@@ -75,7 +76,7 @@ export class PostsController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, UserThrottleGuard)
   async create(@Body() dto: CreatePostDto, @Req() req: Request) {
     const authorId = (req.user as Record<string, unknown>).id as string;
     return this.postsService.create(dto as unknown as Record<string, unknown>, authorId);
