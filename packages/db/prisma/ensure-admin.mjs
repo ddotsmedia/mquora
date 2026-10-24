@@ -24,14 +24,14 @@ async function main() {
   if (existing) {
     await prisma.user.update({
       where: { id: existing.id },
-      data: { passwordHash, role: 'ADMIN', isVerified: true, deletedAt: null, bannedAt: null, bannedUntil: null },
+      data: { passwordHash, role: 'ADMIN', isVerified: true, isApproved: true, deletedAt: null, bannedAt: null, bannedUntil: null },
     });
     console.log(`✓ Admin updated: ${email}`);
   } else {
     const user = await prisma.user.create({
       data: {
         email, username, displayName, passwordHash,
-        role: 'ADMIN', isVerified: true, onboardedAt: new Date(),
+        role: 'ADMIN', isVerified: true, isApproved: true, onboardedAt: new Date(),
         profile: { create: { bio: 'Platform administrator' } },
       },
     });
