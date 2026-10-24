@@ -21,6 +21,7 @@ services:
       - AUTH_GOOGLE_ID=${GOOGLE_CLIENT_ID}
       - AUTH_GOOGLE_SECRET=${GOOGLE_CLIENT_SECRET}
       - NEXT_PUBLIC_VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY}
+      - NEXT_PUBLIC_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
     networks: [askvyo_net]
     deploy:
       resources:
@@ -45,6 +46,8 @@ services:
       - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY}
       - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY}
       - VAPID_SUBJECT=${VAPID_SUBJECT:-mailto:support@askvyo.com}
+      - SITE_URL=${SITE_URL:-}
+      - INDEXNOW_KEY=${INDEXNOW_KEY:-}
     networks: [askvyo_net]
     deploy:
       resources:

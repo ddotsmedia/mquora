@@ -80,6 +80,11 @@ export class PostsService {
       { removeOnComplete: true, removeOnFail: false, delay: 5000 },
     );
 
+    // IndexNow ping (fire-and-forget) — notifies Bing/Yandex of new content instantly
+    if ((post.status as string) === 'PUBLISHED') {
+      void this.pingIndexNow(post.seoSlug).catch(() => undefined);
+    }
+
     return post;
   }
 
@@ -451,6 +456,28 @@ export class PostsService {
     const post = await this.prisma.post.findFirst({ where: { id, authorId, status: 'DRAFT', deletedAt: null } });
     if (!post) throw new Error('Draft not found');
     return this.prisma.post.update({ where: { id }, data: { status: 'PUBLISHED' }, select: { id: true, seoSlug: true } });
+  }
+
+  private async pingIndexNow(seoSlug: string): Promise<void> {
+    const siteUrl = process.env.SITE_URL || process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_API_URL?.replace('/api', '');
+    const key = process.env.INDEXNOW_KEY;
+    if (!siteUrl || !key) return;
+
+    const url = `${siteUrl}/q/${seoSlug}`;
+    const host = new URL(siteUrl).host;
+
+    // Ping both Bing and Yandex IndexNow endpoints
+    const endpoints = [
+      'https://www.bing.com/indexnow',
+      'https://yandex.com/indexnow',
+    ];
+
+    for (const endpoint of endpoints) {
+      await fetch(`${endpoint}?url=${encodeURIComponent(url)}&key=${key}`, {
+        method: 'GET',
+        headers: { host },
+      }).catch(() => undefined);
+    }
   }
 
   async getTrendingTopics(limit = 5) {

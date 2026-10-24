@@ -58,7 +58,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const res = await serverApiFetch<{ data: Tag[] }>('/api/v1/tags?limit=200');
     res.data.forEach((t) =>
       tagEntries.push({
-        url: `${base}/t/${t.slug}`,
+        url: `${base}/tags/${t.slug}`,
         lastModified: t.updatedAt ? new Date(t.updatedAt) : new Date(),
         changeFrequency: 'daily',
         priority: 0.6,

@@ -66,6 +66,12 @@ export class AuthController {
     return this.authService.oauthSignin(body);
   }
 
+  @Post('google-one-tap')
+  @HttpCode(200)
+  async googleOneTap(@Body() body: { credential: string }) {
+    return this.authService.googleOneTap(body.credential);
+  }
+
   @Get('health')
   health() {
     return { status: 'ok' };

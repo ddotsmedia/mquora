@@ -80,6 +80,40 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       clientId: process.env.GOOGLE_CLIENT_ID || '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
     }),
+    // Google One Tap: credential is a signed JWT from Google Identity Services
+    Credentials({
+      id: 'google-one-tap',
+      name: 'Google One Tap',
+      credentials: { credential: { type: 'text' } },
+      async authorize(credentials) {
+        if (!credentials?.credential) return null;
+        try {
+          // Send the Google-issued JWT to our API which verifies it with Google's public keys
+          const res = await fetch(`${API}/api/v1/auth/google-one-tap`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ credential: credentials.credential }),
+            cache: 'no-store',
+          });
+          if (!res.ok) return null;
+          const data = await res.json() as {
+            accessToken: string;
+            refreshToken: string;
+            user: { id: string; email: string; displayName: string; role: string };
+          };
+          return {
+            id: data.user.id,
+            email: data.user.email,
+            name: data.user.displayName,
+            accessToken: data.accessToken,
+            refreshToken: data.refreshToken,
+            role: data.user.role,
+          } as User;
+        } catch {
+          return null;
+        }
+      },
+    }),
   ],
   pages: { signIn: '/login' },
   callbacks: {

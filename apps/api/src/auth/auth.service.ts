@@ -133,6 +133,39 @@ export class AuthService {
     };
   }
 
+  async googleOneTap(credential: string) {
+    if (!credential) throw new BadRequestException('credential required');
+
+    // Verify the Google-issued JWT via Google's tokeninfo endpoint (no extra package needed)
+    let payload: { email?: string; name?: string; picture?: string; aud?: string };
+    try {
+      const res = await fetch(
+        `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`,
+        { cache: 'no-store' },
+      );
+      if (!res.ok) throw new UnauthorizedException('Invalid Google credential');
+      payload = await res.json();
+    } catch {
+      throw new UnauthorizedException('Failed to verify Google credential');
+    }
+
+    // Validate audience matches our client ID
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    if (clientId && payload.aud !== clientId) {
+      throw new UnauthorizedException('Credential audience mismatch');
+    }
+
+    if (!payload.email) throw new UnauthorizedException('No email in credential');
+
+    // Reuse the same OAuth sign-in flow
+    return this.oauthSignin({
+      email: payload.email,
+      name: payload.name || payload.email.split('@')[0],
+      image: payload.picture,
+      provider: 'google',
+    });
+  }
+
   async generateTokens(userId: string) {
     const accessToken = this.jwtService.sign({ sub: userId }, { expiresIn: '15m' });
     const refreshTokenRaw = randomBytes(32).toString('hex');

@@ -6,6 +6,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { PublicOnly } from "@/components/public-only";
 import { Toaster } from "sonner";
 import { Providers } from "@/components/providers";
+import { GoogleOneTap } from "@/components/google-one-tap";
 import "./globals.css";
 import { siteOrigin } from "@/lib/site";
 
@@ -58,6 +59,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className={`${sansFont.variable} ${malayalamFont.variable} font-sans bg-[var(--bg)] text-[var(--text)] min-h-screen`}>
         <Providers>
           <PublicOnly><Navbar /></PublicOnly>
+          <GoogleOneTap />
           <main>{children}</main>
           <PublicOnly><SiteFooter /></PublicOnly>
           <Toaster richColors position="top-center" />
