@@ -20,6 +20,7 @@ import { FollowQuestionButton } from '@/components/follow-question-button';
 import { ReadMore } from '@/components/read-more';
 import { CollapsedAnswer } from '@/components/collapsed-answer';
 import { AnswerQuoteCard } from '@/components/answer-quote-card';
+import { AskToAnswer } from '@/components/ask-to-answer';
 import { formatDistanceToNow } from 'date-fns';
 import { siteOrigin } from '@/lib/site';
 
@@ -210,6 +211,10 @@ export default async function PostPage({ params, searchParams }: { params: Promi
         )}
 
         <div className="mb-2"><ShareButtons title={post.title} path={`/q/${post.seoSlug}`} /></div>
+
+        <div className="mt-4 flex items-center gap-2">
+          <AskToAnswer postId={post.id} />
+        </div>
 
         <Comments postId={post.id} initialCount={post.commentCount} />
       </article>

@@ -1,12 +1,17 @@
 import { Body, Controller, Delete, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
-import { ArrayMaxSize, IsArray, IsString } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsOptional, IsString, MaxLength } from 'class-validator';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { SocialService } from './social.service';
 
 class OnboardingDto {
   @IsArray() @ArrayMaxSize(30) @IsString({ each: true }) communityIds!: string[];
   @IsArray() @ArrayMaxSize(30) @IsString({ each: true }) tagIds!: string[];
+}
+
+class AnswerRequestDto {
+  @IsString() requesteeId!: string;
+  @IsOptional() @IsString() @MaxLength(500) message?: string;
 }
 
 const uid = (req: Request) => (req.user as { id: string }).id;
@@ -74,5 +79,21 @@ export class SocialController {
   @Post('me/onboarding/skip')
   skip(@Req() req: Request) {
     return this.social.skipOnboarding(uid(req));
+  }
+
+  // Answer requests
+  @Post('questions/:postId/request-answer')
+  requestAnswer(@Req() req: Request, @Param('postId') postId: string, @Body() dto: AnswerRequestDto) {
+    return this.social.requestAnswer(uid(req), postId, dto.requesteeId, dto.message);
+  }
+
+  @Get('questions/:postId/answer-requests')
+  answerRequests(@Req() req: Request, @Param('postId') postId: string) {
+    return this.social.getAnswerRequests(uid(req), postId);
+  }
+
+  @Get('me/answer-requests')
+  myAnswerRequests(@Req() req: Request) {
+    return this.social.myAnswerRequests(uid(req));
   }
 }

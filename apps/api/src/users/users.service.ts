@@ -90,6 +90,25 @@ export class UsersService {
     return this.me(userId);
   }
 
+  // Quick user search for "Ask to Answer" and similar features.
+  async searchUsers(q: string, limit = 8) {
+    if (!q || q.trim().length < 2) return { data: [] };
+    const term = q.trim().toLowerCase();
+    const data = await this.prisma.user.findMany({
+      where: {
+        deletedAt: null,
+        OR: [
+          { username: { contains: term, mode: 'insensitive' } },
+          { displayName: { contains: term, mode: 'insensitive' } },
+        ],
+      },
+      select: { id: true, username: true, displayName: true, isVerified: true },
+      take: Math.min(limit, 20),
+      orderBy: { displayName: 'asc' },
+    });
+    return { data };
+  }
+
   // A user's answers with the question they belong to (profile "Answers" tab).
   async answersOf(username: string, limit = 20) {
     const user = await this.prisma.user.findFirst({ where: { username, deletedAt: null }, select: { id: true } });

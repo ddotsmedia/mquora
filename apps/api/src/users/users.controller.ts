@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Query, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { UpdateMeDto } from './users.dto';
@@ -9,6 +9,12 @@ const uid = (req: Request) => (req.user as { id: string }).id;
 @Controller('api/v1/users')
 export class UsersController {
   constructor(private users: UsersService) {}
+
+  @Get('search')
+  @UseGuards(JwtAuthGuard)
+  search(@Query('q') q: string, @Query('limit') limit?: string) {
+    return this.users.searchUsers(q, Number(limit) || 8);
+  }
 
   // Declared before ':username' so "me" is not treated as a username.
   @Get('me')

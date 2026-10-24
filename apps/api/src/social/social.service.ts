@@ -157,4 +157,50 @@ export class SocialService {
     await this.prisma.user.update({ where: { id: userId }, data: { onboardedAt: new Date() } });
     return { onboarded: true };
   }
+
+  // Answer requests: ask a specific person to answer a question.
+  async requestAnswer(requesterId: string, postId: string, requesteeId: string, message?: string) {
+    if (requesterId === requesteeId) throw new BadRequestException('Cannot request yourself');
+    const post = await this.prisma.post.findUnique({ where: { id: postId, deletedAt: null }, select: { id: true } });
+    if (!post) throw new NotFoundException('Question not found');
+    const requestee = await this.prisma.user.findUnique({ where: { id: requesteeId, deletedAt: null }, select: { id: true } });
+    if (!requestee) throw new NotFoundException('User not found');
+    await this.prisma.answerRequest.upsert({
+      where: { postId_requesterId_requesteeId: { postId, requesterId, requesteeId } },
+      create: { postId, requesterId, requesteeId, message },
+      update: { message },
+    });
+    return { requested: true };
+  }
+
+  async getAnswerRequests(userId: string, postId: string) {
+    const requests = await this.prisma.answerRequest.findMany({
+      where: { postId },
+      select: {
+        id: true,
+        message: true,
+        createdAt: true,
+        requestee: { select: { id: true, username: true, displayName: true, isVerified: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+    return { data: requests };
+  }
+
+  async myAnswerRequests(userId: string) {
+    const requests = await this.prisma.answerRequest.findMany({
+      where: { requesteeId: userId },
+      select: {
+        id: true,
+        message: true,
+        createdAt: true,
+        post: { select: { id: true, seoSlug: true, title: true, answerCount: true } },
+        requester: { select: { id: true, username: true, displayName: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+    return { data: requests };
+  }
 }

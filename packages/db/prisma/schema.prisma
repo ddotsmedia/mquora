@@ -120,6 +120,8 @@ model User {
   tagFollows            TagFollow[]
   questionFollows       QuestionFollow[]
   questionPasses        QuestionPass[]
+  answerRequestsSent    AnswerRequest[] @relation("requester")
+  answerRequestsReceived AnswerRequest[] @relation("requestee")
   answerVotes           AnswerVote[]    @relation("user_answer_votes")
   subscriptions         QuestionSubscription[] @relation("subscriptions")
   onboardedAt           DateTime?
@@ -244,6 +246,7 @@ model Post {
   community         Community? @relation(fields: [communityId], references: [id])
   followers         QuestionFollow[]
   passes            QuestionPass[]
+  answerRequests    AnswerRequest[]
   subscribers       QuestionSubscription[] @relation("subscribers")
   answers           Answer[]
   comments          Comment[]
@@ -700,4 +703,23 @@ model NotificationSubscription {
   @@unique([userId, endpoint])
   @@index([userId])
   @@index([isActive])
+}
+
+// User requests a specific person to answer a question.
+model AnswerRequest {
+  id            String    @id @default(cuid())
+  postId        String
+  requesterId   String
+  requesteeId   String
+  message       String?   @db.VarChar(500)
+  createdAt     DateTime  @default(now())
+
+  post          Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  requester     User      @relation("requester", fields: [requesterId], references: [id], onDelete: Cascade)
+  requestee     User      @relation("requestee", fields: [requesteeId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, requesterId, requesteeId])
+  @@index([postId])
+  @@index([requesteeId])
+  @@index([requesterId])
 }
