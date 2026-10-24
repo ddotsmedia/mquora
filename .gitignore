@@ -19,3 +19,4 @@ coverage/
 
 # CI-generated deploy env (never commit)
 .deploy/
+
