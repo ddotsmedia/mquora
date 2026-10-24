@@ -241,12 +241,20 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
           <div className="space-y-4">
             {answers.length > 0 ? (
               answers.map((answer) => (
-                <div key={answer.id} className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
+                <a key={answer.id} href={`/q/${answer.post.seoSlug}`} className="block rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 hover:border-[var(--primary)]/40 hover:shadow-sm transition-all group">
                   <p className="mb-2 text-sm text-[var(--text-muted)]">
-                    Answered: <a href={`/q/${answer.post.seoSlug}`} className="font-semibold text-[var(--primary)] hover:underline">{answer.post.title}</a>
+                    Answered: <span className="font-semibold text-[var(--primary)] group-hover:underline">{answer.post.title}</span>
                   </p>
-                  <p className="text-sm text-[var(--text-secondary)]">{answer.isAccepted && <span className="text-green-600 font-semibold">✓ Accepted · </span>}{answer.voteScore} votes</p>
-                </div>
+                  {answer.body && (
+                    <p className="mb-3 text-sm text-[var(--text)] line-clamp-3 leading-relaxed">
+                      {answer.body.length > 220 ? answer.body.slice(0, 220) + '…' : answer.body}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-3 text-xs text-[var(--text-muted)]">
+                    {answer.isAccepted && <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-0.5 text-green-600 font-semibold">✓ Accepted</span>}
+                    <span>{answer.voteScore >= 0 ? '+' : ''}{answer.voteScore} votes</span>
+                  </div>
+                </a>
               ))
             ) : (
               <p className="p-8 text-center text-[var(--text-muted)]">No answers yet.</p>
