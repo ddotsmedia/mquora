@@ -1,38 +1,37 @@
-import { ImageResponse } from 'next/og';
+import { OG_SIZE, pngResponse, renderCard, siteDomain } from '@/lib/og-card';
 
-export const runtime = 'edge';
-export const alt = 'askvyo question';
-export const size = { width: 1200, height: 630 };
+export const runtime = 'nodejs';
+export const size = OG_SIZE;
 export const contentType = 'image/png';
+export const alt = 'askvyo question';
+
+async function getPost(seoSlug: string) {
+  const apiBase =
+    process.env.API_INTERNAL_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    'http://localhost:3100';
+  try {
+    const res = await fetch(`${apiBase}/api/v1/posts/${seoSlug}?view=0`, {
+      next: { revalidate: 3600 },
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
 
 export default async function Image({ params }: { params: { seoSlug: string } }) {
-  const title = decodeURIComponent(params.seoSlug.replace(/-/g, ' '));
-  return new ImageResponse(
-    (
-      <div
-        style={{
-          background: 'linear-gradient(135deg, #0D1712 0%, #1F6B45 100%)',
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'flex-start',
-          justifyContent: 'center',
-          padding: '80px',
-          fontFamily: 'sans-serif',
-        }}
-      >
-        <div style={{ color: '#4ADE80', fontSize: 28, fontWeight: 700, marginBottom: 24, letterSpacing: 2 }}>
-          askvyo • Malayalam Q&A
-        </div>
-        <div style={{ color: '#ffffff', fontSize: 52, fontWeight: 800, lineHeight: 1.3, maxWidth: 1000 }}>
-          {title.length > 120 ? title.slice(0, 120) + '…' : title}
-        </div>
-        <div style={{ color: '#86EFAC', fontSize: 24, marginTop: 40 }}>
-          Ask. Answer. Learn. In Malayalam.
-        </div>
-      </div>
-    ),
-    { ...size },
-  );
+  const post = await getPost(params.seoSlug);
+  const title = post?.title || decodeURIComponent(params.seoSlug.replace(/-/g, ' '));
+  const answerCount: number = post?.answerCount ?? 0;
+  const community: string = post?.community?.name || '';
+
+  const buf = await renderCard({
+    kicker: community || 'Malayalam Q&A',
+    title,
+    meta: `${answerCount} ${answerCount === 1 ? 'answer' : 'answers'} · ${siteDomain()}`,
+    domain: siteDomain(),
+  });
+  return pngResponse(buf);
 }

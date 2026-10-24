@@ -1,33 +1,41 @@
-import { ImageResponse } from 'next/og';
+import { OG_SIZE, pngResponse, renderCard, siteDomain } from '@/lib/og-card';
 
-export const runtime = 'edge';
-export const alt = 'askvyo profile';
-export const size = { width: 1200, height: 630 };
+export const runtime = 'nodejs';
+export const size = OG_SIZE;
 export const contentType = 'image/png';
+export const alt = 'askvyo profile';
+
+async function getProfile(username: string) {
+  const apiBase =
+    process.env.API_INTERNAL_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    'http://localhost:3100';
+  try {
+    const res = await fetch(`${apiBase}/api/v1/users/profile/${username}`, {
+      next: { revalidate: 3600 },
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
 
 export default async function Image({ params }: { params: { username: string } }) {
-  return new ImageResponse(
-    (
-      <div
-        style={{
-          background: 'linear-gradient(135deg, #0D1712 0%, #1F6B45 100%)',
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontFamily: 'sans-serif',
-        }}
-      >
-        <div style={{ color: '#4ADE80', fontSize: 28, fontWeight: 700, marginBottom: 32, letterSpacing: 2 }}>
-          askvyo • Malayalam Q&A
-        </div>
-        <div style={{ fontSize: 72, marginBottom: 16 }}>👤</div>
-        <div style={{ color: '#ffffff', fontSize: 56, fontWeight: 800 }}>@{params.username}</div>
-        <div style={{ color: '#86EFAC', fontSize: 24, marginTop: 24 }}>View profile on askvyo</div>
-      </div>
-    ),
-    { ...size },
-  );
+  const profile = await getProfile(params.username);
+  const name = profile?.name || `@${params.username}`;
+  const credential = profile?.credential || '';
+  const answerCount: number = profile?.stats?.answers ?? 0;
+
+  const buf = await renderCard({
+    kicker: 'askvyo Profile',
+    title: name,
+    meta: [
+      credential,
+      answerCount > 0 ? `${answerCount} answers` : '',
+      siteDomain(),
+    ].filter(Boolean).join(' · '),
+    domain: siteDomain(),
+  });
+  return pngResponse(buf);
 }
