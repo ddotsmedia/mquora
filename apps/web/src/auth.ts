@@ -98,7 +98,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             }),
             cache: 'no-store',
           });
-          if (!res.ok) return false;
+          if (!res.ok) {
+            const body = await res.text().catch(() => '');
+            console.error('[auth] oauth-signin failed:', res.status, body);
+            return false;
+          }
           const data = await res.json() as { accessToken: string; refreshToken: string; user: { id: string; email: string; username: string; displayName: string; role: string } };
           // Stash tokens on the user object so the jwt callback can pick them up
           (user as User).accessToken = data.accessToken;
