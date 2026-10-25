@@ -24,6 +24,7 @@ import { MetricsModule } from './metrics/metrics.module';
 import { TrendingModule } from './trending/trending.module';
 import { UsersModule } from './users/users.module';
 import { SocialModule } from './social/social.module';
+import { DigestModule } from './digest/digest.module';
 
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { SocialModule } from './social/social.module';
     TrendingModule,
     UsersModule,
     SocialModule,
+    DigestModule,
   ],
   controllers: [AppController],
   providers: [AppService],

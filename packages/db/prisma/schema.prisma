@@ -91,6 +91,7 @@ model User {
   reputationScore       Int             @default(0)
   isVerified            Boolean         @default(false)
   isApproved            Boolean         @default(false)
+  digestOptIn           Boolean         @default(false)
   bannedAt              DateTime?
   bannedUntil           DateTime?
   deletedAt             DateTime?

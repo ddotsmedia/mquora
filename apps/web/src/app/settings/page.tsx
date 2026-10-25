@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { userFetch } from '@/lib/session-api';
 import { ApiError } from '@/lib/api';
 import { PasswordChangeForm } from '@/components/password-change-form';
+import { DigestToggle } from '@/components/digest-toggle';
 
 export const metadata: Metadata = { title: 'Settings — askvyo', robots: { index: false } };
 export const dynamic = 'force-dynamic';
@@ -156,6 +157,8 @@ export default async function SettingsPage({
             <p className="mt-1 text-sm text-[var(--text-secondary)]">{me.email}</p>
             <p className="mt-2 text-xs text-[var(--text-muted)]">Email changes require identity verification. Contact support.</p>
           </div>
+
+          <DigestToggle />
 
           <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4">
             <p className="text-sm font-semibold text-red-600 dark:text-red-400">Danger zone</p>
