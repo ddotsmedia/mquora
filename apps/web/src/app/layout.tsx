@@ -19,6 +19,8 @@ export const metadata: Metadata = {
     'Malayalam Q&A', 'Malayalam questions', 'Malayalam questions and answers', 'Malayalam Q&A community',
     'Kerala questions', 'UAE Malayalam questions', 'Gulf Malayali Q&A', 'NRI questions Malayalam',
     'askvyo', 'Kerala knowledge community', 'ചോദ്യങ്ങൾ', 'ചോദ്യോത്തരം', 'Malayalam answers', 'Kerala community',
+    'ask questions in Malayalam', 'Manglish questions and answers', 'Malayalam knowledge sharing community',
+    'Malayalam Q&A for NRIs', 'Kerala community questions', 'Malayalam questions online',
   ],
   openGraph: {
     title: "askvyo",
