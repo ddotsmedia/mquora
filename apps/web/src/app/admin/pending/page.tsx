@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
+import { apiFetch } from '@/lib/api';
 import { CheckCircle, XCircle, User, FileText, Loader2, ExternalLink } from 'lucide-react';
 
 interface PendingUser {
@@ -29,16 +31,17 @@ export default function PendingPage() {
   const [postTotal, setPostTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  const { data: session } = useSession();
+  const token = session?.user?.accessToken;
 
   const load = useCallback(async () => {
+    if (!token) return;
     setLoading(true);
     try {
-      const res = await fetch('/api/v1/admin/pending', {
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error();
-      const data = await res.json();
+      const data = await apiFetch<{ users: PendingUser[]; posts: PendingPost[]; userTotal: number; postTotal: number }>(
+        '/api/v1/admin/pending',
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
       setUsers(data.users ?? []);
       setPosts(data.posts ?? []);
       setUserTotal(data.userTotal ?? 0);
@@ -48,14 +51,14 @@ export default function PendingPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [token]);
 
   useEffect(() => { load(); }, [load]);
 
   const userAction = async (id: string, action: 'approve' | 'reject') => {
     if (!window.confirm(action === 'approve' ? 'Approve this user?' : 'Reject and delete this user?')) return;
     setBusy(id);
-    await fetch(`/api/v1/admin/users/${id}/${action}`, { method: 'POST', credentials: 'include' });
+    await apiFetch(`/api/v1/admin/users/${id}/${action}`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } }).catch(() => undefined);
     setBusy(null);
     load();
   };
@@ -63,11 +66,8 @@ export default function PendingPage() {
   const postAction = async (id: string, action: 'approve' | 'remove') => {
     if (!window.confirm(action === 'approve' ? 'Approve and publish this post?' : 'Remove this post?')) return;
     setBusy(id);
-    if (action === 'approve') {
-      await fetch(`/api/v1/admin/content/${id}/approve`, { method: 'POST', credentials: 'include' });
-    } else {
-      await fetch(`/api/v1/admin/content/${id}/remove`, { method: 'POST', credentials: 'include' });
-    }
+    const path = action === 'approve' ? `/api/v1/admin/content/${id}/approve` : `/api/v1/admin/content/${id}/remove`;
+    await apiFetch(path, { method: 'POST', headers: { Authorization: `Bearer ${token}` } }).catch(() => undefined);
     setBusy(null);
     load();
   };
