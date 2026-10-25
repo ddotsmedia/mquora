@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { EmbeddingService } from '../../../../packages/ai/src/index';
 import { Redis } from 'ioredis';
+import { expandQuery } from './manglish';
 
 @Injectable()
 export class SearchService {
@@ -44,7 +45,8 @@ export class SearchService {
       }
     }
 
-    // Trigram match (pg_trgm GIN indexes): substring OR typo-tolerant title similarity.
+    // Substring match on the query and its Malayalam-script forms, OR typo-tolerant title similarity (pg_trgm).
+    const patterns = expandQuery(query).map((q) => `%${q}%`);
     const posts = await this.prisma.$queryRaw<
       Array<{ id: string; title: string; seoSlug: string; language: string; createdAt: Date }>
     >`
@@ -52,8 +54,8 @@ export class SearchService {
       FROM "Post" p
       WHERE p."deletedAt" IS NULL
         AND (${options.language}::text IS NULL OR p.language::text = ${options.language})
-        AND (p.title ILIKE '%' || ${query} || '%'
-          OR p.body ILIKE '%' || ${query} || '%'
+        AND (p.title ILIKE ANY(${patterns}::text[])
+          OR p.body ILIKE ANY(${patterns}::text[])
           OR similarity(p.title, ${query}) > 0.3)
       ORDER BY similarity(p.title, ${query}) DESC, p."createdAt" DESC
       LIMIT ${limit + 1} OFFSET ${offset}
