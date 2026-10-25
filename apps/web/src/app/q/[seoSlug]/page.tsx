@@ -61,6 +61,7 @@ interface Answer {
   voteScore: number;
   qualityScore?: number | null;
   viewCount?: number;
+  language?: string;
   voteCount?: number;
   isAccepted: boolean;
   commentCount?: number;
@@ -216,7 +217,7 @@ export default async function PostPage({ params, searchParams }: { params: Promi
         </div>
 
         <div lang={post.language === 'MALAYALAM' || post.language === 'MIXED' ? 'ml' : undefined} className="prose dark:prose-invert max-w-none mb-6">
-          <p className="text-foreground whitespace-pre-wrap">{post.body}</p>
+          <p className="text-foreground whitespace-pre-wrap" lang={post.language === 'MALAYALAM' ? 'ml' : post.language === 'ENGLISH' ? 'en' : undefined}>{post.body}</p>
         </div>
 
         {post.tags && post.tags.length > 0 && (
@@ -293,7 +294,9 @@ export default async function PostPage({ params, searchParams }: { params: Promi
                         )}
                       </p>
                     </div>
-                    <ReadMore text={answer.body} />
+                    <div lang={answer.language === 'MALAYALAM' ? 'ml' : answer.language === 'ENGLISH' ? 'en' : undefined}>
+                      <ReadMore text={answer.body} />
+                    </div>
                     <div className="mt-4 text-sm text-muted-foreground">
                       <div className="mt-2 flex flex-wrap items-center gap-3">
                         <AcceptButton answerId={answer.id} questionAuthorId={post.author.id} accepted={answer.isAccepted} />
