@@ -64,6 +64,13 @@ export class NotificationsController {
     return this.notificationsService.unsubscribeFromPush(userId, dto);
   }
 
+  @Get('unread-count')
+  @UseGuards(JwtAuthGuard)
+  async unreadCount(@Req() req: Request) {
+    const userId = (req.user as Record<string, unknown>).id as string;
+    return { count: await this.notificationsService.unreadCount(userId) };
+  }
+
   @Get('subscriptions')
   @UseGuards(JwtAuthGuard)
   async getSubscriptions(@Req() req: Request) {

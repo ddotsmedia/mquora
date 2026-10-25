@@ -220,6 +220,10 @@ export class NotificationsService {
     return { data };
   }
 
+  async unreadCount(userId: string) {
+    return this.prisma.notification.count({ where: { userId, readAt: null } });
+  }
+
   async markRead(userId: string, notificationId: string) {
     await this.prisma.notification.updateMany({
       where: { id: notificationId, userId },

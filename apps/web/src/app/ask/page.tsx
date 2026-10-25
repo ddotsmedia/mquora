@@ -108,10 +108,11 @@ function AskPageInner() {
       } else if (res.seoSlug) {
         if (requestedUser && res.id) {
           try {
-            await apiFetch(`/api/v1/posts/${res.id}/request-answer`, {
+            const target = await apiFetch<{ id: string }>(`/api/v1/users/${encodeURIComponent(requestedUser)}`);
+            await apiFetch(`/api/v1/questions/${res.id}/request-answer`, {
               method: 'POST',
               headers: { Authorization: `Bearer ${token}` },
-              body: JSON.stringify({ username: requestedUser }),
+              body: JSON.stringify({ requesteeId: target.id }),
             });
           } catch {
             // silently ignore
