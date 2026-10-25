@@ -60,6 +60,7 @@ interface Answer {
   body: string;
   voteScore: number;
   qualityScore?: number | null;
+  viewCount?: number;
   voteCount?: number;
   isAccepted: boolean;
   commentCount?: number;
@@ -304,6 +305,7 @@ export default async function PostPage({ params, searchParams }: { params: Promi
                         />
                       </div>
                     </div>
+                    <span className="text-xs text-[var(--text-muted)]">{answer.viewCount ?? 0} views</span>
                     <Comments answerId={answer.id} initialCount={answer.commentCount ?? 0} />
                   </div>
                 </div>

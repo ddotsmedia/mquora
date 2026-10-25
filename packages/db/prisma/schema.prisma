@@ -280,6 +280,7 @@ model Answer {
   status            ContentStatus @default(PUBLISHED)
   voteScore         Int       @default(0)
   voteCount         Int            @default(0)
+  viewCount         Int            @default(0)
   commentCount      Int       @default(0)
   isAccepted        Boolean   @default(false)
   qualityScore      Int?

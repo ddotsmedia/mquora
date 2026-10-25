@@ -94,7 +94,7 @@ export class AnswersService {
     const answers = await this.prisma.answer.findMany({
       where: whereClause,
       select: {
-        id: true, body: true, language: true, voteScore: true, qualityScore: true, isAccepted: true, commentCount: true, createdAt: true, updatedAt: true,
+        id: true, body: true, language: true, voteScore: true, qualityScore: true, viewCount: true, isAccepted: true, commentCount: true, createdAt: true, updatedAt: true,
         author: { select: { id: true, username: true, displayName: true, isVerified: true, reputationScore: true, profile: { select: { credential: true } } } },
       },
       orderBy: recent ? [{ createdAt: 'desc' }] : [{ isAccepted: 'desc' }, { voteScore: 'desc' }, { createdAt: 'asc' }],
@@ -104,6 +104,13 @@ export class AnswersService {
     const hasMore = answers.length > limit;
     const data = answers.slice(0, limit);
     const nextCursor = hasMore && data.length > 0 ? data[data.length - 1].createdAt.toISOString() : null;
+
+    // Count one view per answer shown; fire-and-forget so the page never waits on it.
+    if (data.length) {
+      void this.prisma.answer
+        .updateMany({ where: { id: { in: data.map((a) => a.id) } }, data: { viewCount: { increment: 1 } } })
+        .catch(() => undefined);
+    }
 
     return { data, nextCursor };
   }
