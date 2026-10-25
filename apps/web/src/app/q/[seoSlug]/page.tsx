@@ -27,6 +27,7 @@ import { siteOrigin } from '@/lib/site';
 
 interface Post {
   id: string;
+  mergedInto?: { seoSlug: string; title: string } | null;
   seoSlug: string;
   title: string;
   body: string;
@@ -58,6 +59,7 @@ interface Answer {
   id: string;
   body: string;
   voteScore: number;
+  qualityScore?: number | null;
   voteCount?: number;
   isAccepted: boolean;
   commentCount?: number;
@@ -109,6 +111,18 @@ export default async function PostPage({ params, searchParams }: { params: Promi
 
   try {
     post = await serverApiFetch<Post>(`/api/v1/posts/${seoSlug}`);
+    if (post.mergedInto) {
+      const target = post.mergedInto;
+      return (
+        <div className="mx-auto max-w-3xl px-4 py-16 text-center">
+          <p className="text-sm text-[var(--text-muted)]">This question was merged into another question.</p>
+          <p className="mt-3 text-[var(--text)]">
+            Originally answered:{' '}
+            <Link href={`/q/${target.seoSlug}`} className="font-medium text-[var(--primary)] underline">{target.title}</Link>
+          </p>
+        </div>
+      );
+    }
     const response = await serverApiFetch<{ data: Answer[]; nextCursor: string | null }>(
       `/api/v1/posts/${post.id}/answers?limit=50&sort=${sort}`, undefined, { cache: 'no-store' },
     );
@@ -254,7 +268,7 @@ export default async function PostPage({ params, searchParams }: { params: Promi
 
         <div className="space-y-6 mb-8">
           {answers.map((answer) => (
-            <CollapsedAnswer key={answer.id} voteScore={answer.voteScore}>
+            <CollapsedAnswer key={answer.id} voteScore={answer.voteScore} qualityScore={answer.qualityScore} isAccepted={answer.isAccepted}>
               <div id={`answer-${answer.id}`} className={`rounded-xl border p-4 bg-[var(--surface)] ${answer.isAccepted ? 'border-green-600/50 ring-1 ring-green-600/20' : 'border-border'}`}>
                 {answer.isAccepted && (
                   <p className="text-sm text-green-600 dark:text-green-400 mb-2 font-semibold">✓ Accepted Answer</p>

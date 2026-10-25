@@ -147,7 +147,15 @@ export class PostsService {
       },
     });
 
-    if (!post || post.deletedAt) throw new NotFoundException('Post not found');
+    if (!post || post.deletedAt) {
+      // Merged duplicates: point visitors to the question they were merged into.
+      const merged = await this.prisma.duplicateCandidate.findFirst({
+        where: { status: 'MERGED', sourcePost: { seoSlug } },
+        select: { targetPost: { select: { seoSlug: true, title: true } } },
+      });
+      if (merged) return { mergedInto: merged.targetPost };
+      throw new NotFoundException('Post not found');
+    }
     // Count the view without slowing the response.
     if (countView) void this.prisma.post.update({ where: { id: post.id }, data: { viewCount: { increment: 1 } } }).catch(() => undefined);
     return post;

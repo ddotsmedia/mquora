@@ -5,13 +5,19 @@ import { ChevronDown } from 'lucide-react';
 
 interface CollapsedAnswerProps {
   voteScore: number;
+  /** AI quality score 0-100 from the answer-quality worker; null until scored. */
+  qualityScore?: number | null;
+  isAccepted?: boolean;
   children: React.ReactNode;
   threshold?: number;
+  qualityThreshold?: number;
 }
 
-/** Auto-collapses answers below a vote-score threshold. */
-export function CollapsedAnswer({ voteScore, children, threshold = -3 }: CollapsedAnswerProps) {
-  const shouldCollapse = voteScore < threshold;
+/** Auto-collapses downvoted or low-quality answers. Accepted answers are never hidden. */
+export function CollapsedAnswer({ voteScore, qualityScore, isAccepted, children, threshold = -3, qualityThreshold = 20 }: CollapsedAnswerProps) {
+  const lowVotes = voteScore < threshold;
+  const lowQuality = qualityScore != null && qualityScore < qualityThreshold;
+  const shouldCollapse = !isAccepted && (lowVotes || lowQuality);
   const [expanded, setExpanded] = useState(false);
 
   if (!shouldCollapse || expanded) {
@@ -26,8 +32,14 @@ export function CollapsedAnswer({ voteScore, children, threshold = -3 }: Collaps
         aria-expanded={false}
       >
         <span>
-          <span className="text-red-500 font-medium">{voteScore} votes</span>
-          {' · '}This answer was downvoted — hidden by default
+          {lowVotes ? (
+            <>
+              <span className="text-red-500 font-medium">{voteScore} votes</span>
+              {' · '}This answer was downvoted — hidden by default
+            </>
+          ) : (
+            'Low-quality answer — hidden by default'
+          )}
         </span>
         <span className="flex items-center gap-1 shrink-0 text-[var(--primary)] font-medium">
           Show <ChevronDown className="h-4 w-4" />
