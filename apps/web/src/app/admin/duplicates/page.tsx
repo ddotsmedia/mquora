@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
+import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 import { GitMerge, X, ExternalLink, Loader2 } from 'lucide-react';
 
@@ -26,22 +27,25 @@ export default function AdminDuplicatesPage() {
   const [candidates, setCandidates] = useState<DuplicateCandidate[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  const { data: session } = useSession();
+  const token = session?.user?.accessToken;
+  const authHeaders = { Authorization: `Bearer ${token}` };
 
   const load = async () => {
     setLoading(true);
     try {
-      const res = await apiFetch<{ data: DuplicateCandidate[] }>('/api/v1/admin/duplicates');
+      const res = await apiFetch<{ data: DuplicateCandidate[] }>('/api/v1/admin/duplicates', { headers: authHeaders });
       setCandidates(res.data ?? []);
     } catch { toast.error('Failed to load duplicate candidates'); }
     finally { setLoading(false); }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { if (token) load(); }, [token]);
 
   const dismiss = async (id: string) => {
     setBusy(id);
     try {
-      await apiFetch(`/api/v1/admin/duplicates/${id}/dismiss`, { method: 'POST' });
+      await apiFetch(`/api/v1/admin/duplicates/${id}/dismiss`, { method: 'POST', headers: authHeaders });
       setCandidates((c) => c.filter((x) => x.id !== id));
       toast.success('Dismissed');
     } catch { toast.error('Failed to dismiss'); }
@@ -56,7 +60,7 @@ export default function AdminDuplicatesPage() {
     try {
       const res = await apiFetch<{ success: boolean; movedAnswers: number; targetSlug: string }>(
         '/api/v1/admin/questions/merge',
-        { method: 'POST', body: JSON.stringify({ sourcePostId, targetPostId }) },
+        { method: 'POST', headers: authHeaders, body: JSON.stringify({ sourcePostId, targetPostId }) },
       );
       setCandidates((c) => c.filter((x) => x.id !== candidate.id));
       toast.success(`Merged — ${res.movedAnswers} answer(s) moved`);

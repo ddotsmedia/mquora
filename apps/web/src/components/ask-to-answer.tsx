@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { UserPlus, X, Search, Loader2, Check } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
+import { useSession } from 'next-auth/react';
 
 interface User {
   id: string;
@@ -17,6 +18,8 @@ interface AskToAnswerProps {
 
 export function AskToAnswer({ postId }: AskToAnswerProps) {
   const [open, setOpen] = useState(false);
+  const { data: session } = useSession();
+  const token = session?.user?.accessToken;
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<User[]>([]);
   const [searching, setSearching] = useState(false);
@@ -30,7 +33,7 @@ export function AskToAnswer({ postId }: AskToAnswerProps) {
     if (q.trim().length < 2) { setResults([]); return; }
     setSearching(true);
     try {
-      const res = await apiFetch<{ data: User[] }>(`/api/v1/users/search?q=${encodeURIComponent(q)}&limit=8`);
+      const res = await apiFetch<{ data: User[] }>(`/api/v1/users/search?q=${encodeURIComponent(q)}&limit=8`, { headers: { Authorization: `Bearer ${token}` } });
       setResults(res.data ?? []);
     } catch { setResults([]); }
     finally { setSearching(false); }
@@ -42,6 +45,7 @@ export function AskToAnswer({ postId }: AskToAnswerProps) {
     try {
       await apiFetch(`/api/v1/questions/${postId}/request-answer`, {
         method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ requesteeId: selected.id, message: message.trim() || undefined }),
       });
       setSent(true);
