@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Header, Param, Patch, Post, Query, Req, 
 import { UserRole } from '@prisma/client';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { AdminGuard } from '../guards/admin.guard';
+import { ModeratorGuard } from '../guards/moderator.guard';
 import { AdminService, Actor } from './admin.service';
 import {
   AnnouncementDto,
@@ -22,6 +23,8 @@ import {
   UsersQueryDto,
 } from './admin.dto';
 
+// All routes require JWT. Sensitive routes require AdminGuard (ADMIN only).
+// Content-moderation routes use ModeratorGuard (ADMIN + COMMUNITY_MODERATOR).
 @Controller('api/v1/admin')
 @UseGuards(JwtAuthGuard, AdminGuard)
 export class AdminController {
@@ -46,6 +49,7 @@ export class AdminController {
     return this.admin.getUsers({ q: q.q, role: q.role, page: q.page, limit: q.limit, pending: q.pending === 'true' });
   }
 
+  @UseGuards(JwtAuthGuard, ModeratorGuard)
   @Get('pending')
   getPending() {
     return Promise.all([
@@ -87,36 +91,43 @@ export class AdminController {
     return this.admin.setVerified(this.actor(req), id, dto.verified);
   }
 
+  @UseGuards(JwtAuthGuard, ModeratorGuard)
   @Get('content')
   getContent(@Query() q: ContentQueryDto) {
     return this.admin.getContent({ filter: q.filter, status: q.status, q: q.q, page: q.page, limit: q.limit });
   }
 
+  @UseGuards(JwtAuthGuard, ModeratorGuard)
   @Post('content/:id/remove')
   removeContent(@Req() req: { user: Actor }, @Param('id') id: string) {
     return this.admin.setPostStatus(this.actor(req), id, 'REMOVED');
   }
 
+  @UseGuards(JwtAuthGuard, ModeratorGuard)
   @Post('content/:id/restore')
   restoreContent(@Req() req: { user: Actor }, @Param('id') id: string) {
     return this.admin.setPostStatus(this.actor(req), id, 'PUBLISHED');
   }
 
+  @UseGuards(JwtAuthGuard, ModeratorGuard)
   @Delete('content/:id')
   deleteContent(@Req() req: { user: Actor }, @Param('id') id: string) {
     return this.admin.setPostStatus(this.actor(req), id, 'REMOVED');
   }
 
+  @UseGuards(JwtAuthGuard, ModeratorGuard)
   @Get('reports')
   getReports(@Query() q: ReportsQueryDto) {
     return this.admin.getReports({ status: q.status, page: q.page, limit: q.limit });
   }
 
+  @UseGuards(JwtAuthGuard, ModeratorGuard)
   @Post('reports/:id/resolve')
   resolveReport(@Req() req: { user: Actor }, @Param('id') id: string, @Body() dto: ResolveDto) {
     return this.admin.resolveReport(this.actor(req), id, dto.action);
   }
 
+  @UseGuards(JwtAuthGuard, ModeratorGuard)
   @Post('reports/bulk-action')
   bulkActionReports(@Req() req: { user: Actor }, @Body() dto: BulkActionDto) {
     return this.admin.bulkResolveReports(this.actor(req), dto.ids, dto.action);
@@ -221,16 +232,19 @@ export class AdminController {
 
   // ── Admin notifications ────────────────────────────────────────────────────
 
+  @UseGuards(JwtAuthGuard, ModeratorGuard)
   @Get('notifications')
   getAdminNotifications(@Query('unreadOnly') unreadOnly?: string) {
     return this.admin.getAdminNotifications(unreadOnly === 'true');
   }
 
+  @UseGuards(JwtAuthGuard, ModeratorGuard)
   @Post('notifications/:id/read')
   markAdminNotificationRead(@Param('id') id: string) {
     return this.admin.markAdminNotificationRead(id);
   }
 
+  @UseGuards(JwtAuthGuard, ModeratorGuard)
   @Post('notifications/read-all')
   markAllAdminNotificationsRead() {
     return this.admin.markAllAdminNotificationsRead();
@@ -238,16 +252,19 @@ export class AdminController {
 
   // ── Approval endpoints ─────────────────────────────────────────────────────
 
+  @UseGuards(JwtAuthGuard, ModeratorGuard)
   @Post('users/:id/approve')
   approveUser(@Req() req: { user: Actor }, @Param('id') id: string) {
     return this.admin.approveUser(this.actor(req), id);
   }
 
+  @UseGuards(JwtAuthGuard, ModeratorGuard)
   @Post('users/:id/reject')
   rejectUser(@Req() req: { user: Actor }, @Param('id') id: string) {
     return this.admin.rejectUser(this.actor(req), id);
   }
 
+  @UseGuards(JwtAuthGuard, ModeratorGuard)
   @Post('content/:id/approve')
   approveContent(@Req() req: { user: Actor }, @Param('id') id: string) {
     return this.admin.approveContent(this.actor(req), id);
@@ -255,16 +272,19 @@ export class AdminController {
 
   // ── Duplicate question management ──────────────────────────────────────────
 
+  @UseGuards(JwtAuthGuard, ModeratorGuard)
   @Get('duplicates')
   listDuplicates(@Query('status') status?: string) {
     return this.admin.listDuplicateCandidates(status || 'PENDING');
   }
 
+  @UseGuards(JwtAuthGuard, ModeratorGuard)
   @Post('duplicates/:id/dismiss')
   dismissDuplicate(@Req() req: { user: Actor }, @Param('id') id: string) {
     return this.admin.dismissDuplicate(this.actor(req), id);
   }
 
+  @UseGuards(JwtAuthGuard, ModeratorGuard)
   @Post('questions/merge')
   mergeQuestions(@Req() req: { user: Actor }, @Body() body: { sourcePostId: string; targetPostId: string }) {
     return this.admin.mergeQuestions(this.actor(req), body.sourcePostId, body.targetPostId);
