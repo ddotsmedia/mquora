@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { sansFont, malayalamFont } from "@/lib/fonts";
 import { Navbar } from "@/components/navbar";
 import { SiteFooter } from "@/components/site-footer";
@@ -40,19 +41,23 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  // Read the nonce injected by middleware so inline scripts pass the strict-dynamic CSP.
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         {/* Privacy-friendly analytics — Umami; no cookies, GDPR-safe */}
         {process.env.NEXT_PUBLIC_UMAMI_URL && process.env.NEXT_PUBLIC_UMAMI_ID && (
           <script
+            nonce={nonce}
             defer
             src={`${process.env.NEXT_PUBLIC_UMAMI_URL}/script.js`}
             data-website-id={process.env.NEXT_PUBLIC_UMAMI_ID}
           />
         )}
         <script
+          nonce={nonce}
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({

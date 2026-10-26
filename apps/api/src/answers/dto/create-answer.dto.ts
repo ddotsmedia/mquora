@@ -1,4 +1,4 @@
-import { IsString, MinLength, MaxLength, IsOptional } from 'class-validator';
+import { IsString, MinLength, MaxLength, IsOptional, IsIn } from 'class-validator';
 
 export class CreateAnswerDto {
   @IsString()
@@ -12,6 +12,6 @@ export class CreateAnswerDto {
 }
 
 export class VoteAnswerDto {
-  @IsString()
+  @IsIn(['UP', 'DOWN'])
   type!: 'UP' | 'DOWN';
 }

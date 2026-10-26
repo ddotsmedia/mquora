@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Delete, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, Query, UseGuards, Req } from '@nestjs/common'; // Query still used by findByPost
 import { Request } from 'express';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { OptionalJwtGuard } from '../guards/optional-jwt.guard';
 import { AnswersService } from './answers.service';
 import { CreateAnswerDto, VoteAnswerDto } from './dto/create-answer.dto';
 
@@ -56,7 +57,9 @@ export class AnswersController {
   }
 
   @Get('answers/:id/vote-status')
-  async getVoteStatus(@Param('id') id: string, @Query('userId') userId?: string) {
+  @UseGuards(OptionalJwtGuard)
+  async getVoteStatus(@Param('id') id: string, @Req() req: Request) {
+    const userId = (req.user as Record<string, unknown> | undefined)?.id as string | undefined;
     return this.answersService.getAnswerVoteStatus(id, userId);
   }
 }
