@@ -5,6 +5,7 @@ import { sansFont, malayalamFont } from "@/lib/fonts";
 import { Navbar } from "@/components/navbar";
 import { SiteFooter } from "@/components/site-footer";
 import { PublicOnly } from "@/components/public-only";
+import { BottomNav } from "@/components/bottom-nav";
 import { Toaster } from "sonner";
 import { Providers } from "@/components/providers";
 import { GoogleOneTap } from "@/components/google-one-tap";
@@ -82,8 +83,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <Providers>
           <PublicOnly><Navbar /></PublicOnly>
           <GoogleOneTap />
-          <main id="main-content">{children}</main>
-          <PublicOnly><SiteFooter /></PublicOnly>
+          <main id="main-content" className="pb-[env(safe-area-inset-bottom,0px)] md:pb-0">{children}</main>
+          <PublicOnly><SiteFooter className="pb-16 md:pb-0" /></PublicOnly>
+          <PublicOnly><BottomNav /></PublicOnly>
           <Toaster richColors position="top-center" />
         </Providers>
       </body>

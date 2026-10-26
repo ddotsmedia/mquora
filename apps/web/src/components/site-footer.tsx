@@ -12,9 +12,9 @@ const LINKS = [
   ['Terms', '/terms'],
 ] as const;
 
-export function SiteFooter() {
+export function SiteFooter({ className }: { className?: string }) {
   return (
-    <footer className="mt-16 border-t border-[var(--border)] bg-[var(--surface)]">
+    <footer className={`mt-16 border-t border-[var(--border)] bg-[var(--surface)] ${className ?? ''}`}>
       <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-8 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="font-semibold text-[var(--text)]">askvyo</p>

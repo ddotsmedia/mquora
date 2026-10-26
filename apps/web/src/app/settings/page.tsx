@@ -77,7 +77,7 @@ export default async function SettingsPage({
       </header>
 
       {/* Tab bar */}
-      <div className="mb-6 flex gap-1 rounded-full border border-[var(--border)] bg-[var(--surface)] p-1">
+      <div className="mb-6 flex gap-1 overflow-x-auto rounded-full border border-[var(--border)] bg-[var(--surface)] p-1 scrollbar-none">
         {TABS.map((t) => (
           <Link
             key={t.id}

@@ -163,3 +163,15 @@ body {
   font-weight: 600;
   font-size: 0.875rem;
 }
+
+/* Bottom nav safe area — add padding on mobile so content isn't hidden behind the fixed nav */
+@media (max-width: 767px) {
+  #main-content {
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* Safe-area bottom utility for the nav itself */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
