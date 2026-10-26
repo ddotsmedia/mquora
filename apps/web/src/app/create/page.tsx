@@ -131,7 +131,7 @@ export default function CreatePage() {
           <p className="text-xs text-muted-foreground mt-1">{body.length} / 5000</p>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="block text-sm font-semibold text-foreground mb-2">Type</label>
             <select
