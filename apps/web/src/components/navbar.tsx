@@ -4,7 +4,7 @@ import { useTheme } from 'next-themes';
 import { useSession, signOut } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import { NotificationBell } from './notification-bell';
-import { LanguageToggle } from '@/lib/i18n';
+import { LanguageToggle, useI18n } from '@/lib/i18n';
 import { useState } from 'react';
 import Link from 'next/link';
 import { Menu, X, Moon, Sun, Search, Plus } from 'lucide-react';
@@ -41,17 +41,18 @@ export function Navbar() {
   const pathname = usePathname();
   const isStaff = ['ADMIN', 'COMMUNITY_MODERATOR'].includes(session?.user?.role ?? '');
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { t } = useI18n();
 
   const navItems = [
-    { href: '/', label: 'Home' },
+    { href: '/', label: t('nav.home') },
     ...(session ? [
-      { href: '/following', label: 'Following' },
-      { href: '/answer', label: 'Answers' },
+      { href: '/following', label: t('nav.following') },
+      { href: '/answer', label: t('nav.answers') },
     ] : []),
-    { href: '/communities', label: 'Communities' },
-    { href: '/discover', label: 'Discover' },
-    { href: '/tags', label: 'Topics' },
-    { href: '/leaderboard', label: 'Leaderboard' },
+    { href: '/communities', label: t('nav.communities') },
+    { href: '/discover', label: t('nav.discover') },
+    { href: '/tags', label: t('nav.topics') },
+    { href: '/leaderboard', label: t('nav.leaderboard') },
   ];
 
   return (
@@ -73,8 +74,8 @@ export function Navbar() {
               <input
                 type="search"
                 name="q"
-                placeholder="Search questions..."
-                aria-label="Search questions"
+                placeholder={t('nav.search')}
+                aria-label={t('nav.search')}
                 className="w-full pl-9 pr-4 py-2 text-sm bg-[var(--surface-2)] border border-[var(--border)] rounded-full outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20 transition-all"
               />
             </form>
@@ -98,7 +99,7 @@ export function Navbar() {
           <Link
             href="/create/article"
             className="hidden sm:flex items-center gap-1.5 px-3 py-2 border border-[var(--border)] text-[var(--text-secondary)] hover:text-amber-600 hover:border-amber-500 text-sm rounded-full transition-all"
-            title="Write an article"
+            title={t('nav.write')}
           >
             ✍️
           </Link>
@@ -107,24 +108,24 @@ export function Navbar() {
             className="hidden sm:flex items-center gap-1.5 px-4 py-2 bg-[var(--accent)] hover:bg-[var(--accent-light)] text-[#17231C] font-semibold text-sm rounded-full transition-all shadow-sm"
           >
             <Plus className="w-4 h-4" />
-            Ask
+            {t('nav.ask')}
           </Link>
 
           {session ? (
             <div className="hidden sm:flex items-center gap-3">
               {isStaff && (
                 <Link href="/admin/dashboard" className="text-sm font-medium text-[var(--primary)] hover:underline">
-                  Admin
+                  {t('nav.admin')}
                 </Link>
               )}
               <Link href="/drafts" className="text-sm text-[var(--text-secondary)] hover:text-[var(--text)] transition-colors">
-                Drafts
+                {t('nav.drafts')}
               </Link>
               <Link href="/bookmarks" className="text-sm text-[var(--text-secondary)] hover:text-[var(--text)] transition-colors">
-                Saved
+                {t('nav.saved')}
               </Link>
               <Link href="/settings" className="text-sm text-[var(--text-secondary)] hover:text-[var(--text)] transition-colors">
-                Settings
+                {t('nav.settings')}
               </Link>
               <Link
                 href="/me"
@@ -136,7 +137,7 @@ export function Navbar() {
                 onClick={() => signOut()}
                 className="text-sm text-[var(--text-secondary)] hover:text-[var(--text)] transition-colors"
               >
-                Sign Out
+                {t('nav.logout')}
               </button>
             </div>
           ) : (
@@ -145,13 +146,13 @@ export function Navbar() {
                 href="/login"
                 className="px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text)] transition-colors"
               >
-                Login
+                {t('nav.login')}
               </Link>
               <Link
                 href="/register"
                 className="px-4 py-2 text-sm bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white font-semibold rounded-full transition-all"
               >
-                Register
+                {t('nav.signup')}
               </Link>
             </div>
           )}
@@ -191,7 +192,7 @@ export function Navbar() {
             href="/ask"
             className="block w-full px-3 py-3 text-sm font-semibold text-[#17231C] bg-[var(--accent)] hover:bg-[var(--accent-light)] rounded-lg transition-colors text-center"
           >
-            Ask a question
+            {t('nav.ask')}
           </Link>
           {session ? (
             <>
@@ -200,47 +201,49 @@ export function Navbar() {
                   href="/admin/dashboard"
                   className="block px-3 py-2 text-sm font-medium text-[var(--primary)] hover:bg-[var(--surface-2)] rounded-lg transition-colors"
                 >
-                  Admin
+                  {t('nav.admin')}
                 </Link>
               )}
               <Link href="/notifications" className="block px-3 py-3 text-sm text-[var(--text)] hover:bg-[var(--surface-2)] rounded-lg transition-colors">
-                Notifications
+                {t('nav.notifications')}
               </Link>
               <Link href="/drafts" className="block px-3 py-3 text-sm text-[var(--text)] hover:bg-[var(--surface-2)] rounded-lg transition-colors">
-                Drafts
+                {t('nav.drafts')}
               </Link>
               <Link href="/bookmarks" className="block px-3 py-3 text-sm text-[var(--text)] hover:bg-[var(--surface-2)] rounded-lg transition-colors">
-                Saved
+                {t('nav.saved')}
               </Link>
               <Link
                 href="/me"
                 className="block px-3 py-3 text-sm text-[var(--text)] hover:bg-[var(--surface-2)] rounded-lg transition-colors"
               >
-                Profile
+                {t('nav.profile')}
               </Link>
               <Link href="/settings" className="block px-3 py-3 text-sm text-[var(--text)] hover:bg-[var(--surface-2)] rounded-lg transition-colors">
-                Settings
+                {t('nav.settings')}
               </Link>
+              <LanguageToggle className="px-3 py-2" />
               <button
                 onClick={() => signOut()}
                 className="w-full text-left px-3 py-3 text-sm text-[var(--text)] hover:bg-[var(--surface-2)] rounded-lg transition-colors"
               >
-                Sign Out
+                {t('nav.logout')}
               </button>
             </>
           ) : (
             <>
+              <LanguageToggle className="px-3 py-2" />
               <Link
                 href="/login"
                 className="block px-3 py-3 text-sm text-[var(--text)] hover:bg-[var(--surface-2)] rounded-lg transition-colors"
               >
-                Login
+                {t('nav.login')}
               </Link>
               <Link
                 href="/register"
                 className="block px-3 py-3 text-sm font-semibold text-white bg-[var(--primary)] rounded-lg transition-colors text-center"
               >
-                Register
+                {t('nav.signup')}
               </Link>
             </>
           )}
