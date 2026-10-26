@@ -4,7 +4,7 @@ import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import Redis from 'ioredis';
 import { isBanned } from '../shared/ban';
-import { STAFF_ROLES } from '../guards/admin.guard';
+const STAFF_ROLES = ['ADMIN', 'COMMUNITY_MODERATOR'] as const;
 
 export interface Actor {
   id: string;

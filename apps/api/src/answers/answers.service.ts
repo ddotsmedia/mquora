@@ -1,4 +1,5 @@
 import { Injectable, BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { CreateAnswerDto } from './dto/create-answer.dto';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import { PrismaClient } from '@prisma/client';
@@ -15,16 +16,16 @@ export class AnswersService {
     @InjectQueue('answer-quality') private qualityQueue: Queue,
   ) {}
 
-  async create(postId: string, dto: Record<string, unknown>, authorId: string) {
+  async create(postId: string, dto: CreateAnswerDto, authorId: string) {
     const { body } = dto;
-    if (typeof body !== 'string' || body.trim().length < 2) throw new BadRequestException('Answer is too short');
+    if (body.trim().length < 2) throw new BadRequestException('Answer is too short');
     const post = await this.prisma.post.findFirst({ where: { id: postId, status: 'PUBLISHED', deletedAt: null }, select: { title: true, seoSlug: true } });
     if (!post) throw new NotFoundException('Question not found');
-    const contentProcessed = this.languageService.processContent(body as string);
+    const contentProcessed = this.languageService.processContent(body);
 
     const [answer] = await this.prisma.$transaction([
       this.prisma.answer.create({
-        data: { postId, authorId, body: body as string, ...contentProcessed, status: 'PUBLISHED' },
+        data: { postId, authorId, body, ...contentProcessed, status: 'PUBLISHED' },
         select: { id: true, postId: true },
       }),
       this.prisma.post.update({
