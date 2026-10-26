@@ -17,6 +17,8 @@ import {
   Building2,
   Layers,
   Tags,
+  TrendingUp,
+  GitMerge,
   Megaphone,
   Activity,
   Clock,
@@ -28,6 +30,7 @@ export const sections = [
     items: [
       { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
+      { href: '/admin/insights', label: 'Insights', icon: TrendingUp },
     ],
   },
   {
@@ -51,6 +54,7 @@ export const sections = [
       { href: '/admin/content', label: 'Content', icon: Newspaper },
       { href: '/admin/moderation', label: 'Moderation', icon: Shield },
       { href: '/admin/tags', label: 'Tags', icon: Tags },
+      { href: '/admin/duplicates', label: 'Duplicates', icon: GitMerge },
     ],
   },
   {

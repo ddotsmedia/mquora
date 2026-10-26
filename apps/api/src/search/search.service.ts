@@ -61,6 +61,12 @@ export class SearchService {
       LIMIT ${limit + 1} OFFSET ${offset}
     `;
 
+    if (posts.length === 0 && query.trim().length >= 2) {
+      const key = query.trim().toLowerCase().slice(0, 100);
+      void this.redis.zincrby('search:zero', 1, key).catch(() => undefined);
+      void this.redis.zremrangebyrank('search:zero', 0, -501).catch(() => undefined);
+    }
+
     return {
       data: posts.slice(0, limit),
       nextCursor: posts.length > limit ? (offset + limit).toString() : null,

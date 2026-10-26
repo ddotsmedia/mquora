@@ -204,6 +204,16 @@ export class AdminController {
     return { success: true };
   }
 
+  @Get('insights/top-views')
+  getTopViews() {
+    return this.admin.getTopViews();
+  }
+
+  @Get('insights/zero-results')
+  getZeroResults() {
+    return this.admin.getZeroResultSearches();
+  }
+
   @Get('analytics')
   getAnalytics() {
     return this.admin.getAnalytics();

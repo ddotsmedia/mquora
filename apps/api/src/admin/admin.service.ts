@@ -481,6 +481,32 @@ export class AdminService {
     await this.audit(actor.id, 'FLAG_SET', 'FLAG', key, { from: previous, to: enabled });
   }
 
+  async getTopViews(limit = 20) {
+    const [questions, answers] = await Promise.all([
+      this.prisma.post.findMany({
+        where: { deletedAt: null, status: 'PUBLISHED' },
+        orderBy: { viewCount: 'desc' },
+        take: limit,
+        select: { title: true, seoSlug: true, viewCount: true },
+      }),
+      this.prisma.answer.findMany({
+        where: { deletedAt: null },
+        orderBy: { viewCount: 'desc' },
+        take: limit,
+        select: { id: true, viewCount: true, post: { select: { seoSlug: true, title: true } } },
+      }),
+    ]);
+    return { questions, answers };
+  }
+
+  // Searches that returned nothing, most frequent first (kept in Redis by SearchService).
+  async getZeroResultSearches(limit = 20) {
+    const rows = await this.redis.zrevrange('search:zero', 0, limit - 1, 'WITHSCORES');
+    const items: { query: string; count: number }[] = [];
+    for (let i = 0; i < rows.length; i += 2) items.push({ query: rows[i], count: Number(rows[i + 1]) });
+    return { items };
+  }
+
   async getAnalytics() {
     const now = Date.now();
     const d1 = new Date(now - DAY);
