@@ -24,8 +24,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
     if (!user || user.deletedAt || isBanned(user)) return null;
 
-    // Tokens issued after the session change carry a session id: reject them once that session
-    // is logged out or rotated out. Older tokens without one remain valid until they expire.
+    // Tokens issued after the session feature carry a session id: reject them once that session
+    // is logged out or rotated out. Older tokens without one remain valid until they expire (15 min).
+    // TODO: remove the sid-less bypass after 2026-12-01 — all live tokens will have sid by then.
     const sid = typeof payload.sid === 'string' ? payload.sid : undefined;
     if (sid) {
       const session = await this.prisma.session.findUnique({ where: { id: sid }, select: { userId: true, expiresAt: true } });

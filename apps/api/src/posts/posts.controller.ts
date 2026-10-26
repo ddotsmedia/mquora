@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
 import { Request } from 'express';
+import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { UserThrottleGuard } from '../guards/user-throttle.guard';
 import { OptionalJwtGuard } from '../guards/optional-jwt.guard';
@@ -13,7 +14,7 @@ export class PostsController {
   @Get()
   @UseGuards(OptionalJwtGuard)
   async findFeed(@Query('cursor') cursor?: string, @Query('communityId') communityId?: string, @Query('limit') limit?: string) {
-    return this.postsService.findFeed(cursor, communityId, limit ? parseInt(limit, 10) : 20);
+    return this.postsService.findFeed(cursor, communityId, Math.min(Math.max(parseInt(limit ?? '20', 10) || 20, 1), 100));
   }
 
   @Get('question-of-day')
@@ -24,34 +25,34 @@ export class PostsController {
 
   @Get('popular-this-week')
   async popularThisWeek(@Query('limit') limit?: string) {
-    const data = await this.postsService.getPopularThisWeek(limit ? parseInt(limit, 10) : 5);
+    const data = await this.postsService.getPopularThisWeek(Math.min(Math.max(parseInt(limit ?? '5', 10) || 5, 1), 50));
     return { data };
   }
 
   @Get('recent')
   async recentQuestions(@Query('limit') limit?: string, @Query('offset') offset?: string) {
     const data = await this.postsService.getRecentQuestions(
-      limit ? parseInt(limit, 10) : 20,
-      offset ? parseInt(offset, 10) : 0
+      Math.min(Math.max(parseInt(limit ?? '20', 10) || 20, 1), 100),
+      Math.max(parseInt(offset ?? '0', 10) || 0, 0),
     );
     return { data };
   }
 
   @Get('by-category')
   async questionsByCategory(@Query('limit') limit?: string) {
-    const data = await this.postsService.getQuestionsByCategory(limit ? parseInt(limit, 10) : 10);
+    const data = await this.postsService.getQuestionsByCategory(Math.min(Math.max(parseInt(limit ?? '10', 10) || 10, 1), 50));
     return { data };
   }
 
   @Get(':id/related')
   async findRelated(@Param('id') id: string, @Query('limit') limit?: string) {
-    return this.postsService.getRelated(id, limit ? parseInt(limit, 10) : 5);
+    return this.postsService.getRelated(id, Math.min(Math.max(parseInt(limit ?? '5', 10) || 5, 1), 20));
   }
 
   @Get(':id/similar')
   @UseGuards(OptionalJwtGuard)
   async findSimilar(@Param('id') id: string, @Query('limit') limit?: string) {
-    return this.postsService.getSimilarPosts(id, limit ? parseInt(limit, 10) : 5);
+    return this.postsService.getSimilarPosts(id, Math.min(Math.max(parseInt(limit ?? '5', 10) || 5, 1), 20));
   }
 
   @Get(':seoSlug')
@@ -96,11 +97,15 @@ export class PostsController {
     return this.postsService.softDelete(id, authorId);
   }
 
+  // Rate-limited: trigram scan is expensive; 20 req/min prevents DoS.
   @Post('search')
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   async search(
     @Body() body: { query: string; limit?: number; offset?: number; communityId?: string },
   ) {
-    const { query, limit = 20, offset = 0, communityId } = body;
+    const { query, communityId } = body;
+    const limit = Math.min(Math.max(Number(body.limit) || 20, 1), 100);
+    const offset = Math.max(Number(body.offset) || 0, 0);
     return this.postsService.search(query, limit, offset, communityId);
   }
 }

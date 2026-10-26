@@ -23,7 +23,9 @@ const csp = [
   `script-src 'self' 'unsafe-inline' https://accounts.google.com https://apis.google.com https://challenges.cloudflare.com ${analyticsOrigin}`.trim(),
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com data:",
-  "img-src 'self' data: blob: https:",
+  // Allowlisted image origins: own domain, data/blob URIs, Google/GitHub avatars.
+  // Avoid broad 'https:' which permits third-party tracking pixels.
+  "img-src 'self' data: blob: https://lh3.googleusercontent.com https://avatars.githubusercontent.com https://secure.gravatar.com",
   `connect-src 'self' https://accounts.google.com https://challenges.cloudflare.com ${apiOrigin} ${analyticsOrigin}`.trim(),
   'frame-src https://accounts.google.com https://challenges.cloudflare.com',
   "frame-ancestors 'none'",

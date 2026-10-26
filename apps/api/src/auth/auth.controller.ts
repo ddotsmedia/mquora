@@ -88,7 +88,9 @@ export class AuthController {
 
   @Post('password-reset/request')
   @UseGuards(EmailThrottleGuard)
-  @Throttle({ default: { limit: 5, ttl: 900000 } })
+  // Per-email: 5 attempts per 15 min (EmailThrottleGuard above).
+  // Per-IP: 10 attempts per hour prevents enumeration across many addresses from one IP.
+  @Throttle({ default: { limit: 10, ttl: 3600000 } })
   @HttpCode(200)
   async requestPasswordReset(@Body() dto: ForgotPasswordDto) {
     await this.authService.requestPasswordReset(dto.email);

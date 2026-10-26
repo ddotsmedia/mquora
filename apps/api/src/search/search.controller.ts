@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Query } from '@nestjs/common';
 import { SearchService } from './search.service';
 import { UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { UserThrottleGuard } from '../guards/user-throttle.guard';
 
@@ -8,7 +9,9 @@ import { UserThrottleGuard } from '../guards/user-throttle.guard';
 export class SearchController {
   constructor(private searchService: SearchService) {}
 
+  // Public but rate-limited: trigram scan is CPU-heavy; 20 req/min per IP prevents DoS.
   @Get()
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   async search(
     @Query('q') q: string,
     @Query('type') type?: string,
@@ -20,7 +23,7 @@ export class SearchController {
       type,
       language,
       cursor,
-      limit: limit ? parseInt(limit, 10) : 20,
+      limit: Math.min(Math.max(parseInt(limit ?? '20', 10) || 20, 1), 100),
     });
   }
 
@@ -36,7 +39,9 @@ export class SearchController {
     });
   }
 
+  // Public but rate-limited: 30 req/min per IP.
   @Get('suggest')
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   async suggest(@Query('q') q: string) {
     return this.searchService.suggest(q);
   }

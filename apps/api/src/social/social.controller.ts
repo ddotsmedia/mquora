@@ -23,12 +23,12 @@ export class SocialController {
 
   @Get('feed/following')
   following(@Req() req: Request, @Query('cursor') cursor?: string, @Query('limit') limit?: string) {
-    return this.social.followingFeed(uid(req), cursor, Number(limit));
+    return this.social.followingFeed(uid(req), cursor, Math.min(Math.max(parseInt(limit ?? '20', 10) || 20, 1), 100));
   }
 
   @Get('feed/for-you')
   forYou(@Req() req: Request, @Query('limit') limit?: string) {
-    return this.social.questionsForYou(uid(req), Number(limit));
+    return this.social.questionsForYou(uid(req), Math.min(Math.max(parseInt(limit ?? '20', 10) || 20, 1), 100));
   }
 
   @Get('questions/:postId/follow')

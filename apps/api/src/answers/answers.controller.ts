@@ -2,6 +2,7 @@ import { Controller, Get, Post, Delete, Body, Param, Query, UseGuards, Req } fro
 import { Request } from 'express';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { AnswersService } from './answers.service';
+import { CreateAnswerDto, VoteAnswerDto } from './dto/create-answer.dto';
 
 @Controller('api/v1')
 export class AnswersController {
@@ -20,7 +21,7 @@ export class AnswersController {
 
   @Post('posts/:postId/answers')
   @UseGuards(JwtAuthGuard)
-  async create(@Param('postId') postId: string, @Body() dto: Record<string, unknown>, @Req() req: Request) {
+  async create(@Param('postId') postId: string, @Body() dto: CreateAnswerDto, @Req() req: Request) {
     const authorId = (req.user as Record<string, unknown>).id as string;
     return this.answersService.create(postId, dto, authorId);
   }
@@ -41,10 +42,9 @@ export class AnswersController {
 
   @Post('answers/:id/vote')
   @UseGuards(JwtAuthGuard)
-  async vote(@Param('id') id: string, @Body() dto: Record<string, unknown>, @Req() req: Request) {
+  async vote(@Param('id') id: string, @Body() dto: VoteAnswerDto, @Req() req: Request) {
     const userId = (req.user as Record<string, unknown>).id as string;
-    const voteType = dto.type as 'UP' | 'DOWN';
-    return this.answersService.voteAnswer(id, userId, voteType);
+    return this.answersService.voteAnswer(id, userId, dto.type);
   }
 
   @Delete('answers/:id/vote')

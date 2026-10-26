@@ -16,7 +16,8 @@ if [ -z "${GHCR_TOKEN:-}" ]; then
   exit 1
 fi
 if [ -z "${GITHUB_ACTOR:-}" ]; then
-  GITHUB_ACTOR="ddotsmedia"
+  echo "ERROR: GITHUB_ACTOR is not set. Cannot authenticate with ghcr.io."
+  exit 1
 fi
 echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin >/dev/null
 
