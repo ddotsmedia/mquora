@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { router, Link } from 'expo-router';
 import { useState } from 'react';
 import { login } from '@/lib/auth';
+import { nextRoute } from '@/lib/onboarding-route';
 import { ApiError } from '@/lib/api';
 
 export default function Login() {
@@ -13,9 +14,9 @@ export default function Login() {
 
   const mutation = useMutation({
     mutationFn: () => login(email, password),
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['me'] });
-      router.replace('/');
+      router.replace(await nextRoute());
     },
     onError: (err: ApiError) => {
       Alert.alert('Login failed', err.message);

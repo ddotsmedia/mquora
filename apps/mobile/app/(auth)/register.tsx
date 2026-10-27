@@ -5,6 +5,7 @@ import { router, Link } from 'expo-router';
 import { useState } from 'react';
 import { apiFetch, ApiError } from '@/lib/api';
 import { login } from '@/lib/auth';
+import { nextRoute } from '@/lib/onboarding-route';
 
 interface RegisterRequest {
   displayName: string;
@@ -28,9 +29,9 @@ export default function Register() {
       });
       await login(email, password);
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['me'] });
-      router.replace('/');
+      router.replace(await nextRoute());
     },
     onError: (err: ApiError) => {
       Alert.alert('Registration failed', err.message);
