@@ -45,8 +45,14 @@ export default function Profile() {
         {me?.profile?.credential && <Text className="text-sm text-accent mt-2 font-semibold">{me.profile.credential}</Text>}
         {me?.bio && <Text className="text-gray-700 dark:text-gray-300 mt-3">{me.bio}</Text>}
         <View className="mt-6 gap-3">
-          <TouchableOpacity disabled className="bg-gray-200 dark:bg-gray-800 px-4 py-3 rounded-lg opacity-50">
-            <Text className="text-gray-600 dark:text-gray-400 font-semibold">Settings (Coming soon)</Text>
+          <TouchableOpacity onPress={() => router.push('/edit-profile')} className="bg-gray-100 dark:bg-gray-800 px-4 py-3 rounded-lg">
+            <Text className="text-gray-900 dark:text-white font-semibold">Edit profile</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/drafts')} className="bg-gray-100 dark:bg-gray-800 px-4 py-3 rounded-lg">
+            <Text className="text-gray-900 dark:text-white font-semibold">Drafts</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/answer-requests')} className="bg-gray-100 dark:bg-gray-800 px-4 py-3 rounded-lg">
+            <Text className="text-gray-900 dark:text-white font-semibold">Answer requests</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={handleLogout} className="bg-red-100 dark:bg-red-900 px-4 py-3 rounded-lg">
             <Text className="text-red-700 dark:text-red-200 font-semibold">Log out</Text>
