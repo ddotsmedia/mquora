@@ -6,6 +6,7 @@ import { FlashList } from '@shopify/flash-list';
 import { useLocalSearchParams, router } from 'expo-router';
 import { ThumbsUp } from 'lucide-react-native';
 import { apiFetch, ApiError } from '@/lib/api';
+import { Keyboard } from 'react-native';
 
 // Route param is the post's seoSlug (the API resolves posts by slug, not id).
 interface Answer {
@@ -43,6 +44,7 @@ export default function QuestionDetail() {
   const { id: slug } = useLocalSearchParams<{ id: string }>();
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState('');
+  const [askUsername, setAskUsername] = useState('');
 
   const { data: post } = useQuery({
     queryKey: ['post', slug],
@@ -78,6 +80,22 @@ export default function QuestionDetail() {
       queryClient.invalidateQueries({ queryKey: ['post', slug] });
     },
     onError: (err) => onAuthError(err, 'Could not post answer'),
+  });
+
+  const askUser = useMutation({
+    mutationFn: async () => {
+      const profile = await apiFetch<{ id: string }>(`/api/v1/users/${askUsername.trim().replace(/^@/, '')}`);
+      return apiFetch(`/api/v1/questions/${post!.id}/request-answer`, {
+        method: 'POST',
+        body: JSON.stringify({ requesteeId: profile.id }),
+      });
+    },
+    onSuccess: () => {
+      setAskUsername('');
+      Keyboard.dismiss();
+      Alert.alert('Request sent', 'They will be notified.');
+    },
+    onError: (err) => onAuthError(err, 'Could not send request'),
   });
 
   if (!post) return null;
@@ -123,6 +141,23 @@ export default function QuestionDetail() {
                 maxLength={50000}
                 className="border border-gray-300 dark:border-gray-700 rounded-lg p-3 min-h-[90px] text-gray-900 dark:text-white"
               />
+              <View className="flex-row gap-2 mt-6">
+                <TextInput
+                  value={askUsername}
+                  onChangeText={setAskUsername}
+                  placeholder="Ask a user by username"
+                  placeholderTextColor="#9CA3AF"
+                  autoCapitalize="none"
+                  className="flex-1 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-gray-900 dark:text-white"
+                />
+                <TouchableOpacity
+                  onPress={() => askUser.mutate()}
+                  disabled={askUsername.trim().length < 2 || askUser.isPending}
+                  className={`rounded-lg px-4 justify-center ${askUsername.trim().length < 2 ? 'bg-gray-300' : 'bg-[#1F6B45]'}`}
+                >
+                  <Text className="text-white font-semibold">Ask</Text>
+                </TouchableOpacity>
+              </View>
               <TouchableOpacity
                 onPress={() => answerMutation.mutate()}
                 disabled={draft.trim().length < 2 || answerMutation.isPending}

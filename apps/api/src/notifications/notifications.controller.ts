@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Get,
+  Delete,
   Body,
   Param,
   Query,
@@ -12,10 +13,21 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { Request } from 'express';
+import { IsIn, IsString, Matches } from 'class-validator';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { UserThrottleGuard } from '../guards/user-throttle.guard';
 import { NotificationsService } from './notifications.service';
 import { SubscribePushDto, UnsubscribePushDto, SendTestNotificationDto } from './notifications.dto';
+
+class PushTokenDto {
+  // Expo push tokens look like ExponentPushToken[xxxx] or ExpoPushToken[xxxx].
+  @IsString()
+  @Matches(/^Expo(nent)?PushToken\[[^\]]+\]$/)
+  token!: string;
+
+  @IsIn(['ios', 'android'])
+  platform!: 'ios' | 'android';
+}
 
 @Controller('api/v1/notifications')
 export class NotificationsController {
@@ -91,5 +103,20 @@ export class NotificationsController {
     }
 
     return this.notificationsService.sendTestNotification(dto);
+  }
+
+  @Post('push-tokens')
+  @UseGuards(JwtAuthGuard, UserThrottleGuard)
+  @HttpCode(HttpStatus.OK)
+  async registerPushToken(@Body() dto: PushTokenDto, @Req() req: Request) {
+    const userId = (req.user as Record<string, unknown>).id as string;
+    return this.notificationsService.registerPushToken(userId, dto.token, dto.platform);
+  }
+
+  @Delete('push-tokens/:token')
+  @UseGuards(JwtAuthGuard)
+  async removePushToken(@Param('token') token: string, @Req() req: Request) {
+    const userId = (req.user as Record<string, unknown>).id as string;
+    return this.notificationsService.removePushToken(userId, token);
   }
 }

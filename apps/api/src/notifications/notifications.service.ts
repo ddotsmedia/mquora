@@ -159,6 +159,41 @@ export class NotificationsService {
     });
   }
 
+  async registerPushToken(userId: string, token: string, platform: string) {
+    await this.prisma.pushToken.upsert({
+      where: { token },
+      update: { userId, platform },
+      create: { userId, token, platform },
+    });
+    return { success: true };
+  }
+
+  async removePushToken(userId: string, token: string) {
+    await this.prisma.pushToken.deleteMany({ where: { userId, token } });
+    return { success: true };
+  }
+
+  // Sends Expo push messages to every registered device of the given users. Failures are logged, never thrown.
+  async sendExpoPush(userIds: string[], title: string, body: string, data: Record<string, string>) {
+    try {
+      const tokens = await this.prisma.pushToken.findMany({ where: { userId: { in: userIds } }, select: { token: true } });
+      if (tokens.length === 0) return { sent: 0 };
+      const messages = tokens.map((t) => ({ to: t.token, title, body, data, sound: 'default' }));
+      for (let i = 0; i < messages.length; i += 100) {
+        const res = await fetch('https://exp.host/--/api/v2/push/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify(messages.slice(i, i + 100)),
+        });
+        if (!res.ok) console.error('Expo push failed', res.status);
+      }
+      return { sent: tokens.length };
+    } catch (err) {
+      console.error('Expo push error', err);
+      return { sent: 0 };
+    }
+  }
+
   async notifyFollowersOfNewAnswer(postId: string, answerId: string, answerPreview: string) {
     try {
       // Get all followers of the post
@@ -185,6 +220,12 @@ export class NotificationsService {
       );
 
       await Promise.allSettled(notificationTasks);
+      await this.sendExpoPush(
+        followers.map((f: any) => f.userId),
+        'New Answer to Your Question',
+        answerPreview.substring(0, 100),
+        { postId, answerId, seoSlug: followers[0].post?.seoSlug || '' },
+      );
 
       return { notified: followers.length };
     } catch (error) {
