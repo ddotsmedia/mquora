@@ -31,7 +31,7 @@ export default function Ask() {
   });
 
   const handlePost = () => {
-    mutation.mutate({ title, body: body || undefined });
+    mutation.mutate({ title, body: body.trim() || title });
   };
 
   const isDisabled = title.length < 6 || mutation.isPending;

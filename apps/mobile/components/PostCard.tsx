@@ -4,6 +4,7 @@ import { ThumbsUp, MessageCircle } from 'lucide-react-native';
 
 export interface Post {
   id: string;
+  seoSlug?: string;
   title: string;
   voteScore: number;
   answerCount: number;
@@ -18,7 +19,7 @@ export function PostCard({ post }: PostCardProps) {
   const router = useRouter();
 
   return (
-    <Pressable onPress={() => router.push(`/question/${post.id}`)} className="bg-white dark:bg-gray-900 p-4 border-b border-gray-200 dark:border-gray-800">
+    <Pressable onPress={() => router.push(`/question/${post.seoSlug ?? post.id}`)} className="bg-white dark:bg-gray-900 p-4 border-b border-gray-200 dark:border-gray-800">
       <View className="gap-2">
         <Text className="text-sm text-gray-500 dark:text-gray-400">@{post.author?.username || 'anonymous'}</Text>
         <Text className="text-base font-semibold text-gray-900 dark:text-white" numberOfLines={2}>
