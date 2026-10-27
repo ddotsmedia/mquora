@@ -18,6 +18,9 @@ export default function RootLayout() {
             <Stack.Screen name="(auth)" options={{ presentation: 'modal' }} />
             <Stack.Screen name="question/[id]" options={{ headerShown: true, title: '' }} />
             <Stack.Screen name="profile/[username]" options={{ headerShown: true, title: '' }} />
+            <Stack.Screen name="edit-profile" options={{ headerShown: true, title: 'Edit profile' }} />
+            <Stack.Screen name="drafts" options={{ headerShown: true, title: 'Drafts' }} />
+            <Stack.Screen name="answer-requests" options={{ headerShown: true, title: 'Answer requests' }} />
           </Stack>
         </QueryClientProvider>
       </SafeAreaProvider>
