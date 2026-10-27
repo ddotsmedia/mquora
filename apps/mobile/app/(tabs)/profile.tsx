@@ -51,6 +51,9 @@ export default function Profile() {
           <TouchableOpacity onPress={() => router.push('/drafts')} className="bg-gray-100 dark:bg-gray-800 px-4 py-3 rounded-lg">
             <Text className="text-gray-900 dark:text-white font-semibold">Drafts</Text>
           </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/topics')} className="bg-gray-100 dark:bg-gray-800 px-4 py-3 rounded-lg">
+            <Text className="text-gray-900 dark:text-white font-semibold">Topics</Text>
+          </TouchableOpacity>
           <TouchableOpacity onPress={() => router.push('/answer-requests')} className="bg-gray-100 dark:bg-gray-800 px-4 py-3 rounded-lg">
             <Text className="text-gray-900 dark:text-white font-semibold">Answer requests</Text>
           </TouchableOpacity>

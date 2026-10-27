@@ -4,10 +4,24 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { Alert, Linking } from 'react-native';
+import { registerForPush } from '@/lib/push';
+import { updateRequiredFor } from '@/lib/version';
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 60_000, retry: 1 } } });
 
 export default function RootLayout() {
+  useEffect(() => {
+    registerForPush();
+    updateRequiredFor().then((minVersion) => {
+      if (!minVersion) return;
+      Alert.alert('Update required', `Please update askvyo to version ${minVersion} or later to continue.`, [
+        { text: 'Update', onPress: () => Linking.openURL('https://askvyo.com') },
+      ], { cancelable: false });
+    });
+  }, []);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
@@ -21,6 +35,7 @@ export default function RootLayout() {
             <Stack.Screen name="edit-profile" options={{ headerShown: true, title: 'Edit profile' }} />
             <Stack.Screen name="drafts" options={{ headerShown: true, title: 'Drafts' }} />
             <Stack.Screen name="answer-requests" options={{ headerShown: true, title: 'Answer requests' }} />
+            <Stack.Screen name="topics" options={{ headerShown: true, title: 'Topics' }} />
           </Stack>
         </QueryClientProvider>
       </SafeAreaProvider>
