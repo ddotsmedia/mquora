@@ -37,6 +37,7 @@ export default function RootLayout() {
             <Stack.Screen name="answer-requests" options={{ headerShown: true, title: 'Answer requests' }} />
             <Stack.Screen name="topics" options={{ headerShown: true, title: 'Topics' }} />
             <Stack.Screen name="bookmarks" options={{ headerShown: true, title: 'Saved' }} />
+            <Stack.Screen name="communities" options={{ headerShown: true, title: 'Communities' }} />
           </Stack>
         </QueryClientProvider>
       </SafeAreaProvider>

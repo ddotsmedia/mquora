@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Switch } from 'react-native';
 import { router } from 'expo-router';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getMe } from '@/lib/auth';
@@ -24,6 +25,17 @@ export default function EditProfile() {
       credential: me.profile?.credential ?? '',
     });
   }, [me]);
+
+  const { data: digest } = useQuery({
+    queryKey: ['digest'],
+    queryFn: () => apiFetch<{ optIn: boolean }>('/api/v1/digest/preference'),
+    retry: false,
+  });
+  const setDigest = useMutation({
+    mutationFn: (optIn: boolean) => apiFetch('/api/v1/digest/preference', { method: 'POST', body: JSON.stringify({ optIn }) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['digest'] }),
+    onError: (err) => Alert.alert('Could not update', err instanceof ApiError ? err.message : 'Try again'),
+  });
 
   const save = useMutation({
     mutationFn: () => {
@@ -69,6 +81,10 @@ export default function EditProfile() {
         {field('bio', 'Bio', true, 500)}
         {field('location', 'Location', false, 100)}
         {field('website', 'Website', false, 200)}
+        <View className="flex-row justify-between items-center py-3 border-t border-gray-200 dark:border-gray-800">
+          <Text className="text-gray-900 dark:text-white">Weekly email digest</Text>
+          <Switch value={!!digest?.optIn} onValueChange={(v) => setDigest.mutate(v)} />
+        </View>
         <TouchableOpacity
           onPress={() => save.mutate()}
           disabled={save.isPending || form.displayName.trim().length < 2}

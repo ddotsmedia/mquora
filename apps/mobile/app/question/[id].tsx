@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, Keyboard } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, Keyboard, Share } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { FlashList } from '@shopify/flash-list';
@@ -172,6 +172,12 @@ export default function QuestionDetail() {
                   <Text className="text-gray-900 dark:text-white font-semibold">{post.voteScore}</Text>
                 </TouchableOpacity>
                 <Text className="text-gray-600 dark:text-gray-400">{post.answerCount} answers</Text>
+                <TouchableOpacity
+                  onPress={() => Share.share({ message: `${post.title}\nhttps://askvyo.com/q/${post.seoSlug}` })}
+                  className="flex-row items-center gap-1"
+                >
+                  <Text className="text-gray-700 dark:text-gray-300">Share</Text>
+                </TouchableOpacity>
                 {!!me && (
                   <TouchableOpacity onPress={() => toggleBookmark.mutate()} className="flex-row items-center gap-1 ml-auto">
                     <Bookmark size={20} color={bookmark?.bookmarked ? '#D4A017' : '#6B7280'} fill={bookmark?.bookmarked ? '#D4A017' : 'none'} />
