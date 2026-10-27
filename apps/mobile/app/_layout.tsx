@@ -38,6 +38,7 @@ export default function RootLayout() {
             <Stack.Screen name="topics" options={{ headerShown: true, title: 'Topics' }} />
             <Stack.Screen name="bookmarks" options={{ headerShown: true, title: 'Saved' }} />
             <Stack.Screen name="communities" options={{ headerShown: true, title: 'Communities' }} />
+            <Stack.Screen name="discover" options={{ headerShown: true, title: 'Discover' }} />
             <Stack.Screen name="leaderboard" options={{ headerShown: true, title: 'Leaderboard' }} />
             <Stack.Screen name="tag/[slug]" options={{ headerShown: true, title: '' }} />
           </Stack>
