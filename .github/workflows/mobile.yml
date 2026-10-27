@@ -1,0 +1,42 @@
+name: Mobile Build
+on:
+  push:
+    branches: [main]
+    paths: ['apps/mobile/**']
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Platform
+        required: true
+        default: android
+        type: choice
+        options: [android, ios, all]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: .
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Android preview build
+        if: github.event_name == 'push' || inputs.platform == 'android' || inputs.platform == 'all'
+        run: eas build --platform android --profile preview --non-interactive --no-wait
+      - name: iOS preview build
+        if: inputs.platform == 'ios' || inputs.platform == 'all'
+        run: eas build --platform ios --profile preview --non-interactive --no-wait
