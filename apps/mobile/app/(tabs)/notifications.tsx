@@ -5,16 +5,23 @@ import { FlashList } from '@shopify/flash-list';
 import { router } from 'expo-router';
 import { apiFetch, ApiError } from '@/lib/api';
 
+// Matches the API's Notification row. `link` is "/q/<seoSlug>#answer-<id>" for question alerts.
 interface Notification {
   id: string;
-  message: string;
-  read: boolean;
-  postId?: string;
+  title: string;
+  body: string;
+  link: string | null;
+  readAt: string | null;
   createdAt: string;
 }
 
 interface NotificationsResponse {
-  notifications: Notification[];
+  data: Notification[];
+}
+
+function questionSlug(link: string | null): string | null {
+  const match = link?.match(/^\/q\/([^#/?]+)/);
+  return match ? match[1] : null;
 }
 
 export default function Notifications() {
@@ -26,17 +33,16 @@ export default function Notifications() {
   });
 
   const markAllReadMutation = useMutation({
-    mutationFn: () => apiFetch('/api/v1/notifications/mark-all-read', { method: 'POST' }),
+    mutationFn: () => apiFetch('/api/v1/notifications/read-all', { method: 'POST' }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
   });
 
   const handleNotificationPress = (notification: Notification) => {
-    if (notification.postId) {
-      router.push(`/question/${notification.postId}`);
-    }
+    const slug = questionSlug(notification.link);
+    if (slug) router.push(`/question/${slug}`);
   };
 
-  const notifications = data?.notifications ?? [];
+  const notifications = data?.data ?? [];
 
   if (error instanceof ApiError && error.status === 401) {
     return (
@@ -66,9 +72,10 @@ export default function Notifications() {
         <FlashList
           data={notifications}
           renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => handleNotificationPress(item)} className={item.read ? 'bg-white dark:bg-gray-900' : 'bg-blue-50 dark:bg-blue-950'}>
+            <TouchableOpacity onPress={() => handleNotificationPress(item)} className={item.readAt ? 'bg-white dark:bg-gray-900' : 'bg-blue-50 dark:bg-blue-950'}>
               <View className="px-4 py-3 border-b border-gray-200 dark:border-gray-800">
-                <Text className="text-gray-900 dark:text-white">{item.message}</Text>
+                <Text className="font-semibold text-gray-900 dark:text-white">{item.title}</Text>
+                <Text className="text-gray-700 dark:text-gray-300">{item.body}</Text>
                 <Text className="text-xs text-gray-500 dark:text-gray-400 mt-1">{new Date(item.createdAt).toLocaleDateString()}</Text>
               </View>
             </TouchableOpacity>
