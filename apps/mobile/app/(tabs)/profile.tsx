@@ -54,6 +54,9 @@ export default function Profile() {
           <TouchableOpacity onPress={() => router.push('/bookmarks')} className="bg-gray-100 dark:bg-gray-800 px-4 py-3 rounded-lg">
             <Text className="text-gray-900 dark:text-white font-semibold">Saved questions</Text>
           </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/leaderboard')} className="bg-gray-100 dark:bg-gray-800 px-4 py-3 rounded-lg">
+            <Text className="text-gray-900 dark:text-white font-semibold">Leaderboard</Text>
+          </TouchableOpacity>
           <TouchableOpacity onPress={() => router.push('/communities')} className="bg-gray-100 dark:bg-gray-800 px-4 py-3 rounded-lg">
             <Text className="text-gray-900 dark:text-white font-semibold">Communities</Text>
           </TouchableOpacity>
