@@ -45,6 +45,7 @@ export default function QuestionDetail() {
   const qc = useQueryClient();
   const [draft, setDraft] = useState('');
   const [askUsername, setAskUsername] = useState('');
+  const [sort, setSort] = useState<'suggested' | 'recent'>('suggested');
 
   const { data: post } = useQuery({
     queryKey: ['post', slug],
@@ -55,8 +56,8 @@ export default function QuestionDetail() {
   const { data: me } = useQuery({ queryKey: ['me'], queryFn: getMe, retry: false });
 
   const { data: answerPage } = useQuery({
-    queryKey: ['answers', post?.id],
-    queryFn: () => apiFetch<AnswerPage>(`/api/v1/posts/${post!.id}/answers?limit=20`),
+    queryKey: ['answers', post?.id, sort],
+    queryFn: () => apiFetch<AnswerPage>(`/api/v1/posts/${post!.id}/answers?limit=20&sort=${sort}`),
     enabled: !!post?.id,
   });
 
@@ -65,6 +66,23 @@ export default function QuestionDetail() {
     queryFn: () => apiFetch<{ bookmarked: boolean }>(`/api/v1/bookmarks/status/${post!.id}`),
     enabled: !!post?.id && !!me,
     retry: false,
+  });
+
+  const { data: followStatus } = useQuery({
+    queryKey: ['question-follow', post?.id],
+    queryFn: () => apiFetch<{ following: boolean; followerCount: number }>(`/api/v1/questions/${post!.id}/follow`),
+    enabled: !!post?.id && !!me,
+    retry: false,
+  });
+
+  const toggleFollowQuestion = useMutation({
+    mutationFn: () =>
+      apiFetch(`/api/v1/questions/${post!.id}/follow`, { method: followStatus?.following ? 'DELETE' : 'POST' }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['question-follow', post?.id] });
+      qc.invalidateQueries({ queryKey: ['post', slug] });
+    },
+    onError: (err) => onApiError(err, 'Could not update'),
   });
 
   const refresh = () => {
@@ -172,6 +190,16 @@ export default function QuestionDetail() {
                   <Text className="text-gray-900 dark:text-white font-semibold">{post.voteScore}</Text>
                 </TouchableOpacity>
                 <Text className="text-gray-600 dark:text-gray-400">{post.answerCount} answers</Text>
+                {!!me && (
+                  <TouchableOpacity onPress={() => toggleFollowQuestion.mutate()} disabled={toggleFollowQuestion.isPending} className="flex-row items-center gap-1">
+                    <Text className="text-[#1F6B45] font-semibold">
+                      {followStatus?.following ? 'Following' : 'Follow'} · {followStatus?.followerCount ?? 0}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity onPress={() => setSort(sort === 'suggested' ? 'recent' : 'suggested')} className="flex-row items-center gap-1">
+                  <Text className="text-gray-600 dark:text-gray-400">Sort: {sort === 'suggested' ? 'Suggested' : 'Recent'}</Text>
+                </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => Share.share({ message: `${post.title}\nhttps://askvyo.com/q/${post.seoSlug}` })}
                   className="flex-row items-center gap-1"
