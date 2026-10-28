@@ -33,6 +33,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
         working-directory: .
       - run: npm install -g eas-cli@26.0.0
+      - name: Create EAS project if not linked
+        run: eas init --account ddotsmedia --non-interactive --force
       - name: Android preview build
         if: github.event_name == 'push' || inputs.platform == 'android' || inputs.platform == 'all'
         run: eas build --platform android --profile preview --non-interactive --no-wait
