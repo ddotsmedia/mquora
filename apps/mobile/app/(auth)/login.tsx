@@ -32,6 +32,11 @@ export default function Login() {
         <TouchableOpacity disabled={mutation.isPending} onPress={() => mutation.mutate()} className="bg-primary px-6 py-3 rounded-lg mt-2">
           <Text className="text-white font-semibold text-center">{mutation.isPending ? 'Logging in...' : 'Log in'}</Text>
         </TouchableOpacity>
+        <Link href="/(auth)/forgot-password" asChild>
+          <TouchableOpacity className="items-center">
+            <Text className="text-sm text-primary">Forgot password?</Text>
+          </TouchableOpacity>
+        </Link>
         <Link href="/(auth)/register" asChild>
           <TouchableOpacity>
             <Text className="text-primary text-center mt-4">Don't have an account? Sign up</Text>
