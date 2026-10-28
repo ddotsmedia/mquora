@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { FlashList } from '@shopify/flash-list';
 import { useLocalSearchParams, router } from 'expo-router';
 import { ThumbsUp, Bookmark, CheckCircle } from 'lucide-react-native';
+import { AnswerBody } from '@/components/AnswerBody';
 import { apiFetch, ApiError } from '@/lib/api';
 import { getMe } from '@/lib/auth';
 
@@ -14,7 +15,9 @@ interface Answer {
   body: string;
   isAccepted: boolean;
   voteScore: number;
-  author: { username: string };
+  createdAt?: string;
+  updatedAt?: string;
+  author: { username: string; profile?: { credential?: string | null } | null };
 }
 
 interface Post {
@@ -156,12 +159,18 @@ export default function QuestionDetail() {
         renderItem={({ item: answer }) => (
           <View className={`px-4 py-3 border-b border-gray-200 dark:border-gray-800 ${answer.isAccepted ? 'bg-green-50 dark:bg-green-950' : ''}`}>
             <View className="flex-row justify-between items-start mb-2">
-              <TouchableOpacity onPress={() => router.push(`/profile/${answer.author.username}`)}>
+              <TouchableOpacity onPress={() => router.push(`/profile/${answer.author.username}`)} className="flex-1 pr-2">
                 <Text className="font-semibold text-gray-900 dark:text-white">@{answer.author.username}</Text>
+                {!!answer.author.profile?.credential && (
+                  <Text className="text-xs text-gray-500" numberOfLines={1}>{answer.author.profile.credential}</Text>
+                )}
               </TouchableOpacity>
               {answer.isAccepted && <Text className="text-xs bg-green-600 text-white px-2 py-1 rounded">Accepted</Text>}
             </View>
-            <Text className="text-gray-700 dark:text-gray-300">{answer.body}</Text>
+            <AnswerBody body={answer.body} />
+            {!!answer.createdAt && !!answer.updatedAt && answer.updatedAt !== answer.createdAt && (
+              <Text className="text-xs text-gray-500 mt-1">Updated {new Date(answer.updatedAt).toLocaleDateString()}</Text>
+            )}
             <View className="flex-row gap-4 items-center mt-3">
               <TouchableOpacity onPress={() => voteAnswer.mutate(answer.id)} className="flex-row items-center gap-1">
                 <ThumbsUp size={16} color="#1F6B45" />
