@@ -18,6 +18,8 @@ jobs:
     defaults:
       run:
         working-directory: apps/mobile
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -30,10 +32,7 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
         working-directory: .
-      - uses: expo/expo-github-action@v8
-        with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
+      - run: npm install -g eas-cli@26.0.0
       - name: Android preview build
         if: github.event_name == 'push' || inputs.platform == 'android' || inputs.platform == 'all'
         run: eas build --platform android --profile preview --non-interactive --no-wait
