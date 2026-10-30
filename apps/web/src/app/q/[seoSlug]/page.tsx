@@ -71,6 +71,7 @@ interface Answer {
   createdAt: string;
   updatedAt?: string;
   editedAt?: string | null;
+  isPinned?: boolean;
   author: {
     id: string;
     username: string;
@@ -280,6 +281,7 @@ export default async function PostPage({ params, searchParams }: { params: Promi
                 {answer.isAccepted && (
                   <p className="text-sm text-green-600 dark:text-green-400 mb-2 font-semibold">✓ Accepted Answer</p>
                 )}
+                {answer.isPinned && <p className="mb-2 text-xs font-semibold text-[var(--text-muted)]">📌 Pinned by the question author</p>}
                 <div className="flex gap-3">
                   <AnswerVoting answerId={answer.id} initialVoteCount={answer.voteCount ?? 0} />
                   <div className="flex-1 min-w-0">
@@ -302,7 +304,7 @@ export default async function PostPage({ params, searchParams }: { params: Promi
                     <div lang={answer.language === 'MALAYALAM' ? 'ml' : answer.language === 'ENGLISH' ? 'en' : undefined}>
                       <ReadMore text={answer.body} />
                     </div>
-                    <AnswerActions answerId={answer.id} authorId={answer.author.id} body={answer.body} />
+                    <AnswerActions answerId={answer.id} authorId={answer.author.id} body={answer.body} questionAuthorId={post.author.id} isPinned={answer.isPinned} />
                     <div className="mt-4 text-sm text-muted-foreground">
                       <div className="mt-2 flex flex-wrap items-center gap-3">
                         <AcceptButton answerId={answer.id} questionAuthorId={post.author.id} accepted={answer.isAccepted} />

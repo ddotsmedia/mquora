@@ -343,6 +343,7 @@ model Answer {
   viewCount         Int            @default(0)
   commentCount      Int       @default(0)
   isAccepted        Boolean   @default(false)
+  isPinned          Boolean   @default(false)
   qualityScore      Int?
   editedAt          DateTime?
   createdAt         DateTime  @default(now())

@@ -95,10 +95,10 @@ export class AnswersService {
     const answers = await this.prisma.answer.findMany({
       where: whereClause,
       select: {
-        id: true, body: true, language: true, voteScore: true, qualityScore: true, viewCount: true, isAccepted: true, commentCount: true, createdAt: true, updatedAt: true, editedAt: true,
+        id: true, body: true, language: true, voteScore: true, qualityScore: true, viewCount: true, isAccepted: true, commentCount: true, createdAt: true, updatedAt: true, editedAt: true, isPinned: true,
         author: { select: { id: true, username: true, displayName: true, isVerified: true, reputationScore: true, profile: { select: { credential: true } } } },
       },
-      orderBy: recent ? [{ createdAt: 'desc' }] : [{ isAccepted: 'desc' }, { voteScore: 'desc' }, { createdAt: 'asc' }],
+      orderBy: recent ? [{ isPinned: 'desc' }, { createdAt: 'desc' }] : [{ isPinned: 'desc' }, { isAccepted: 'desc' }, { voteScore: 'desc' }, { createdAt: 'asc' }],
       take: limit + 1,
     });
 
@@ -149,6 +149,23 @@ export class AnswersService {
           ]),
     ]);
     return { accepted: true };
+  }
+
+  // The question's author (or a site admin) pins one answer to the top; pinning replaces any other pin.
+  async setPinned(answerId: string, pinned: boolean, userId: string) {
+    const answer = await this.prisma.answer.findFirst({
+      where: { id: answerId, deletedAt: null, status: 'PUBLISHED' },
+      select: { id: true, postId: true, post: { select: { authorId: true } } },
+    });
+    if (!answer) throw new NotFoundException('Answer not found');
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+    if (answer.post.authorId !== userId && user?.role !== 'ADMIN') throw new ForbiddenException('Only the question author can pin answers');
+
+    await this.prisma.$transaction([
+      ...(pinned ? [this.prisma.answer.updateMany({ where: { postId: answer.postId, isPinned: true }, data: { isPinned: false } })] : []),
+      this.prisma.answer.update({ where: { id: answerId }, data: { isPinned: pinned } }),
+    ]);
+    return { id: answerId, isPinned: pinned };
   }
 
   // Author edits their answer; the previous body is kept as a revision.
