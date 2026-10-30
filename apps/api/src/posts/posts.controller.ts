@@ -69,6 +69,20 @@ export class PostsController {
     return this.postsService.findBySlug(seoSlug, view !== '0');
   }
 
+  @Get('me/history')
+  @UseGuards(JwtAuthGuard)
+  async myHistory(@Req() req: Request) {
+    const userId = (req.user as Record<string, unknown>).id as string;
+    return this.postsService.myHistory(userId);
+  }
+
+  @Post(':id/visit')
+  @UseGuards(JwtAuthGuard)
+  async recordVisit(@Param('id') id: string, @Req() req: Request) {
+    const userId = (req.user as Record<string, unknown>).id as string;
+    return this.postsService.recordVisit(id, userId);
+  }
+
   @Get('me/drafts')
   @UseGuards(JwtAuthGuard)
   async myDrafts(@Req() req: Request) {
