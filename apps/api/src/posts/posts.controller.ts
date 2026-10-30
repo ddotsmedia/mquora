@@ -13,8 +13,8 @@ export class PostsController {
 
   @Get()
   @UseGuards(OptionalJwtGuard)
-  async findFeed(@Query('cursor') cursor?: string, @Query('communityId') communityId?: string, @Query('limit') limit?: string) {
-    return this.postsService.findFeed(cursor, communityId, Math.min(Math.max(parseInt(limit ?? '20', 10) || 20, 1), 100));
+  async findFeed(@Query('cursor') cursor?: string, @Query('communityId') communityId?: string, @Query('limit') limit?: string, @Query('language') language?: string) {
+    return this.postsService.findFeed(cursor, communityId, Math.min(Math.max(parseInt(limit ?? '20', 10) || 20, 1), 100), language);
   }
 
   @Get('question-of-day')

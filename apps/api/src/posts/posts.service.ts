@@ -89,11 +89,13 @@ export class PostsService {
     return post;
   }
 
-  async findFeed(cursor?: string, communityId?: string, limit = 20) {
+  async findFeed(cursor?: string, communityId?: string, limit = 20, language?: string) {
+    const langs = ['MALAYALAM', 'ENGLISH', 'MANGLISH', 'MIXED'];
     const whereClause = {
       status: 'PUBLISHED' as const,
       deletedAt: null,
       ...(communityId && { communityId }),
+      ...(language && langs.includes(language) && { language: language as 'MALAYALAM' | 'ENGLISH' | 'MANGLISH' | 'MIXED' }),
       ...(cursor && { createdAt: { lt: new Date(cursor) } }),
     };
 
