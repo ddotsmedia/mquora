@@ -21,6 +21,12 @@ interface Invite {
   creatorUsername: string;
 }
 
+interface JoinRequest {
+  id: string;
+  createdAt: string;
+  user: { id: string; username: string; displayName: string };
+}
+
 interface MyRole {
   role: string | null;
   isCreator: boolean;
@@ -37,6 +43,7 @@ export default function CommunityMembersPage({ params }: { params: Promise<{ slu
   const [me, setMe] = useState<MyRole | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [invites, setInvites] = useState<Invite[]>([]);
+  const [requests, setRequests] = useState<JoinRequest[]>([]);
 
   const load = useCallback(async () => {
     const community = await apiFetch<{ id: string }>(`/api/v1/communities/${slug}`);
@@ -49,6 +56,10 @@ export default function CommunityMembersPage({ params }: { params: Promise<{ slu
         headers: { Authorization: `Bearer ${token}` },
       }).catch(() => ({ data: [] as Invite[] }));
       setInvites(inv.data);
+      const reqs = await apiFetch<{ data: JoinRequest[] }>(`/api/v1/communities/${community.id}/join-requests`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }).catch(() => ({ data: [] as JoinRequest[] }));
+      setRequests(reqs.data);
       const mine = await apiFetch<MyRole>(`/api/v1/communities/${community.id}/members/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -118,6 +129,24 @@ export default function CommunityMembersPage({ params }: { params: Promise<{ slu
     }
   };
 
+  const decide = async (r: JoinRequest, approve: boolean) => {
+    if (!communityId) return;
+    setBusy(r.id);
+    try {
+      await apiFetch(`/api/v1/communities/${communityId}/join-requests/${r.id}/decide`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ approve }),
+      });
+      toast.success(approve ? 'Request approved' : 'Request declined');
+      await load();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : 'Could not update request');
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const btn = 'rounded-full border border-[var(--border)] px-3 py-1 text-xs text-[var(--text-secondary)] hover:text-[var(--primary)] disabled:opacity-50';
 
   return (
@@ -151,6 +180,26 @@ export default function CommunityMembersPage({ params }: { params: Promise<{ slu
           );
         })}
       </ul>
+
+      {requests.length > 0 && (
+        <section className="mt-8">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--text-muted)]">Join requests</h2>
+          <ul className="mt-3 divide-y divide-[var(--border)]">
+            {requests.map((r) => (
+              <li key={r.id} className="flex items-center justify-between gap-3 py-3 text-sm">
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-[var(--text)]">{r.user.displayName}</p>
+                  <p className="text-xs text-[var(--text-muted)]">@{r.user.username}</p>
+                </div>
+                <div className="flex gap-2">
+                  <button className={btn} disabled={busy === r.id} onClick={() => decide(r, true)}>Approve</button>
+                  <button className={btn} disabled={busy === r.id} onClick={() => decide(r, false)}>Decline</button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {invites.length > 0 && (
         <section className="mt-8">

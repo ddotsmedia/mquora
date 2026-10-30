@@ -120,6 +120,58 @@ export class CommunitiesService {
     return { token, expiresAt };
   }
 
+  // Private communities: anyone can ask to join; moderators decide.
+  async requestJoin(communityId: string, userId: string) {
+    const community = await this.prisma.community.findFirst({ where: { id: communityId, deletedAt: null }, select: { isPublic: true } });
+    if (!community) throw new NotFoundException('Community not found');
+    if (community.isPublic) throw new BadRequestException('This community is public. Join it directly.');
+    const member = await this.prisma.communityMember.findUnique({ where: { communityId_userId: { communityId, userId } }, select: { id: true } });
+    if (member) return { status: 'MEMBER' };
+    await this.prisma.communityJoinRequest.upsert({
+      where: { communityId_userId: { communityId, userId } },
+      create: { communityId, userId, status: 'PENDING' },
+      update: { status: 'PENDING', decidedAt: null },
+    });
+    return { status: 'PENDING' };
+  }
+
+  async listJoinRequests(communityId: string, userId: string) {
+    const { membership, canManage } = await this.loadActor(communityId, userId);
+    if (!canManage && membership?.role !== 'MODERATOR') throw new ForbiddenException('Only moderators can view requests');
+    const rows = await this.prisma.communityJoinRequest.findMany({
+      where: { communityId, status: 'PENDING' },
+      orderBy: { createdAt: 'asc' },
+      take: 100,
+      select: { id: true, createdAt: true, user: { select: { id: true, username: true, displayName: true } } },
+    });
+    return { data: rows };
+  }
+
+  async decideJoinRequest(communityId: string, requestId: string, approve: boolean, userId: string) {
+    const { membership, canManage } = await this.loadActor(communityId, userId);
+    if (!canManage && membership?.role !== 'MODERATOR') throw new ForbiddenException('Only moderators can decide requests');
+    const request = await this.prisma.communityJoinRequest.findFirst({
+      where: { id: requestId, communityId, status: 'PENDING' },
+      select: { id: true, userId: true },
+    });
+    if (!request) throw new NotFoundException('Request not found');
+
+    return this.prisma.$transaction(async (tx) => {
+      if (approve) {
+        const existing = await tx.communityMember.findUnique({ where: { communityId_userId: { communityId, userId: request.userId } }, select: { id: true } });
+        if (!existing) {
+          await tx.communityMember.create({ data: { communityId, userId: request.userId, role: 'MEMBER' } });
+          await tx.community.update({ where: { id: communityId }, data: { memberCount: { increment: 1 } } });
+        }
+      }
+      await tx.communityJoinRequest.update({
+        where: { id: request.id },
+        data: { status: approve ? 'APPROVED' : 'DECLINED', decidedAt: new Date() },
+      });
+      return { status: approve ? 'APPROVED' : 'DECLINED' };
+    });
+  }
+
   // Active (not revoked, not expired) invite links. Members only.
   async listInvites(communityId: string, userId: string) {
     const membership = await this.prisma.communityMember.findUnique({
