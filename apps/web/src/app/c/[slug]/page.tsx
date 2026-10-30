@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { serverApiFetch } from '@/lib/api';
 import { PostCard } from '@/components/post-card';
 import { JoinButton } from '@/components/join-button';
+import { InviteButton } from '@/components/invite-button';
 import { siteOrigin } from '@/lib/site';
 
 interface Community {
@@ -104,6 +105,7 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
           <JoinButton communityId={community.id} />
+          <InviteButton communityId={community.id} />
           <Link
             href={`/ask?communityId=${community.id}`}
             className="rounded-full border border-[var(--border)] bg-[var(--surface-2)] px-4 py-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--primary)] hover:border-[var(--primary)] transition-colors"

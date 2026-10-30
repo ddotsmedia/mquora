@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
+// Routes: POST :id/invites (member creates link), GET invites/:token (public preview), POST invites/:token/accept
 import { Request } from 'express';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { CommunitiesService } from './communities.service';
@@ -43,6 +44,25 @@ export class CommunitiesController {
   async leave(@Param('id') id: string, @Req() req: Request) {
     const userId = (req.user as Record<string, unknown>).id as string;
     return this.communitiesService.leave(id, userId);
+  }
+
+  @Post(':id/invites')
+  @UseGuards(JwtAuthGuard)
+  async createInvite(@Param('id') id: string, @Req() req: Request) {
+    const userId = (req.user as Record<string, unknown>).id as string;
+    return this.communitiesService.createInvite(id, userId);
+  }
+
+  @Get('invites/:token')
+  async previewInvite(@Param('token') token: string) {
+    return this.communitiesService.previewInvite(token);
+  }
+
+  @Post('invites/:token/accept')
+  @UseGuards(JwtAuthGuard)
+  async acceptInvite(@Param('token') token: string, @Req() req: Request) {
+    const userId = (req.user as Record<string, unknown>).id as string;
+    return this.communitiesService.acceptInvite(token, userId);
   }
 
   @Patch(':id')
