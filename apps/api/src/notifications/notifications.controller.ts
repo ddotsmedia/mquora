@@ -3,6 +3,7 @@ import {
   Post,
   Get,
   Delete,
+  Patch,
   Body,
   Param,
   Query,
@@ -74,6 +75,16 @@ export class NotificationsController {
   async unsubscribe(@Body() dto: UnsubscribePushDto, @Req() req: Request) {
     const userId = (req.user as Record<string, unknown>).id as string;
     return this.notificationsService.unsubscribeFromPush(userId, dto);
+  }
+
+  @Get('preferences')
+  async getPreferences(@Req() req: Request) {
+    return this.notificationsService.getPreferences((req.user as Record<string, unknown>).id as string);
+  }
+
+  @Patch('preferences/:type')
+  async setPreference(@Param('type') type: string, @Body() body: { enabled: boolean }, @Req() req: Request) {
+    return this.notificationsService.setPreference((req.user as Record<string, unknown>).id as string, type, body?.enabled === true);
   }
 
   @Get('unread-count')

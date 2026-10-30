@@ -3,6 +3,9 @@ import { PrismaClient } from '@prisma/client';
 import { SubscribePushDto, UnsubscribePushDto, SendTestNotificationDto, PushNotificationPayload } from './notifications.dto';
 import * as webpush from 'web-push';
 
+const NOTIF_TYPES = ['VOTE', 'ANSWER', 'COMMENT', 'FOLLOW', 'MENTION', 'MODERATION', 'SYSTEM'];
+const LOCKED_TYPES = ['MODERATION', 'SYSTEM'];
+
 @Injectable()
 export class NotificationsService {
   private prisma = new PrismaClient();
@@ -234,7 +237,35 @@ export class NotificationsService {
     }
   }
 
+  // Moderation and system notices always go out; other types respect the user's preferences.
+  async isTypeEnabled(userId: string, type: string): Promise<boolean> {
+    if (type === 'MODERATION' || type === 'SYSTEM') return true;
+    const pref = await this.prisma.notificationPreference.findUnique({
+      where: { userId_type: { userId, type: type as any } },
+      select: { enabled: true },
+    });
+    return pref?.enabled !== false;
+  }
+
+  async getPreferences(userId: string) {
+    const rows = await this.prisma.notificationPreference.findMany({ where: { userId }, select: { type: true, enabled: true } });
+    const map = new Map(rows.map((r) => [r.type as string, r.enabled]));
+    return { data: NOTIF_TYPES.map((t) => ({ type: t, enabled: map.get(t) ?? true, locked: LOCKED_TYPES.includes(t) })) };
+  }
+
+  async setPreference(userId: string, type: string, enabled: boolean) {
+    if (!NOTIF_TYPES.includes(type)) throw new BadRequestException('Unknown notification type');
+    if (LOCKED_TYPES.includes(type)) throw new BadRequestException('This notification type cannot be turned off');
+    await this.prisma.notificationPreference.upsert({
+      where: { userId_type: { userId, type: type as any } },
+      create: { userId, type: type as any, enabled },
+      update: { enabled },
+    });
+    return { type, enabled };
+  }
+
   async create(userId: string, type: string, title: string, body: string, link?: string) {
+    if (!(await this.isTypeEnabled(userId, type))) return null;
     try {
       const notification = await this.prisma.notification.create({
         data: {

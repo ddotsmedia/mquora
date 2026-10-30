@@ -125,6 +125,7 @@ model User {
   questionVisits    QuestionVisit[]
   bookmarkCollections BookmarkCollection[]
   communityJoinRequests CommunityJoinRequest[]
+  notificationPreferences NotificationPreference[]
   blocksGiven       UserBlock[] @relation("blocker")
   blocksReceived    UserBlock[] @relation("blocked")
   tagFollows            TagFollow[]
@@ -451,6 +452,16 @@ model CommunityJoinRequest {
 
   @@unique([communityId, userId])
   @@index([communityId, status])
+}
+
+model NotificationPreference {
+  userId    String
+  type      NotifType
+  enabled   Boolean  @default(true)
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, type])
 }
 
 model UserBlock {

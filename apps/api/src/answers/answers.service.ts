@@ -43,7 +43,13 @@ export class AnswersService {
 
     const followerIds = followers.map((f) => f.userId);
     const subscriberIds = subscribers.map((s) => s.userId);
-    const uniqueUserIds = Array.from(new Set([...followerIds, ...subscriberIds]));
+    const optedOut = new Set(
+      (await this.prisma.notificationPreference.findMany({
+        where: { userId: { in: [...followerIds, ...subscriberIds] }, type: 'ANSWER', enabled: false },
+        select: { userId: true },
+      })).map((p) => p.userId),
+    );
+    const uniqueUserIds = Array.from(new Set([...followerIds, ...subscriberIds])).filter((id) => !optedOut.has(id));
 
     if (uniqueUserIds.length) {
       await this.prisma.notification
@@ -62,7 +68,7 @@ export class AnswersService {
     // Send web push notifications to subscribers
     if (subscriberIds.length) {
       const subscriptions = await this.prisma.notificationSubscription.findMany({
-        where: { userId: { in: subscriberIds }, isActive: true },
+        where: { userId: { in: subscriberIds.filter((id) => !optedOut.has(id)) }, isActive: true },
         select: { endpoint: true, p256dh: true, auth: true },
         take: 1000,
       });
