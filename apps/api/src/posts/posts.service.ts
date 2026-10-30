@@ -203,9 +203,27 @@ export class PostsService {
     });
   }
 
+  // A reader says this question duplicates another. Queued for admin review; nothing merges automatically.
+  async reportDuplicate(sourceId: string, targetSeoSlug: string, userId: string) {
+    const [source, target] = await Promise.all([
+      this.prisma.post.findFirst({ where: { id: sourceId, status: 'PUBLISHED', deletedAt: null }, select: { id: true } }),
+      this.prisma.post.findFirst({ where: { seoSlug: targetSeoSlug, status: 'PUBLISHED', deletedAt: null }, select: { id: true } }),
+    ]);
+    if (!source) throw new NotFoundException('Question not found');
+    if (!target) throw new NotFoundException('Original question not found. Check the link or slug.');
+    if (source.id === target.id) throw new BadRequestException('A question cannot duplicate itself');
+
+    await this.prisma.duplicateCandidate.upsert({
+      where: { sourcePostId_targetPostId: { sourcePostId: source.id, targetPostId: target.id } },
+      create: { sourcePostId: source.id, targetPostId: target.id, score: 1, status: 'PENDING', reportedBy: userId },
+      update: {},
+    });
+    return { reported: true };
+  }
+
   async getSimilarPosts(postId: string, limit = 5) {
     const candidates = await this.prisma.duplicateCandidate.findMany({
-      where: { sourcePostId: postId, status: 'PENDING' },
+      where: { sourcePostId: postId, status: 'PENDING', reportedBy: null },
       orderBy: { score: 'desc' },
       take: limit,
       select: { targetPostId: true, score: true },

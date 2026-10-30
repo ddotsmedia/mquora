@@ -698,6 +698,7 @@ model DuplicateCandidate {
   targetPostId      String
   score             Float
   status            String    @default("PENDING")
+  reportedBy        String?
   createdAt         DateTime  @default(now())
 
   sourcePost        Post      @relation("source", fields: [sourcePostId], references: [id], onDelete: Cascade)

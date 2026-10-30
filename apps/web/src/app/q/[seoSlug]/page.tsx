@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { serverApiFetch } from '@/lib/api';
 import { LanguageBadge } from '@/components/language-badge';
 import { VoteButtons } from '@/components/vote-buttons';
+import { DuplicateReportButton } from '@/components/duplicate-report-button';
 import { BookmarkButton } from '@/components/bookmark-button';
 import { SubscribeButton } from '@/components/subscribe-button';
 import { AnswerForm } from '@/components/answer-form';
@@ -213,7 +214,7 @@ export default async function PostPage({ params, searchParams }: { params: Promi
           <BookmarkButton postId={post.id} />
           <SubscribeButton postId={post.id} />
           <FollowQuestionButton postId={post.id} initialCount={post.followerCount ?? 0} />
-          <span className="ml-auto self-center"><ReportButton targetId={post.id} targetType="POST" /></span>
+          <span className="ml-auto self-center flex items-center gap-3"><DuplicateReportButton postId={post.id} /><ReportButton targetId={post.id} targetType="POST" /></span>
         </div>
 
         <div lang={post.language === 'MALAYALAM' || post.language === 'MIXED' ? 'ml' : undefined} className="prose dark:prose-invert max-w-none mb-6">

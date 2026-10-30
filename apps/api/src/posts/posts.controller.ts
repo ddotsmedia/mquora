@@ -49,6 +49,13 @@ export class PostsController {
     return this.postsService.getRelated(id, Math.min(Math.max(parseInt(limit ?? '5', 10) || 5, 1), 20));
   }
 
+  @Post(':id/duplicate-reports')
+  @UseGuards(JwtAuthGuard)
+  async reportDuplicate(@Param('id') id: string, @Body() body: { targetSeoSlug: string }, @Req() req: Request) {
+    const userId = (req.user as Record<string, unknown>).id as string;
+    return this.postsService.reportDuplicate(id, String(body?.targetSeoSlug ?? '').trim(), userId);
+  }
+
   @Get(':id/similar')
   @UseGuards(OptionalJwtGuard)
   async findSimilar(@Param('id') id: string, @Query('limit') limit?: string) {
