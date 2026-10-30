@@ -91,13 +91,15 @@ export class PostsService {
     return post;
   }
 
-  async findFeed(cursor?: string, communityId?: string, limit = 20, language?: string) {
+  async findFeed(cursor?: string, communityId?: string, limit = 20, language?: string, viewerId?: string) {
+    const hidden = await this.hiddenAuthorIds(viewerId);
     const langs = ['MALAYALAM', 'ENGLISH', 'MANGLISH', 'MIXED'];
     const whereClause = {
       status: 'PUBLISHED' as const,
       deletedAt: null,
       ...(communityId && { communityId }),
       ...(language && langs.includes(language) && { language: language as 'MALAYALAM' | 'ENGLISH' | 'MANGLISH' | 'MIXED' }),
+      ...(hidden.length && { authorId: { notIn: hidden } }),
       ...(cursor && { createdAt: { lt: new Date(cursor) } }),
     };
 
@@ -225,6 +227,15 @@ export class PostsService {
       update: {},
     });
     return { reported: true };
+  }
+
+  private async hiddenAuthorIds(viewerId?: string): Promise<string[]> {
+    if (!viewerId) return [];
+    const rows = await this.prisma.userBlock.findMany({
+      where: { OR: [{ blockerId: viewerId }, { blockedId: viewerId }] },
+      select: { blockerId: true, blockedId: true },
+    });
+    return [...new Set(rows.map((r) => (r.blockerId === viewerId ? r.blockedId : r.blockerId)))];
   }
 
   // Records that a signed-in user opened a question (one row per user and question).

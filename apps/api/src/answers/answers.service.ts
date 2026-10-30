@@ -87,10 +87,20 @@ export class AnswersService {
   }
 
   // sort: 'suggested' (accepted, then most votes) or 'recent'.
-  async findByPost(postId: string, cursor?: string, limit = 20, sort = 'suggested') {
+  private async hiddenAuthorIds(viewerId?: string): Promise<string[]> {
+    if (!viewerId) return [];
+    const rows = await this.prisma.userBlock.findMany({
+      where: { OR: [{ blockerId: viewerId }, { blockedId: viewerId }] },
+      select: { blockerId: true, blockedId: true },
+    });
+    return [...new Set(rows.map((r) => (r.blockerId === viewerId ? r.blockedId : r.blockerId)))];
+  }
+
+  async findByPost(postId: string, cursor?: string, limit = 20, sort = 'suggested', viewerId?: string) {
     const recent = sort === 'recent';
     limit = Math.min(Math.max(limit || 20, 1), 50);
-    const whereClause = { postId, status: 'PUBLISHED' as const, deletedAt: null, ...(cursor && !recent ? {} : cursor ? { createdAt: { lt: new Date(cursor) } } : {}) };
+    const hidden = await this.hiddenAuthorIds(viewerId);
+    const whereClause = { postId, status: 'PUBLISHED' as const, deletedAt: null, ...(hidden.length && { authorId: { notIn: hidden } }), ...(cursor && !recent ? {} : cursor ? { createdAt: { lt: new Date(cursor) } } : {}) };
 
     const answers = await this.prisma.answer.findMany({
       where: whereClause,

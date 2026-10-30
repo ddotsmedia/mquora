@@ -10,8 +10,10 @@ export class AnswersController {
   constructor(private answersService: AnswersService) {}
 
   @Get('posts/:postId/answers')
-  async findByPost(@Param('postId') postId: string, @Query('cursor') cursor?: string, @Query('limit') limit?: string, @Query('sort') sort?: string) {
-    return this.answersService.findByPost(postId, cursor, limit ? parseInt(limit, 10) : 20, sort);
+  @UseGuards(OptionalJwtGuard)
+  async findByPost(@Param('postId') postId: string, @Query('cursor') cursor?: string, @Query('limit') limit?: string, @Query('sort') sort?: string, @Req() req?: Request) {
+    const viewerId = (req?.user as Record<string, unknown> | undefined)?.id as string | undefined;
+    return this.answersService.findByPost(postId, cursor, limit ? parseInt(limit, 10) : 20, sort, viewerId);
   }
 
   @Get('posts/:postId/answer-summary')

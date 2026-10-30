@@ -135,6 +135,55 @@ export class UsersService {
   }
 
   // A user's answers with the question they belong to (profile "Answers" tab).
+  private async userIdByUsername(username: string): Promise<string> {
+    const u = await this.prisma.user.findUnique({ where: { username }, select: { id: true } });
+    if (!u) throw new NotFoundException('User not found');
+    return u.id;
+  }
+
+  async block(blockerId: string, username: string) {
+    const blockedId = await this.userIdByUsername(username);
+    if (blockedId === blockerId) throw new BadRequestException('You cannot block yourself');
+    await this.prisma.userBlock.upsert({
+      where: { blockerId_blockedId: { blockerId, blockedId } },
+      create: { blockerId, blockedId },
+      update: {},
+    });
+    return { blocked: true };
+  }
+
+  async unblock(blockerId: string, username: string) {
+    const blockedId = await this.userIdByUsername(username);
+    await this.prisma.userBlock.deleteMany({ where: { blockerId, blockedId } });
+    return { blocked: false };
+  }
+
+  async blockStatus(blockerId: string, username: string) {
+    const blockedId = await this.userIdByUsername(username);
+    const row = await this.prisma.userBlock.findUnique({ where: { blockerId_blockedId: { blockerId, blockedId } }, select: { id: true } });
+    return { blocked: !!row };
+  }
+
+  async myBlocks(blockerId: string) {
+    const rows = await this.prisma.userBlock.findMany({
+      where: { blockerId },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+      select: { blocked: { select: { username: true, displayName: true } } },
+    });
+    return { data: rows.map((r) => r.blocked) };
+  }
+
+  // Users hidden from a viewer's feeds: people they blocked, and people who blocked them.
+  async hiddenUserIds(viewerId?: string): Promise<string[]> {
+    if (!viewerId) return [];
+    const rows = await this.prisma.userBlock.findMany({
+      where: { OR: [{ blockerId: viewerId }, { blockedId: viewerId }] },
+      select: { blockerId: true, blockedId: true },
+    });
+    return [...new Set(rows.map((r) => (r.blockerId === viewerId ? r.blockedId : r.blockerId)))];
+  }
+
   async answersOf(username: string, limit = 20) {
     const user = await this.prisma.user.findFirst({ where: { username, deletedAt: null }, select: { id: true } });
     if (!user) throw new NotFoundException('User not found');
