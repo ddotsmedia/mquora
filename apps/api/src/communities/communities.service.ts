@@ -57,8 +57,9 @@ export class CommunitiesService {
 
   // Member counts change only when membership actually changes (idempotent join/leave).
   async join(communityId: string, userId: string) {
-    const community = await this.prisma.community.findFirst({ where: { id: communityId, deletedAt: null }, select: { id: true } });
+    const community = await this.prisma.community.findFirst({ where: { id: communityId, deletedAt: null }, select: { id: true, isPublic: true } });
     if (!community) throw new NotFoundException('Community not found');
+    if (!community.isPublic) throw new ForbiddenException('This community is private. Join with an invite link.');
     return this.prisma.$transaction(async (tx) => {
       const existing = await tx.communityMember.findUnique({ where: { communityId_userId: { communityId, userId } }, select: { id: true } });
       if (existing) return { joined: true };
