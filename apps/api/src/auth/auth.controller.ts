@@ -105,6 +105,35 @@ export class AuthController {
     return this.authService.confirmPasswordReset(dto.token, dto.newPassword);
   }
 
+  @Get('2fa/status')
+  @UseGuards(JwtAuthGuard)
+  async twoFactorStatus(@Req() req: Request) {
+    return this.authService.twoFactorStatus((req.user as Record<string, unknown>).id as string);
+  }
+
+  @Post('2fa/setup')
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 900000 } })
+  async twoFactorSetup(@Req() req: Request) {
+    return this.authService.twoFactorSetup((req.user as Record<string, unknown>).id as string);
+  }
+
+  @Post('2fa/enable')
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 900000 } })
+  @HttpCode(200)
+  async twoFactorEnable(@Body() body: { code?: string }, @Req() req: Request) {
+    return this.authService.twoFactorEnable((req.user as Record<string, unknown>).id as string, body?.code ?? '');
+  }
+
+  @Post('2fa/disable')
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 900000 } })
+  @HttpCode(200)
+  async twoFactorDisable(@Body() body: { password?: string; code?: string }, @Req() req: Request) {
+    return this.authService.twoFactorDisable((req.user as Record<string, unknown>).id as string, body?.password ?? '', body?.code ?? '');
+  }
+
   @Get('health')
   health() {
     return { status: 'ok' };

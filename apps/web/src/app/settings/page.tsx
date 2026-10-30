@@ -5,6 +5,7 @@ import { userFetch } from '@/lib/session-api';
 import { ApiError } from '@/lib/api';
 import { PasswordChangeForm } from '@/components/password-change-form';
 import { DigestToggle } from '@/components/digest-toggle';
+import { TwoFactorSettings } from '@/components/two-factor-settings';
 
 export const metadata: Metadata = { title: 'Settings — askvyo', robots: { index: false } };
 export const dynamic = 'force-dynamic';
@@ -49,6 +50,7 @@ const input =
 const TABS = [
   { id: 'profile', label: 'Profile' },
   { id: 'password', label: 'Password' },
+  { id: 'security', label: 'Security' },
   { id: 'account', label: 'Account' },
 ] as const;
 
@@ -62,7 +64,7 @@ export default async function SettingsPage({
     searchParams,
   ]);
 
-  const tab = (sp.tab ?? 'profile') as 'profile' | 'password' | 'account';
+  const tab = (sp.tab ?? 'profile') as 'profile' | 'password' | 'security' | 'account';
 
   return (
     <div className="mx-auto max-w-xl px-4 py-8">
@@ -140,6 +142,8 @@ export default async function SettingsPage({
 
       {/* ── Password tab ─────────────────────────────────────────── */}
       {tab === 'password' && <PasswordChangeForm />}
+
+      {tab === 'security' && <TwoFactorSettings />}
 
       {/* ── Account tab ─────────────────────────────────────────── */}
       {tab === 'account' && (

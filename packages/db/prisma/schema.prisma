@@ -82,6 +82,10 @@ enum ReportStatus {
 }
 
 model User {
+  totpSecret         String?
+  totpEnabledAt      DateTime?
+  totpLastStep       Int?
+  totpBackupHashes   String[]        @default([])
   pushTokens         PushToken[]
   id                    String          @id @default(cuid())
   email                 String          @unique

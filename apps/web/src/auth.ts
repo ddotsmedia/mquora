@@ -45,6 +45,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Credentials({
       async authorize(credentials, request) {
         if (!credentials.email || !credentials.password) return null;
+        const totp = typeof credentials.totp === 'string' ? credentials.totp.trim() : '';
 
         let res: Response;
         try {
@@ -56,7 +57,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               'X-Client-IP': clientIp(request.headers),
             },
             // API rejects unknown fields (csrfToken etc.), so send only these two
-            body: JSON.stringify({ email: credentials.email, password: credentials.password }),
+            body: JSON.stringify({ email: credentials.email, password: credentials.password, ...(totp ? { totp } : {}) }),
             cache: 'no-store',
           });
         } catch (err) {
@@ -68,6 +69,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const body = await res.json().catch(() => ({})) as { message?: string };
           const msg = typeof body.message === 'string' ? body.message : '';
           console.error('[auth] authorize login failed:', res.status, msg);
+          if (res.status === 401 && (msg === 'TWO_FACTOR_REQUIRED' || msg === 'INVALID_TWO_FACTOR_CODE')) {
+            throw new Error(msg);
+          }
           if (res.status === 403 && msg.toLowerCase().includes('pending')) {
             // Throw so NextAuth propagates an CredentialsSignin error with a distinguishable cause
             throw new Error('PENDING_APPROVAL');
