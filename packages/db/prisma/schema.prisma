@@ -223,6 +223,17 @@ model CommunityMember {
   @@index([userId])
 }
 
+model AnswerRevision {
+  id        String   @id @default(cuid())
+  answerId  String
+  body      String
+  createdAt DateTime @default(now())
+
+  answer    Answer   @relation(fields: [answerId], references: [id], onDelete: Cascade)
+
+  @@index([answerId, createdAt])
+}
+
 model PostView {
   id        String   @id @default(cuid())
   postId    String
@@ -318,6 +329,7 @@ model Answer {
   commentCount      Int       @default(0)
   isAccepted        Boolean   @default(false)
   qualityScore      Int?
+  editedAt          DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   deletedAt         DateTime?
@@ -325,6 +337,7 @@ model Answer {
   post              Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
   author            User      @relation(fields: [authorId], references: [id])
   comments          Comment[]
+  revisions         AnswerRevision[]
   votes             Vote[]    @relation("answer")
   answerVotes       AnswerVote[] @relation("answer_votes")
   reports           Report[]  @relation("report_answer")
