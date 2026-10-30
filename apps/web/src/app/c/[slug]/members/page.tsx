@@ -12,6 +12,15 @@ interface Member {
   user: { id: string; username: string; displayName: string };
 }
 
+interface Invite {
+  id: string;
+  token: string;
+  expiresAt: string;
+  uses: number;
+  maxUses: number | null;
+  creatorUsername: string;
+}
+
 interface MyRole {
   role: string | null;
   isCreator: boolean;
@@ -27,6 +36,7 @@ export default function CommunityMembersPage({ params }: { params: Promise<{ slu
   const [creatorId, setCreatorId] = useState<string | null>(null);
   const [me, setMe] = useState<MyRole | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [invites, setInvites] = useState<Invite[]>([]);
 
   const load = useCallback(async () => {
     const community = await apiFetch<{ id: string }>(`/api/v1/communities/${slug}`);
@@ -35,6 +45,10 @@ export default function CommunityMembersPage({ params }: { params: Promise<{ slu
     setMembers(list.data);
     setCreatorId(list.creatorId);
     if (token) {
+      const inv = await apiFetch<{ data: Invite[] }>(`/api/v1/communities/${community.id}/invites`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }).catch(() => ({ data: [] as Invite[] }));
+      setInvites(inv.data);
       const mine = await apiFetch<MyRole>(`/api/v1/communities/${community.id}/members/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -86,6 +100,24 @@ export default function CommunityMembersPage({ params }: { params: Promise<{ slu
     );
   };
 
+  const revoke = async (inv: Invite) => {
+    if (!communityId) return;
+    if (!window.confirm('Revoke this invite link? It will stop working.')) return;
+    setBusy(inv.id);
+    try {
+      await apiFetch(`/api/v1/communities/${communityId}/invites/${inv.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success('Invite revoked');
+      await load();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : 'Could not revoke invite');
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const btn = 'rounded-full border border-[var(--border)] px-3 py-1 text-xs text-[var(--text-secondary)] hover:text-[var(--primary)] disabled:opacity-50';
 
   return (
@@ -119,6 +151,28 @@ export default function CommunityMembersPage({ params }: { params: Promise<{ slu
           );
         })}
       </ul>
+
+      {invites.length > 0 && (
+        <section className="mt-8">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--text-muted)]">Active invite links</h2>
+          <ul className="mt-3 divide-y divide-[var(--border)]">
+            {invites.map((inv) => {
+              const canRevoke = !!me; // the API decides: link creator, community creator, or admin
+              return (
+                <li key={inv.id} className="flex items-center justify-between gap-3 py-3 text-sm">
+                  <div className="min-w-0 text-[var(--text-secondary)]">
+                    <p>Created by @{inv.creatorUsername} · {inv.uses} joined</p>
+                    <p className="text-xs text-[var(--text-muted)]">Expires {new Date(inv.expiresAt).toLocaleDateString()}</p>
+                  </div>
+                  {canRevoke && (
+                    <button className={btn} disabled={busy === inv.id} onClick={() => revoke(inv)}>Revoke</button>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }
