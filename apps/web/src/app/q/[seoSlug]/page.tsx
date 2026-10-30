@@ -7,6 +7,7 @@ import { LanguageBadge } from '@/components/language-badge';
 import { VoteButtons } from '@/components/vote-buttons';
 import { DuplicateReportButton } from '@/components/duplicate-report-button';
 import { AnswerActions } from '@/components/answer-actions';
+import { VisitTracker } from '@/components/visit-tracker';
 import { BookmarkButton } from '@/components/bookmark-button';
 import { SubscribeButton } from '@/components/subscribe-button';
 import { AnswerForm } from '@/components/answer-form';
@@ -182,6 +183,7 @@ export default async function PostPage({ params, searchParams }: { params: Promi
     <div className="mx-auto max-w-3xl px-4 sm:px-0">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd).replace(/</g, '\\u003c') }} />
+      <VisitTracker postId={post.id} />
       <article className="p-4 sm:p-6">
         <div className="mb-4 flex items-center gap-2 flex-wrap">
           <LanguageBadge language={post.language} />

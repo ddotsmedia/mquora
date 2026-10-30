@@ -122,6 +122,7 @@ model User {
   communitiesCreated    Community[]     @relation("creator")
   communityMemberships  CommunityMember[]
   communityInvitesCreated CommunityInvite[] @relation("community_invites")
+  questionVisits    QuestionVisit[]
   tagFollows            TagFollow[]
   questionFollows       QuestionFollow[]
   questionPasses        QuestionPass[]
@@ -234,6 +235,19 @@ model AnswerRevision {
   @@index([answerId, createdAt])
 }
 
+model QuestionVisit {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  visitedAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([userId, visitedAt])
+}
+
 model PostView {
   id        String   @id @default(cuid())
   postId    String
@@ -304,6 +318,7 @@ model Post {
   targetOf          DuplicateCandidate[] @relation("target")
 
   views             PostView[]
+  questionVisits    QuestionVisit[]
 
   @@index([authorId])
   @@index([communityId])

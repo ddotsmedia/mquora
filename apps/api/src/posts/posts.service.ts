@@ -221,6 +221,31 @@ export class PostsService {
     return { reported: true };
   }
 
+  // Records that a signed-in user opened a question (one row per user and question).
+  async recordVisit(postId: string, userId: string) {
+    const post = await this.prisma.post.findFirst({ where: { id: postId, status: 'PUBLISHED', deletedAt: null }, select: { id: true } });
+    if (!post) throw new NotFoundException('Question not found');
+    await this.prisma.questionVisit.upsert({
+      where: { userId_postId: { userId, postId } },
+      create: { userId, postId },
+      update: { visitedAt: new Date() },
+    });
+    return { ok: true };
+  }
+
+  async myHistory(userId: string, limit = 50) {
+    const rows = await this.prisma.questionVisit.findMany({
+      where: { userId, post: { status: 'PUBLISHED', deletedAt: null } },
+      orderBy: { visitedAt: 'desc' },
+      take: limit,
+      select: {
+        visitedAt: true,
+        post: { select: { id: true, seoSlug: true, title: true, answerCount: true, voteScore: true } },
+      },
+    });
+    return { data: rows.map((r) => ({ visitedAt: r.visitedAt, ...r.post })) };
+  }
+
   async getSimilarPosts(postId: string, limit = 5) {
     const candidates = await this.prisma.duplicateCandidate.findMany({
       where: { sourcePostId: postId, status: 'PENDING', reportedBy: null },
