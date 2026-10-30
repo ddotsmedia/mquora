@@ -157,7 +157,12 @@ export class PostsService {
       throw new NotFoundException('Post not found');
     }
     // Count the view without slowing the response.
-    if (countView) void this.prisma.post.update({ where: { id: post.id }, data: { viewCount: { increment: 1 } } }).catch(() => undefined);
+    if (countView) {
+      void this.prisma.$transaction([
+        this.prisma.post.update({ where: { id: post.id }, data: { viewCount: { increment: 1 } } }),
+        this.prisma.postView.create({ data: { postId: post.id } }),
+      ]).catch(() => undefined);
+    }
     return post;
   }
 

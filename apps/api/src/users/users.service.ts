@@ -10,6 +10,11 @@ const POST_CARD = {
   community: { select: { id: true, slug: true, name: true } },
 } as const;
 
+function startOfDubaiMonth(): Date {
+  const now = new Date(Date.now() + 4 * 60 * 60 * 1000);
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1) - 4 * 60 * 60 * 1000);
+}
+
 @Injectable()
 export class UsersService {
   private prisma = new PrismaClient();
@@ -28,7 +33,7 @@ export class UsersService {
     if (!user) throw new NotFoundException('User not found');
 
     const live = { authorId: user.id, status: 'PUBLISHED' as const, deletedAt: null };
-    const [posts, postCount, answerCount, followerCount, followingCount, views, knows] = await Promise.all([
+    const [posts, postCount, answerCount, followerCount, followingCount, views, viewsThisMonth, knows] = await Promise.all([
       this.prisma.post.findMany({ where: live, select: POST_CARD, orderBy: { createdAt: 'desc' }, take: 20 }),
       this.prisma.post.count({ where: live }),
       this.prisma.answer.count({ where: live }),
@@ -38,6 +43,13 @@ export class UsersService {
       this.prisma.post.aggregate({
         where: { status: 'PUBLISHED', deletedAt: null, OR: [{ authorId: user.id }, { answers: { some: { authorId: user.id, deletedAt: null } } }] },
         _sum: { viewCount: true },
+      }),
+      // Views in the current month (Dubai time, UTC+4) of questions they asked or answered.
+      this.prisma.postView.count({
+        where: {
+          createdAt: { gte: startOfDubaiMonth() },
+          post: { status: 'PUBLISHED', deletedAt: null, OR: [{ authorId: user.id }, { answers: { some: { authorId: user.id, deletedAt: null } } }] },
+        },
       }),
       // "Knows about": communities where they answered most.
       this.prisma.answer.findMany({ where: live, select: { post: { select: { community: { select: { slug: true, name: true } } } } }, take: 500 }),
@@ -62,7 +74,7 @@ export class UsersService {
       credential: profile?.credential ?? null,
       posts,
       knowsAbout,
-      stats: { posts: postCount, answers: answerCount, followers: followerCount, following: followingCount, views: views._sum.viewCount ?? 0 },
+      stats: { posts: postCount, answers: answerCount, followers: followerCount, following: followingCount, views: views._sum.viewCount ?? 0, viewsThisMonth },
     };
   }
 

@@ -223,6 +223,17 @@ model CommunityMember {
   @@index([userId])
 }
 
+model PostView {
+  id        String   @id @default(cuid())
+  postId    String
+  createdAt DateTime @default(now())
+
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId, createdAt])
+  @@index([createdAt])
+}
+
 model CommunityInvite {
   id          String    @id @default(cuid())
   communityId String
@@ -280,6 +291,8 @@ model Post {
   embedding         PostEmbedding?
   sourceOf          DuplicateCandidate[] @relation("source")
   targetOf          DuplicateCandidate[] @relation("target")
+
+  views             PostView[]
 
   @@index([authorId])
   @@index([communityId])
