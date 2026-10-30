@@ -5,6 +5,7 @@ import { auth } from '@/auth';
 import { serverApiFetch, ApiError } from '@/lib/api';
 import { PostCard } from '@/components/post-card';
 import { FollowButton } from '@/components/follow-button';
+import { BlockUserButton } from '@/components/block-user-button';
 import { formatDistanceToNow } from 'date-fns';
 import { siteOrigin } from '@/lib/site';
 import { MessageCircle } from 'lucide-react';
@@ -163,6 +164,7 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
             ) : (
               <>
                 <FollowButton userId={user.id} />
+                <BlockUserButton username={user.username} />
                 <Link href={`/ask?to=${encodeURIComponent(user.username)}`} className="flex items-center gap-1.5 rounded-full bg-[var(--primary)] px-4 py-1.5 text-sm text-white hover:bg-[var(--primary-light)] transition-colors">
                   <MessageCircle className="h-3.5 w-3.5" />
                   Ask {user.displayName.split(' ')[0]}

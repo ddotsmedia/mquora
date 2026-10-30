@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { UpdateMeDto, ChangePasswordDto } from './users.dto';
@@ -33,6 +33,30 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   changePassword(@Req() req: Request, @Body() dto: ChangePasswordDto) {
     return this.users.changePassword(uid(req), dto.currentPassword, dto.newPassword);
+  }
+
+  @Get('me/blocks')
+  @UseGuards(JwtAuthGuard)
+  myBlocks(@Req() req: Request) {
+    return this.users.myBlocks((req.user as Record<string, unknown>).id as string);
+  }
+
+  @Get(':username/block-status')
+  @UseGuards(JwtAuthGuard)
+  blockStatus(@Param('username') username: string, @Req() req: Request) {
+    return this.users.blockStatus((req.user as Record<string, unknown>).id as string, username);
+  }
+
+  @Post(':username/block')
+  @UseGuards(JwtAuthGuard)
+  block(@Param('username') username: string, @Req() req: Request) {
+    return this.users.block((req.user as Record<string, unknown>).id as string, username);
+  }
+
+  @Delete(':username/block')
+  @UseGuards(JwtAuthGuard)
+  unblock(@Param('username') username: string, @Req() req: Request) {
+    return this.users.unblock((req.user as Record<string, unknown>).id as string, username);
   }
 
   @Get(':username/answers')
