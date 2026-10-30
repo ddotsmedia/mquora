@@ -35,11 +35,14 @@ export default async function NotificationsPage() {
           <h1 className="text-2xl font-bold text-[var(--text)]">Notifications</h1>
           <p className="text-sm text-[var(--text-secondary)]">{unread ? `${unread} unread` : 'You are all caught up'}</p>
         </div>
-        {unread > 0 && (
+        <div className="flex items-center gap-3">
+          <Link href="/notifications/preferences" className="text-sm text-[var(--primary)] hover:underline">Settings</Link>
+          {unread > 0 && (
           <form action={markAllRead}>
             <button className="rounded-full border border-[var(--border)] px-4 py-1.5 text-sm hover:bg-[var(--surface-2)]">Mark all as read</button>
           </form>
         )}
+        </div>
       </header>
       {data.length === 0 ? (
         <div className="rounded-xl border border-dashed border-[var(--border)] p-10 text-center text-[var(--text-muted)]">No notifications yet.</div>
