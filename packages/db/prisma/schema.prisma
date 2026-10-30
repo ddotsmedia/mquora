@@ -124,6 +124,7 @@ model User {
   communityInvitesCreated CommunityInvite[] @relation("community_invites")
   questionVisits    QuestionVisit[]
   bookmarkCollections BookmarkCollection[]
+  communityJoinRequests CommunityJoinRequest[]
   blocksGiven       UserBlock[] @relation("blocker")
   blocksReceived    UserBlock[] @relation("blocked")
   tagFollows            TagFollow[]
@@ -205,6 +206,7 @@ model Community {
   members           CommunityMember[]
   posts             Post[]
   invites           CommunityInvite[]
+  joinRequests      CommunityJoinRequest[]
 
   @@index([slug])
   @@index([createdBy])
@@ -435,6 +437,21 @@ model AnswerVote {
 }
 
 
+
+model CommunityJoinRequest {
+  id          String    @id @default(cuid())
+  communityId String
+  userId      String
+  status      String    @default("PENDING")
+  createdAt   DateTime  @default(now())
+  decidedAt   DateTime?
+
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([communityId, userId])
+  @@index([communityId, status])
+}
 
 model UserBlock {
   id          String   @id @default(cuid())

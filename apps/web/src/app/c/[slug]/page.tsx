@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { serverApiFetch } from '@/lib/api';
 import { PostCard } from '@/components/post-card';
 import { JoinButton } from '@/components/join-button';
+import { RequestJoinButton } from '@/components/request-join-button';
 import { InviteButton } from '@/components/invite-button';
 import { siteOrigin } from '@/lib/site';
 
@@ -12,6 +13,7 @@ interface Community {
   slug: string;
   name: string;
   description?: string;
+  isPublic?: boolean;
   memberCount: number;
   postCount: number;
   createdAt: string;
@@ -104,7 +106,7 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
           <span className="text-[var(--text-muted)]">{community.postCount} posts</span>
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
-          <JoinButton communityId={community.id} />
+          {community.isPublic ? <JoinButton communityId={community.id} /> : <RequestJoinButton communityId={community.id} />}
           <InviteButton communityId={community.id} />
           <Link
             href={`/c/${community.slug}/members`}

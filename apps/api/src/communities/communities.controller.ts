@@ -53,6 +53,27 @@ export class CommunitiesController {
     return this.communitiesService.createInvite(id, userId);
   }
 
+  @Post(':id/join-requests')
+  @UseGuards(JwtAuthGuard)
+  async requestJoin(@Param('id') id: string, @Req() req: Request) {
+    const userId = (req.user as Record<string, unknown>).id as string;
+    return this.communitiesService.requestJoin(id, userId);
+  }
+
+  @Get(':id/join-requests')
+  @UseGuards(JwtAuthGuard)
+  async listJoinRequests(@Param('id') id: string, @Req() req: Request) {
+    const userId = (req.user as Record<string, unknown>).id as string;
+    return this.communitiesService.listJoinRequests(id, userId);
+  }
+
+  @Post(':id/join-requests/:requestId/decide')
+  @UseGuards(JwtAuthGuard)
+  async decideJoinRequest(@Param('id') id: string, @Param('requestId') requestId: string, @Body() body: { approve: boolean }, @Req() req: Request) {
+    const userId = (req.user as Record<string, unknown>).id as string;
+    return this.communitiesService.decideJoinRequest(id, requestId, body?.approve === true, userId);
+  }
+
   @Get(':id/invites')
   @UseGuards(JwtAuthGuard)
   async listInvites(@Param('id') id: string, @Req() req: Request) {
