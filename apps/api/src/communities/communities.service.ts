@@ -1,6 +1,9 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
+import { randomBytes } from 'crypto';
 import slug from 'slug';
+
+const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 @Injectable()
 export class CommunitiesService {
@@ -98,6 +101,73 @@ export class CommunitiesService {
       data: updateData,
       select: { id: true, slug: true, name: true },
     });
+  }
+
+  // Only existing members can invite. Invites expire after 7 days.
+  async createInvite(communityId: string, userId: string) {
+    const membership = await this.prisma.communityMember.findUnique({
+      where: { communityId_userId: { communityId, userId } },
+      select: { id: true },
+    });
+    if (!membership) throw new ForbiddenException('Only members can invite');
+
+    const token = randomBytes(16).toString('base64url');
+    const expiresAt = new Date(Date.now() + INVITE_TTL_MS);
+    await this.prisma.communityInvite.create({
+      data: { communityId, token, createdBy: userId, expiresAt },
+    });
+    return { token, expiresAt };
+  }
+
+  // Public preview: safe fields only, no membership info.
+  async previewInvite(token: string) {
+    const invite = await this.prisma.communityInvite.findUnique({
+      where: { token },
+      select: {
+        expiresAt: true,
+        revokedAt: true,
+        uses: true,
+        maxUses: true,
+        community: { select: { slug: true, name: true, description: true, memberCount: true, deletedAt: true } },
+      },
+    });
+    if (!invite) throw new NotFoundException('Invite not found');
+
+    const valid = this.isInviteUsable(invite) && !invite.community.deletedAt;
+    return {
+      valid,
+      community: { slug: invite.community.slug, name: invite.community.name, description: invite.community.description, memberCount: invite.community.memberCount },
+    };
+  }
+
+  // Accepting an invite joins the community even when it is private.
+  async acceptInvite(token: string, userId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const invite = await tx.communityInvite.findUnique({
+        where: { token },
+        select: { id: true, communityId: true, expiresAt: true, revokedAt: true, uses: true, maxUses: true, community: { select: { slug: true, deletedAt: true } } },
+      });
+      if (!invite || invite.community.deletedAt) throw new NotFoundException('Invite not found');
+      if (!this.isInviteUsable(invite)) throw new BadRequestException('Invite is expired or no longer valid');
+
+      const existing = await tx.communityMember.findUnique({
+        where: { communityId_userId: { communityId: invite.communityId, userId } },
+        select: { id: true },
+      });
+      if (existing) return { joined: true, slug: invite.community.slug };
+
+      await tx.communityMember.create({ data: { communityId: invite.communityId, userId, role: 'MEMBER' } });
+      await tx.community.update({ where: { id: invite.communityId }, data: { memberCount: { increment: 1 } } });
+      await tx.communityInvite.update({ where: { id: invite.id }, data: { uses: { increment: 1 } } });
+      return { joined: true, slug: invite.community.slug };
+    });
+  }
+
+  private isInviteUsable(invite: { expiresAt: Date; revokedAt: Date | null; uses: number; maxUses: number | null }): boolean {
+    if (invite.revokedAt) return false;
+    if (invite.expiresAt.getTime() <= Date.now()) return false;
+    if (invite.maxUses !== null && invite.uses >= invite.maxUses) return false;
+    return true;
   }
 
   private async isAdmin(userId: string): Promise<boolean> {

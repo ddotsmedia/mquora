@@ -121,6 +121,7 @@ model User {
   mediaAssets           MediaAsset[]
   communitiesCreated    Community[]     @relation("creator")
   communityMemberships  CommunityMember[]
+  communityInvitesCreated CommunityInvite[] @relation("community_invites")
   tagFollows            TagFollow[]
   questionFollows       QuestionFollow[]
   questionPasses        QuestionPass[]
@@ -199,6 +200,7 @@ model Community {
   creator           User      @relation("creator", fields: [createdBy], references: [id])
   members           CommunityMember[]
   posts             Post[]
+  invites           CommunityInvite[]
 
   @@index([slug])
   @@index([createdBy])
@@ -219,6 +221,23 @@ model CommunityMember {
   @@unique([communityId, userId])
   @@index([communityId])
   @@index([userId])
+}
+
+model CommunityInvite {
+  id          String    @id @default(cuid())
+  communityId String
+  token       String    @unique
+  createdBy   String
+  expiresAt   DateTime
+  uses        Int       @default(0)
+  maxUses     Int?
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  creator     User      @relation("community_invites", fields: [createdBy], references: [id], onDelete: Cascade)
+
+  @@index([communityId])
 }
 
 model Post {
