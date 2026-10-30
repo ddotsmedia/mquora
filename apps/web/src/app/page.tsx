@@ -28,6 +28,7 @@ export default function Home() {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<Stats | null>(null);
+  const [lang, setLang] = useState<'ALL' | 'MALAYALAM' | 'ENGLISH' | 'MANGLISH'>('ALL');
 
   const TABS: { id: Tab; label: string; path: string }[] = [
     ...(session ? [{ id: 'foryou' as Tab, label: '✨ For You', path: '/api/v1/feed/for-you?limit=20' }] : []),
@@ -40,7 +41,7 @@ export default function Home() {
 
   const load = useCallback(async (which: Tab, cursor?: string) => {
     const tabDef = TABS.find((t) => t.id === which) ?? PUBLIC_TABS.find((t) => t.id === which)!;
-    const base = tabDef.path;
+    const base = which === 'latest' && lang !== 'ALL' ? `${tabDef.path}&language=${lang}` : tabDef.path;
     const headers: Record<string, string> = {};
     if (which === 'foryou' && session?.user?.accessToken) {
       headers['Authorization'] = `Bearer ${session.user.accessToken}`;
@@ -51,7 +52,7 @@ export default function Home() {
     );
     setPosts((prev) => (cursor ? [...prev, ...(res.data ?? [])] : res.data ?? []));
     setNextCursor(which === 'latest' ? res.nextCursor ?? null : null);
-  }, [session]);
+  }, [session, lang]);
 
   useEffect(() => {
     setLoading(true);
@@ -128,6 +129,19 @@ export default function Home() {
             <div>
               <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <h2 className="text-lg font-semibold text-[var(--text)]">All Questions</h2>
+              {tab === 'latest' && (
+                <div className="mb-3 flex flex-wrap gap-1 text-xs">
+                  {([['ALL', 'All'], ['MALAYALAM', 'മലയാളം'], ['ENGLISH', 'English'], ['MANGLISH', 'Manglish']] as const).map(([v, label]) => (
+                    <button
+                      key={v}
+                      onClick={() => setLang(v)}
+                      className={`rounded-full border px-3 py-1 ${lang === v ? 'border-[var(--primary)] text-[var(--primary)]' : 'border-[var(--border)] text-[var(--text-secondary)]'}`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
                 <div className="flex gap-1 overflow-x-auto rounded-full border border-[var(--border)] bg-[var(--surface)] p-1 scrollbar-none">
                   {TABS.map((t) => (
                     <button
