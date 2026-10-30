@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, BadRequestException, ForbiddenException, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaClient } from '@prisma/client';
 import * as argon2 from 'argon2';
@@ -6,6 +6,7 @@ import { createHash, randomBytes } from 'crypto';
 import { RegisterDto } from '../dto/register.dto';
 import { LoginDto } from '../dto/login.dto';
 import { isBanned } from '../shared/ban';
+import { decryptSecret, encryptSecret, matchTotp, newBackupCodes, newTotpSecret, normalizeBackupCode, otpauthUri } from './totp';
 import { sendMail } from '../shared/mailer';
 
 // Refresh tokens are 256-bit random values; a fast deterministic hash is enough to look them up.
@@ -74,11 +75,108 @@ export class AuthService {
       throw new ForbiddenException(`Account is suspended${until}`);
     }
 
+    if (user.totpEnabledAt) {
+      const code = (dto.totp ?? '').trim();
+      if (!code) throw new UnauthorizedException('TWO_FACTOR_REQUIRED');
+      if (!(await this.consumeSecondFactor(user, code))) throw new UnauthorizedException('INVALID_TWO_FACTOR_CODE');
+    }
+
     const tokens = await this.generateTokens(user.id);
     return {
       ...tokens,
       user: { id: user.id, email: user.email, username: user.username, displayName: user.displayName, role: user.role },
     };
+  }
+
+  /**
+   * Accepts a current authenticator code (once per time step) or an unused backup code (once ever).
+   * Each use is claimed with a conditional write, so two concurrent requests cannot both succeed.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private async consumeSecondFactor(user: any, code: string): Promise<boolean> {
+    if (/^\d{6}$/.test(code) && user.totpSecret) {
+      let secret: string;
+      try {
+        secret = decryptSecret(user.totpSecret);
+      } catch {
+        return false;
+      }
+      const step = matchTotp(secret, code, user.totpLastStep ?? null);
+      if (step === null) return false;
+      const claimed = await this.prisma.user.updateMany({
+        where: { id: user.id, OR: [{ totpLastStep: null }, { totpLastStep: { lt: step } }] },
+        data: { totpLastStep: step },
+      });
+      return claimed.count === 1;
+    }
+
+    const hash = hashToken(normalizeBackupCode(code));
+    if (!(user.totpBackupHashes ?? []).includes(hash)) return false;
+    const removed = await this.prisma.$executeRaw`
+      UPDATE "User" SET "totpBackupHashes" = array_remove("totpBackupHashes", ${hash})
+      WHERE id = ${user.id} AND ${hash} = ANY("totpBackupHashes")`;
+    return removed === 1;
+  }
+
+  async twoFactorStatus(userId: string) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const user = await (this.prisma as any).user.findUnique({ where: { id: userId }, select: { totpEnabledAt: true } });
+    return { enabled: !!user?.totpEnabledAt };
+  }
+
+  async twoFactorSetup(userId: string) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const user = await (this.prisma as any).user.findUnique({ where: { id: userId }, select: { email: true, totpEnabledAt: true } });
+    if (!user) throw new UnauthorizedException();
+    if (user.totpEnabledAt) throw new BadRequestException('Two-factor sign-in is already on');
+    const secret = newTotpSecret();
+    try {
+      await this.prisma.user.update({ where: { id: userId }, data: { totpSecret: encryptSecret(secret), totpLastStep: null } });
+    } catch {
+      throw new ServiceUnavailableException('Two-factor sign-in is not configured on this server yet');
+    }
+    return { secret, otpauthUrl: otpauthUri(secret, user.email) };
+  }
+
+  async twoFactorEnable(userId: string, code: string) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const user = await (this.prisma as any).user.findUnique({ where: { id: userId } });
+    if (!user?.totpSecret || user.totpEnabledAt) throw new BadRequestException('Start two-factor setup first');
+    let secret: string;
+    try {
+      secret = decryptSecret(user.totpSecret);
+    } catch {
+      throw new ServiceUnavailableException('Two-factor sign-in is not configured on this server yet');
+    }
+    const step = matchTotp(secret, String(code ?? '').trim(), null);
+    if (step === null) throw new BadRequestException('That code is not correct. Check the time on your phone and try again.');
+    const backupCodes = newBackupCodes();
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        totpEnabledAt: new Date(),
+        totpLastStep: step,
+        totpBackupHashes: backupCodes.map((c) => hashToken(normalizeBackupCode(c))),
+      },
+    });
+    return { enabled: true, backupCodes };
+  }
+
+  async twoFactorDisable(userId: string, password: string, code: string) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const user = await (this.prisma as any).user.findUnique({ where: { id: userId } });
+    if (!user?.totpEnabledAt) throw new BadRequestException('Two-factor sign-in is not on');
+    if (!user.passwordHash || !(await argon2.verify(user.passwordHash, password ?? ''))) {
+      throw new UnauthorizedException('Password is incorrect');
+    }
+    if (!(await this.consumeSecondFactor(user, String(code ?? '').trim()))) {
+      throw new UnauthorizedException('Authentication code is incorrect');
+    }
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { totpSecret: null, totpEnabledAt: null, totpLastStep: null, totpBackupHashes: [] },
+    });
+    return { enabled: false };
   }
 
   // Issues a new access token for a valid refresh token. The refresh token is not rotated, so
