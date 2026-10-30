@@ -295,6 +295,7 @@ model Post {
   isManglish        Boolean   @default(false)
   status            ContentStatus @default(PUBLISHED)
   isAnonymous       Boolean  @default(false)
+  scheduledAt       DateTime?
   voteScore         Int       @default(0)
   answerCount       Int       @default(0)
   commentCount      Int       @default(0)
@@ -333,6 +334,7 @@ model Post {
   @@index([deletedAt])
   @@index([createdAt(sort: Desc)])
   @@index([seoSlug])
+  @@index([status, scheduledAt])
 }
 
 model Answer {

@@ -23,6 +23,7 @@ function AskPageInner() {
   const [body, setBody] = useState('');
   const [communityId, setCommunityId] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [scheduleAt, setScheduleAt] = useState('');
   const [tags, setTags] = useState('');
   const [language, setLanguage] = useState('ENGLISH');
   const [loading, setLoading] = useState(false);
@@ -102,10 +103,11 @@ function AskPageInner() {
           tags: tagArray,
           status,
           isAnonymous,
+          ...(status === 'PUBLISHED' && scheduleAt ? { scheduledAt: new Date(scheduleAt).toISOString() } : {}),
         }),
       });
 
-      if (status === 'DRAFT') {
+      if (status === 'DRAFT' || scheduleAt) {
         router.push('/drafts');
       } else if (res.seoSlug) {
         if (requestedUser && res.id) {
@@ -227,6 +229,19 @@ function AskPageInner() {
             <input type="checkbox" checked={isAnonymous} onChange={(e) => setIsAnonymous(e.target.checked)} />
             Post anonymously (your name will not be shown to others)
           </label>
+
+          <div>
+            <label className="block text-sm font-semibold text-foreground mb-2">Publish later (optional)</label>
+            <input
+              type="datetime-local"
+              value={scheduleAt}
+              onChange={(e) => setScheduleAt(e.target.value)}
+              className="w-full px-4 py-3 rounded-lg bg-[var(--surface)] border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:border-[var(--primary)]"
+            />
+            <p className="text-xs text-muted-foreground mt-2">
+              Leave empty to post now. A scheduled question is saved in your drafts until its time, between 5 minutes and 30 days ahead.
+            </p>
+          </div>
 
           <div>
             <label className="block text-sm font-semibold text-foreground mb-2">Details (optional)</label>

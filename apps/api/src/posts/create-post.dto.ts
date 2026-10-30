@@ -1,4 +1,4 @@
-import { IsString, MinLength, MaxLength, IsOptional, ArrayMaxSize, IsIn, IsBoolean } from 'class-validator';
+import { IsString, MinLength, MaxLength, IsOptional, ArrayMaxSize, IsIn, IsBoolean, IsDateString } from 'class-validator';
 
 export class CreatePostDto {
   @IsString()
@@ -31,4 +31,8 @@ export class CreatePostDto {
   @IsOptional()
   @IsBoolean()
   isAnonymous?: boolean;
+
+  @IsOptional()
+  @IsDateString()
+  scheduledAt?: string;
 }
