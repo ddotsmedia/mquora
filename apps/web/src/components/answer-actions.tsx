@@ -9,7 +9,7 @@ import { apiFetch, ApiError } from '@/lib/api';
 interface Revision { id: string; body: string; createdAt: string }
 
 // Edit (author only) and view edit history for an answer.
-export function AnswerActions({ answerId, authorId, body }: { answerId: string; authorId: string; body: string }) {
+export function AnswerActions({ answerId, authorId, body, questionAuthorId, isPinned }: { answerId: string; authorId: string; body: string; questionAuthorId?: string; isPinned?: boolean }) {
   const { data: session } = useSession();
   const router = useRouter();
   const token = session?.user?.accessToken;
@@ -18,6 +18,22 @@ export function AnswerActions({ answerId, authorId, body }: { answerId: string; 
   const [draft, setDraft] = useState(body);
   const [busy, setBusy] = useState(false);
   const [history, setHistory] = useState<Revision[] | null>(null);
+  const canPin = !!session?.user?.id && session.user.id === questionAuthorId;
+
+  const togglePin = async () => {
+    if (!token) return;
+    try {
+      await apiFetch(`/api/v1/answers/${answerId}/pin`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pinned: !isPinned }),
+      });
+      toast.success(isPinned ? 'Unpinned' : 'Pinned to top');
+      router.refresh();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : 'Could not update pin');
+    }
+  };
 
   const save = async () => {
     if (!token) return;
@@ -68,6 +84,7 @@ export function AnswerActions({ answerId, authorId, body }: { answerId: string; 
       ) : (
         <div className="flex gap-4">
           {isAuthor && <button onClick={() => setEditing(true)} className={link}>Edit</button>}
+          {canPin && <button onClick={togglePin} className={link}>{isPinned ? 'Unpin' : 'Pin to top'}</button>}
           <button onClick={loadHistory} className={link}>{history ? 'Hide edit history' : 'Edit history'}</button>
         </div>
       )}

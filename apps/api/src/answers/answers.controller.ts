@@ -27,6 +27,13 @@ export class AnswersController {
     return this.answersService.updateAnswer(id, body?.body ?? '', userId);
   }
 
+  @Post('answers/:id/pin')
+  @UseGuards(JwtAuthGuard)
+  async pin(@Param('id') id: string, @Body() body: { pinned: boolean }, @Req() req: Request) {
+    const userId = (req.user as Record<string, unknown>).id as string;
+    return this.answersService.setPinned(id, body?.pinned === true, userId);
+  }
+
   @Get('answers/:id/revisions')
   async revisions(@Param('id') id: string) {
     return this.answersService.listRevisions(id);
