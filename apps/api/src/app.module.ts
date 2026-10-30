@@ -1,3 +1,5 @@
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { AnonymousMaskInterceptor } from './shared/anonymous-mask.interceptor';
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { BullModule } from '@nestjs/bull';
@@ -63,7 +65,10 @@ import { DigestModule } from './digest/digest.module';
     DigestModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    { provide: APP_INTERCEPTOR, useClass: AnonymousMaskInterceptor },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

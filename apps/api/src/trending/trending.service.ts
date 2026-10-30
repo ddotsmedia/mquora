@@ -5,6 +5,7 @@ const DAY = 86_400_000;
 const POST_CARD = {
   id: true, seoSlug: true, title: true, body: true, language: true, voteScore: true,
   answerCount: true, viewCount: true, createdAt: true,
+  isAnonymous: true,
   author: { select: { id: true, username: true, displayName: true } },
   community: { select: { id: true, slug: true, name: true } },
 } as const;

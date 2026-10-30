@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client';
 const POST_CARD = {
   id: true, seoSlug: true, title: true, body: true, language: true, voteScore: true,
   answerCount: true, viewCount: true, followerCount: true, createdAt: true,
+  isAnonymous: true,
   author: { select: { id: true, username: true, displayName: true, isVerified: true } },
   community: { select: { id: true, slug: true, name: true } },
 } as const;

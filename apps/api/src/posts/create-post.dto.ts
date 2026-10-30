@@ -1,4 +1,4 @@
-import { IsString, MinLength, MaxLength, IsOptional, ArrayMaxSize, IsIn } from 'class-validator';
+import { IsString, MinLength, MaxLength, IsOptional, ArrayMaxSize, IsIn, IsBoolean } from 'class-validator';
 
 export class CreatePostDto {
   @IsString()
@@ -27,4 +27,8 @@ export class CreatePostDto {
   @IsOptional()
   @IsIn(['DRAFT', 'PUBLISHED'])
   status?: 'DRAFT' | 'PUBLISHED';
+
+  @IsOptional()
+  @IsBoolean()
+  isAnonymous?: boolean;
 }
