@@ -6,6 +6,7 @@ import { serverApiFetch } from '@/lib/api';
 import { LanguageBadge } from '@/components/language-badge';
 import { VoteButtons } from '@/components/vote-buttons';
 import { DuplicateReportButton } from '@/components/duplicate-report-button';
+import { AnswerActions } from '@/components/answer-actions';
 import { BookmarkButton } from '@/components/bookmark-button';
 import { SubscribeButton } from '@/components/subscribe-button';
 import { AnswerForm } from '@/components/answer-form';
@@ -68,6 +69,7 @@ interface Answer {
   commentCount?: number;
   createdAt: string;
   updatedAt?: string;
+  editedAt?: string | null;
   author: {
     id: string;
     username: string;
@@ -288,8 +290,8 @@ export default async function PostPage({ params, searchParams }: { params: Promi
                       {answer.author.profile?.credential && <span className="text-[var(--text-secondary)]"> · {answer.author.profile.credential}</span>}
                       <p className="text-xs flex items-center gap-1.5">
                         {formatDistanceToNow(new Date(answer.createdAt), { addSuffix: true })}
-                        {answer.updatedAt && new Date(answer.updatedAt).getTime() - new Date(answer.createdAt).getTime() > 60_000 && (
-                          <span className="inline-flex items-center gap-0.5 rounded bg-[var(--surface-2)] px-1.5 py-0.5 text-[10px] text-[var(--text-muted)]" title={`Last edited ${new Date(answer.updatedAt).toLocaleString()}`}>
+                        {answer.editedAt && (
+                          <span className="inline-flex items-center gap-0.5 rounded bg-[var(--surface-2)] px-1.5 py-0.5 text-[10px] text-[var(--text-muted)]" title={`Last edited ${new Date(answer.editedAt).toLocaleString()}`}>
                             ✏️ edited
                           </span>
                         )}
@@ -298,6 +300,7 @@ export default async function PostPage({ params, searchParams }: { params: Promi
                     <div lang={answer.language === 'MALAYALAM' ? 'ml' : answer.language === 'ENGLISH' ? 'en' : undefined}>
                       <ReadMore text={answer.body} />
                     </div>
+                    <AnswerActions answerId={answer.id} authorId={answer.author.id} body={answer.body} />
                     <div className="mt-4 text-sm text-muted-foreground">
                       <div className="mt-2 flex flex-wrap items-center gap-3">
                         <AcceptButton answerId={answer.id} questionAuthorId={post.author.id} accepted={answer.isAccepted} />

@@ -95,7 +95,7 @@ export class AnswersService {
     const answers = await this.prisma.answer.findMany({
       where: whereClause,
       select: {
-        id: true, body: true, language: true, voteScore: true, qualityScore: true, viewCount: true, isAccepted: true, commentCount: true, createdAt: true, updatedAt: true,
+        id: true, body: true, language: true, voteScore: true, qualityScore: true, viewCount: true, isAccepted: true, commentCount: true, createdAt: true, updatedAt: true, editedAt: true,
         author: { select: { id: true, username: true, displayName: true, isVerified: true, reputationScore: true, profile: { select: { credential: true } } } },
       },
       orderBy: recent ? [{ createdAt: 'desc' }] : [{ isAccepted: 'desc' }, { voteScore: 'desc' }, { createdAt: 'asc' }],
@@ -149,6 +149,39 @@ export class AnswersService {
           ]),
     ]);
     return { accepted: true };
+  }
+
+  // Author edits their answer; the previous body is kept as a revision.
+  async updateAnswer(id: string, body: string, userId: string) {
+    const trimmed = (body ?? '').trim();
+    if (trimmed.length < 2) throw new BadRequestException('Answer is too short');
+    const existing = await this.prisma.answer.findFirst({
+      where: { id, deletedAt: null, status: 'PUBLISHED' },
+      select: { id: true, authorId: true, body: true },
+    });
+    if (!existing) throw new NotFoundException('Answer not found');
+    if (existing.authorId !== userId) throw new ForbiddenException('Only the author can edit this answer');
+    if (existing.body.trim() === trimmed) return { id, unchanged: true };
+
+    const contentProcessed = this.languageService.processContent(trimmed);
+    await this.prisma.$transaction([
+      this.prisma.answerRevision.create({ data: { answerId: id, body: existing.body } }),
+      this.prisma.answer.update({ where: { id }, data: { body: trimmed, ...contentProcessed, editedAt: new Date() } }),
+    ]);
+    return { id, unchanged: false };
+  }
+
+  // Public edit history, newest first.
+  async listRevisions(id: string) {
+    const answer = await this.prisma.answer.findFirst({ where: { id, deletedAt: null }, select: { id: true, body: true, editedAt: true } });
+    if (!answer) throw new NotFoundException('Answer not found');
+    const revisions = await this.prisma.answerRevision.findMany({
+      where: { answerId: id },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      select: { id: true, body: true, createdAt: true },
+    });
+    return { current: { body: answer.body, editedAt: answer.editedAt }, data: revisions };
   }
 
   async softDelete(id: string, authorId: string) {

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Body, Param, Query, UseGuards, Req } from '@nestjs/common'; // Query still used by findByPost
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, Req } from '@nestjs/common'; // Query still used by findByPost
 import { Request } from 'express';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { OptionalJwtGuard } from '../guards/optional-jwt.guard';
@@ -18,6 +18,18 @@ export class AnswersController {
   async getAnswerSummary(@Param('postId') postId: string) {
     const summary = await this.answersService.getAnswerSummary(postId);
     return { summary };
+  }
+
+  @Patch('answers/:id')
+  @UseGuards(JwtAuthGuard)
+  async update(@Param('id') id: string, @Body() body: { body: string }, @Req() req: Request) {
+    const userId = (req.user as Record<string, unknown>).id as string;
+    return this.answersService.updateAnswer(id, body?.body ?? '', userId);
+  }
+
+  @Get('answers/:id/revisions')
+  async revisions(@Param('id') id: string) {
+    return this.answersService.listRevisions(id);
   }
 
   @Post('posts/:postId/answers')
