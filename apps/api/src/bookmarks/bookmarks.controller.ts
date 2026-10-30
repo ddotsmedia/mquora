@@ -1,4 +1,4 @@
-import { Controller, Post, Delete, Get, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Patch, Delete, Get, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { BookmarksService } from './bookmarks.service';
@@ -9,9 +9,29 @@ export class BookmarksController {
   constructor(private bookmarksService: BookmarksService) {}
 
   @Get()
-  async findByUser(@Req() req: Request, @Query('cursor') cursor?: string, @Query('limit') limit?: string) {
+  async findByUser(@Req() req: Request, @Query('cursor') cursor?: string, @Query('limit') limit?: string, @Query('collection') collection?: string) {
     const userId = (req.user as Record<string, unknown>).id as string;
-    return this.bookmarksService.findByUser(userId, cursor, limit ? parseInt(limit, 10) : 20);
+    return this.bookmarksService.findByUser(userId, cursor, limit ? parseInt(limit, 10) : 20, collection);
+  }
+
+  @Get('collections')
+  async listCollections(@Req() req: Request) {
+    return this.bookmarksService.listCollections((req.user as Record<string, unknown>).id as string);
+  }
+
+  @Post('collections')
+  async createCollection(@Body() body: { name: string }, @Req() req: Request) {
+    return this.bookmarksService.createCollection((req.user as Record<string, unknown>).id as string, body?.name);
+  }
+
+  @Delete('collections/:id')
+  async deleteCollection(@Param('id') id: string, @Req() req: Request) {
+    return this.bookmarksService.deleteCollection((req.user as Record<string, unknown>).id as string, id);
+  }
+
+  @Patch(':postId/collection')
+  async setCollection(@Param('postId') postId: string, @Body() body: { collectionId: string | null }, @Req() req: Request) {
+    return this.bookmarksService.setCollection((req.user as Record<string, unknown>).id as string, postId, body?.collectionId ?? null);
   }
 
   @Get('status/:postId')

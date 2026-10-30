@@ -123,6 +123,7 @@ model User {
   communityMemberships  CommunityMember[]
   communityInvitesCreated CommunityInvite[] @relation("community_invites")
   questionVisits    QuestionVisit[]
+  bookmarkCollections BookmarkCollection[]
   tagFollows            TagFollow[]
   questionFollows       QuestionFollow[]
   questionPasses        QuestionPass[]
@@ -432,14 +433,31 @@ model AnswerVote {
 
 
 
+model BookmarkCollection {
+  id        String     @id @default(cuid())
+  userId    String
+  name      String
+  createdAt DateTime   @default(now())
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookmarks Bookmark[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
 model Bookmark {
   id                String    @id @default(cuid())
   userId            String
   postId            String
+  collectionId     String?
   createdAt         DateTime  @default(now())
 
   user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   post              Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  collection        BookmarkCollection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+
+  @@index([collectionId])
 
   @@unique([userId, postId])
   @@index([userId])
