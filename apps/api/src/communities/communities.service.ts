@@ -120,6 +120,35 @@ export class CommunitiesService {
     return { token, expiresAt };
   }
 
+  // Active (not revoked, not expired) invite links. Members only.
+  async listInvites(communityId: string, userId: string) {
+    const membership = await this.prisma.communityMember.findUnique({
+      where: { communityId_userId: { communityId, userId } },
+      select: { id: true },
+    });
+    if (!membership) throw new ForbiddenException('Only members can view invites');
+    const rows = await this.prisma.communityInvite.findMany({
+      where: { communityId, revokedAt: null, expiresAt: { gt: new Date() } },
+      select: { id: true, token: true, expiresAt: true, uses: true, maxUses: true, createdBy: true, creator: { select: { username: true } } },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+    return { data: rows.map((r) => ({ id: r.id, token: r.token, expiresAt: r.expiresAt, uses: r.uses, maxUses: r.maxUses, createdBy: r.createdBy, creatorUsername: r.creator.username })) };
+  }
+
+  // The link's creator, the community creator, or an admin can revoke it.
+  async revokeInvite(communityId: string, inviteId: string, userId: string) {
+    const { canManage } = await this.loadActor(communityId, userId);
+    const invite = await this.prisma.communityInvite.findFirst({
+      where: { id: inviteId, communityId },
+      select: { id: true, createdBy: true, revokedAt: true },
+    });
+    if (!invite) throw new NotFoundException('Invite not found');
+    if (invite.createdBy !== userId && !canManage) throw new ForbiddenException('Not allowed to revoke this invite');
+    if (!invite.revokedAt) await this.prisma.communityInvite.update({ where: { id: inviteId }, data: { revokedAt: new Date() } });
+    return { revoked: true };
+  }
+
   // Public preview: safe fields only, no membership info.
   async previewInvite(token: string) {
     const invite = await this.prisma.communityInvite.findUnique({

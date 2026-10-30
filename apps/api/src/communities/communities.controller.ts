@@ -53,6 +53,20 @@ export class CommunitiesController {
     return this.communitiesService.createInvite(id, userId);
   }
 
+  @Get(':id/invites')
+  @UseGuards(JwtAuthGuard)
+  async listInvites(@Param('id') id: string, @Req() req: Request) {
+    const userId = (req.user as Record<string, unknown>).id as string;
+    return this.communitiesService.listInvites(id, userId);
+  }
+
+  @Delete(':id/invites/:inviteId')
+  @UseGuards(JwtAuthGuard)
+  async revokeInvite(@Param('id') id: string, @Param('inviteId') inviteId: string, @Req() req: Request) {
+    const userId = (req.user as Record<string, unknown>).id as string;
+    return this.communitiesService.revokeInvite(id, inviteId, userId);
+  }
+
   @Get('invites/:token')
   async previewInvite(@Param('token') token: string) {
     return this.communitiesService.previewInvite(token);
