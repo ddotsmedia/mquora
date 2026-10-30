@@ -6,6 +6,7 @@ import { UpdateMeDto } from './users.dto';
 const POST_CARD = {
   id: true, seoSlug: true, title: true, language: true, voteScore: true,
   answerCount: true, viewCount: true, createdAt: true,
+  isAnonymous: true,
   author: { select: { id: true, username: true, displayName: true } },
   community: { select: { id: true, slug: true, name: true } },
 } as const;
@@ -34,8 +35,8 @@ export class UsersService {
 
     const live = { authorId: user.id, status: 'PUBLISHED' as const, deletedAt: null };
     const [posts, postCount, answerCount, followerCount, followingCount, views, viewsThisMonth, knows] = await Promise.all([
-      this.prisma.post.findMany({ where: live, select: POST_CARD, orderBy: { createdAt: 'desc' }, take: 20 }),
-      this.prisma.post.count({ where: live }),
+      this.prisma.post.findMany({ where: { ...live, isAnonymous: false }, select: POST_CARD, orderBy: { createdAt: 'desc' }, take: 20 }),
+      this.prisma.post.count({ where: { ...live, isAnonymous: false } }),
       this.prisma.answer.count({ where: live }),
       this.prisma.follow.count({ where: { followingId: user.id } }),
       this.prisma.follow.count({ where: { followerId: user.id } }),

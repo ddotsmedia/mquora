@@ -22,6 +22,7 @@ function AskPageInner() {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [communityId, setCommunityId] = useState('');
+  const [isAnonymous, setIsAnonymous] = useState(false);
   const [tags, setTags] = useState('');
   const [language, setLanguage] = useState('ENGLISH');
   const [loading, setLoading] = useState(false);
@@ -100,6 +101,7 @@ function AskPageInner() {
           communityId,
           tags: tagArray,
           status,
+          isAnonymous,
         }),
       });
 
@@ -220,6 +222,11 @@ function AskPageInner() {
               ))}
             </select>
           </div>
+
+          <label className="flex items-center gap-2 text-sm text-foreground">
+            <input type="checkbox" checked={isAnonymous} onChange={(e) => setIsAnonymous(e.target.checked)} />
+            Post anonymously (your name will not be shown to others)
+          </label>
 
           <div>
             <label className="block text-sm font-semibold text-foreground mb-2">Details (optional)</label>

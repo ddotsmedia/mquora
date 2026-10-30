@@ -31,6 +31,7 @@ import { siteOrigin } from '@/lib/site';
 interface Post {
   id: string;
   mergedInto?: { seoSlug: string; title: string } | null;
+  isAnonymous?: boolean;
   seoSlug: string;
   title: string;
   body: string;
@@ -200,7 +201,12 @@ export default async function PostPage({ params, searchParams }: { params: Promi
 
         <div className="flex items-center gap-4 mb-6 text-sm text-muted-foreground">
           <div>
-            <Link href={`/profile/${post.author.username}`} className="font-semibold text-foreground hover:underline">{post.author.displayName}</Link>
+            {post.author.username ? (
+              <Link href={`/profile/${post.author.username}`} className="font-semibold text-foreground hover:underline">{post.author.displayName}</Link>
+            ) : (
+              <span className="font-semibold text-foreground">{post.author.displayName}</span>
+            )}
+            {post.isAnonymous && <span className="ml-2 text-xs text-[var(--text-muted)]">· posted anonymously</span>}
             <VerifiedBadge show={post.author.isVerified} />
             <p>{formatDistanceToNow(new Date(post.createdAt), {addSuffix: true})}</p>
           </div>

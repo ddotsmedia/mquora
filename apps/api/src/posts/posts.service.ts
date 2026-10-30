@@ -20,6 +20,7 @@ export class PostsService {
 
   async create(dto: Record<string, unknown>, authorId: string) {
     const { body, title, type, communityId, tags } = dto;
+    const isAnonymous = dto.isAnonymous === true;
     await this.assertCanPostIn(communityId as string | undefined, authorId);
     const contentProcessed = this.languageService.processContent(`${title} ${body}`);
     const seoSlug = `${this.nanoid()}-${slug(title as string, { lower: true }).slice(0, 50)}`;
@@ -33,6 +34,7 @@ export class PostsService {
         type: type as string,
         ...contentProcessed,
         seoSlug,
+        isAnonymous,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         status: await this.resolvePostStatus(dto, authorId) as any,
       },
@@ -111,6 +113,7 @@ export class PostsService {
         answerCount: true,
         viewCount: true,
         createdAt: true,
+        isAnonymous: true,
         author: { select: { id: true, username: true, displayName: true } },
         community: { select: { id: true, slug: true, name: true } },
       },
@@ -142,6 +145,7 @@ export class PostsService {
         followerCount: true,
         createdAt: true,
         deletedAt: true,
+        isAnonymous: true,
         author: { select: { id: true, username: true, displayName: true, isVerified: true } },
         community: { select: { id: true, slug: true, name: true } },
         tags: { select: { tag: { select: { id: true, name: true, slug: true } } } },
@@ -270,6 +274,7 @@ export class PostsService {
         answerCount: true,
         viewCount: true,
         createdAt: true,
+        isAnonymous: true,
         author: { select: { id: true, username: true, displayName: true } },
         community: { select: { id: true, slug: true, name: true } },
       },
