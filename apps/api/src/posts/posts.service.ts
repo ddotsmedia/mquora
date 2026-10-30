@@ -21,6 +21,7 @@ export class PostsService {
   async create(dto: Record<string, unknown>, authorId: string) {
     const { body, title, type, communityId, tags } = dto;
     const isAnonymous = dto.isAnonymous === true;
+    const scheduledAt = this.parseSchedule(dto.scheduledAt);
     await this.assertCanPostIn(communityId as string | undefined, authorId);
     const contentProcessed = this.languageService.processContent(`${title} ${body}`);
     const seoSlug = `${this.nanoid()}-${slug(title as string, { lower: true }).slice(0, 50)}`;
@@ -35,8 +36,10 @@ export class PostsService {
         ...contentProcessed,
         seoSlug,
         isAnonymous,
+        scheduledAt,
+        // Scheduled questions stay as drafts until the publisher releases them.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        status: await this.resolvePostStatus(dto, authorId) as any,
+        status: (scheduledAt ? 'DRAFT' : await this.resolvePostStatus(dto, authorId)) as any,
       },
       select: { id: true, seoSlug: true, title: true, authorId: true, status: true },
     });
@@ -530,7 +533,51 @@ export class PostsService {
   async publishDraft(id: string, authorId: string) {
     const post = await this.prisma.post.findFirst({ where: { id, authorId, status: 'DRAFT', deletedAt: null } });
     if (!post) throw new Error('Draft not found');
-    return this.prisma.post.update({ where: { id }, data: { status: 'PUBLISHED' }, select: { id: true, seoSlug: true } });
+    return this.prisma.post.update({ where: { id }, data: { status: 'PUBLISHED', scheduledAt: null }, select: { id: true, seoSlug: true } });
+  }
+
+  private parseSchedule(value: unknown): Date | null {
+    if (value === undefined || value === null || value === '') return null;
+    const date = new Date(String(value));
+    if (isNaN(date.getTime())) throw new BadRequestException('Invalid publish time');
+    const now = Date.now();
+    if (date.getTime() < now + 5 * 60_000) throw new BadRequestException('Scheduled time must be at least 5 minutes from now');
+    if (date.getTime() > now + 30 * 86_400_000) throw new BadRequestException('Scheduled time can be at most 30 days ahead');
+    return date;
+  }
+
+  /** Publishes scheduled questions whose time has come. Safe to run on several instances: each row is claimed by one conditional update. */
+  async publishDueScheduled(limit = 50): Promise<number> {
+    const due = await this.prisma.post.findMany({
+      where: { status: 'DRAFT', scheduledAt: { lte: new Date() }, deletedAt: null },
+      select: { id: true, authorId: true, title: true, body: true, seoSlug: true },
+      take: limit,
+    });
+    let published = 0;
+    for (const post of due) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const status = (await this.resolvePostStatus({ title: post.title, body: post.body }, post.authorId)) as any;
+      const claimed = await this.prisma.post.updateMany({
+        where: { id: post.id, status: 'DRAFT', scheduledAt: { not: null } },
+        data: { status, scheduledAt: null },
+      });
+      if (claimed.count === 0) continue;
+      published++;
+      if (status === 'PUBLISHED') void this.pingIndexNow(post.seoSlug).catch(() => undefined);
+      if (status === 'PENDING_REVIEW') {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (this.prisma as any).adminNotification.create({ // eslint-disable-line
+          data: {
+            type: 'NEW_QUESTION',
+            title: 'New question pending review',
+            body: `"${post.title}" is awaiting approval`,
+            link: `/admin/content?id=${post.id}`,
+            relatedPostId: post.id,
+          },
+        }).catch(() => undefined);
+      }
+    }
+    return published;
   }
 
   /** Determine post status: DRAFT → DRAFT; spam → PENDING_REVIEW; trusted user → PUBLISHED; else PENDING_REVIEW */
@@ -550,7 +597,7 @@ export class PostsService {
     if (!member) throw new ForbiddenException('You must join this community to post in it');
   }
 
-  private async resolvePostStatus(dto: Record<string, unknown>, authorId: string): Promise<string> {
+  async resolvePostStatus(dto: Record<string, unknown>, authorId: string): Promise<string> {
     if ((dto.status as string) === 'DRAFT') return 'DRAFT';
 
     // Spam auto-flag: URLs, excessive repeated chars, or very short body → always pending review
