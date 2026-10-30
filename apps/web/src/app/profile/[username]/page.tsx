@@ -25,7 +25,7 @@ interface UserProfile {
   website: string | null;
   credential: string | null;
   badges: Array<{ awardedAt: string; badge: { name: string; description: string | null } }>;
-  stats: { posts: number; answers: number; followers: number; following: number; views: number };
+  stats: { posts: number; answers: number; followers: number; following: number; views: number; viewsThisMonth: number };
   knowsAbout: Array<{ id: string; name: string; slug: string; answerCount: number }>;
   posts: Array<{
     id: string;
@@ -108,6 +108,7 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
     { label: 'Questions', value: user.stats.posts },
     { label: 'Answers', value: user.stats.answers },
     { label: 'Content Views', value: user.stats.views },
+    { label: 'Views This Month', value: user.stats.viewsThisMonth },
     { label: 'Followers', value: user.stats.followers },
   ];
 
