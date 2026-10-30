@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
 // Routes: POST :id/invites (member creates link), GET invites/:token (public preview), POST invites/:token/accept
 import { Request } from 'express';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
@@ -56,6 +56,32 @@ export class CommunitiesController {
   @Get('invites/:token')
   async previewInvite(@Param('token') token: string) {
     return this.communitiesService.previewInvite(token);
+  }
+
+  @Get(':id/members')
+  async listMembers(@Param('id') id: string) {
+    return this.communitiesService.listMembers(id);
+  }
+
+  @Get(':id/members/me')
+  @UseGuards(JwtAuthGuard)
+  async myRole(@Param('id') id: string, @Req() req: Request) {
+    const userId = (req.user as Record<string, unknown>).id as string;
+    return this.communitiesService.myRole(id, userId);
+  }
+
+  @Patch(':id/members/:userId')
+  @UseGuards(JwtAuthGuard)
+  async setMemberRole(@Param('id') id: string, @Param('userId') userId: string, @Body() body: { role: string }, @Req() req: Request) {
+    const actorId = (req.user as Record<string, unknown>).id as string;
+    return this.communitiesService.setMemberRole(id, userId, body?.role, actorId);
+  }
+
+  @Delete(':id/members/:userId')
+  @UseGuards(JwtAuthGuard)
+  async removeMember(@Param('id') id: string, @Param('userId') userId: string, @Req() req: Request) {
+    const actorId = (req.user as Record<string, unknown>).id as string;
+    return this.communitiesService.removeMember(id, userId, actorId);
   }
 
   @Post('invites/:token/accept')

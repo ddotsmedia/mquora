@@ -170,6 +170,85 @@ export class CommunitiesService {
     return true;
   }
 
+  async listMembers(communityId: string) {
+    const community = await this.prisma.community.findFirst({
+      where: { id: communityId, deletedAt: null },
+      select: { createdBy: true },
+    });
+    if (!community) throw new NotFoundException('Community not found');
+    const rows = await this.prisma.communityMember.findMany({
+      where: { communityId },
+      select: { role: true, joinedAt: true, user: { select: { id: true, username: true, displayName: true } } },
+      orderBy: [{ role: 'asc' }, { joinedAt: 'asc' }],
+      take: 200,
+    });
+    return {
+      creatorId: community.createdBy,
+      data: rows.map((r) => ({ role: r.role, joinedAt: r.joinedAt, user: r.user })),
+    };
+  }
+
+  // Creator and site admins manage moderators; moderators may remove plain members.
+  async myRole(communityId: string, userId: string) {
+    const { community, membership, canManage } = await this.loadActor(communityId, userId);
+    return {
+      role: membership?.role ?? null,
+      isCreator: community.createdBy === userId,
+      canManage,
+    };
+  }
+
+  async setMemberRole(communityId: string, targetUserId: string, role: string, actorId: string) {
+    if (role !== 'MODERATOR' && role !== 'MEMBER') throw new BadRequestException('Role must be MODERATOR or MEMBER');
+    const { community, canManage } = await this.loadActor(communityId, actorId);
+    if (!canManage) throw new ForbiddenException('Only the creator or an admin can change roles');
+    if (community.createdBy === targetUserId) throw new BadRequestException('The creator’s role cannot be changed');
+
+    const target = await this.prisma.communityMember.findUnique({
+      where: { communityId_userId: { communityId, userId: targetUserId } },
+      select: { id: true },
+    });
+    if (!target) throw new NotFoundException('Member not found');
+
+    await this.prisma.communityMember.update({ where: { id: target.id }, data: { role } });
+    return { userId: targetUserId, role };
+  }
+
+  async removeMember(communityId: string, targetUserId: string, actorId: string) {
+    if (targetUserId === actorId) return this.leave(communityId, actorId);
+
+    const { community, membership, canManage } = await this.loadActor(communityId, actorId);
+    if (community.createdBy === targetUserId) throw new BadRequestException('The creator cannot be removed');
+    const target = await this.prisma.communityMember.findUnique({
+      where: { communityId_userId: { communityId, userId: targetUserId } },
+      select: { role: true },
+    });
+    if (!target) throw new NotFoundException('Member not found');
+
+    const moderatorRemovingMember = membership?.role === 'MODERATOR' && target.role === 'MEMBER';
+    if (!canManage && !moderatorRemovingMember) throw new ForbiddenException('Not allowed to remove this member');
+
+    return this.prisma.$transaction(async (tx) => {
+      const { count } = await tx.communityMember.deleteMany({ where: { communityId, userId: targetUserId } });
+      if (count) await tx.community.update({ where: { id: communityId }, data: { memberCount: { decrement: count } } });
+      return { removed: true };
+    });
+  }
+
+  private async loadActor(communityId: string, userId: string) {
+    const community = await this.prisma.community.findFirst({
+      where: { id: communityId, deletedAt: null },
+      select: { id: true, createdBy: true },
+    });
+    if (!community) throw new NotFoundException('Community not found');
+    const membership = await this.prisma.communityMember.findUnique({
+      where: { communityId_userId: { communityId, userId } },
+      select: { role: true },
+    });
+    const canManage = community.createdBy === userId || (await this.isAdmin(userId));
+    return { community, membership, canManage };
+  }
+
   private async isAdmin(userId: string): Promise<boolean> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },

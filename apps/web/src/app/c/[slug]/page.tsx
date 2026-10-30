@@ -107,6 +107,12 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
           <JoinButton communityId={community.id} />
           <InviteButton communityId={community.id} />
           <Link
+            href={`/c/${community.slug}/members`}
+            className="rounded-full border border-[var(--border)] bg-[var(--surface-2)] px-4 py-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--primary)] hover:border-[var(--primary)] transition-colors"
+          >
+            Members
+          </Link>
+          <Link
             href={`/ask?communityId=${community.id}`}
             className="rounded-full border border-[var(--border)] bg-[var(--surface-2)] px-4 py-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--primary)] hover:border-[var(--primary)] transition-colors"
           >
