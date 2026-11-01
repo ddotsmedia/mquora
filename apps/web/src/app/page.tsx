@@ -10,6 +10,7 @@ import { RecentQuestions } from '@/components/RecentQuestions';
 import { QuestionsByCategory } from '@/components/QuestionsByCategory';
 import { apiFetch } from '@/lib/api';
 import { QuestionOfTheDay } from '@/components/QuestionOfTheDay';
+import { ExpertSpotlight } from '@/components/expert-spotlight';
 
 type Post = Parameters<typeof PostCard>[0] & { id: string };
 type Stats = { communities: number; questions: number; answers: number; topics: number; members: number };
@@ -201,6 +202,7 @@ export default function Home() {
           <aside className="lg:block">
             <div className="space-y-4">
               <QuestionOfTheDay />
+              <ExpertSpotlight />
               <TrendingSidebar />
             </div>
           </aside>

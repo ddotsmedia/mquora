@@ -35,6 +35,11 @@ export class UsersController {
     return this.users.changePassword(uid(req), dto.currentPassword, dto.newPassword);
   }
 
+  @Get('spotlight')
+  async weeklySpotlight() {
+    return this.users.weeklySpotlight();
+  }
+
   @Get('me/referral')
   @UseGuards(JwtAuthGuard)
   async myReferral(@Req() req: Request) {
