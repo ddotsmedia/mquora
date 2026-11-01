@@ -7,7 +7,7 @@ import { TurnstileWidget } from './turnstile-widget';
 
 const API = process.env.NEXT_PUBLIC_API_URL || '';
 
-export function RegisterForm() {
+export function RegisterForm({ referralCode }: { referralCode?: string }) {
   const router = useRouter();
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
@@ -20,6 +20,7 @@ export function RegisterForm() {
     const fd = new FormData(e.currentTarget);
     const body: Record<string, string> = {};
     fd.forEach((v, k) => { body[k] = String(v); });
+    if (referralCode) body.ref = referralCode;
 
     try {
       const res = await fetch(`${API}/api/v1/auth/register`, {

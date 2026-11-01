@@ -82,6 +82,11 @@ enum ReportStatus {
 }
 
 model User {
+  referralCode       String?   @unique
+  referredById       String?
+  referralCreditedAt DateTime?
+  referredBy         User?     @relation("referrals", fields: [referredById], references: [id], onDelete: SetNull)
+  referrals          User[]    @relation("referrals")
   totpSecret         String?
   totpEnabledAt      DateTime?
   totpLastStep       Int?

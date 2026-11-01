@@ -35,6 +35,12 @@ export class UsersController {
     return this.users.changePassword(uid(req), dto.currentPassword, dto.newPassword);
   }
 
+  @Get('me/referral')
+  @UseGuards(JwtAuthGuard)
+  async myReferral(@Req() req: Request) {
+    return this.users.myReferral((req.user as Record<string, unknown>).id as string);
+  }
+
   @Get('me/blocks')
   @UseGuards(JwtAuthGuard)
   myBlocks(@Req() req: Request) {

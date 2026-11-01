@@ -4,6 +4,7 @@ import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import Redis from 'ioredis';
 import { isBanned } from '../shared/ban';
+import { REFERRAL_CAP, REFERRAL_REPUTATION } from '../shared/referrals';
 const STAFF_ROLES = ['ADMIN', 'COMMUNITY_MODERATOR'] as const;
 
 export interface Actor {
@@ -796,8 +797,23 @@ export class AdminService {
       where: { type: 'USER_REGISTRATION', relatedUserId: userId, isRead: false },
       data: { isRead: true },
     });
+    await this.creditReferrer(userId);
     await this.audit(actor.id, 'USER_APPROVED', 'USER', userId, { username: user.username });
     return { success: true, user };
+  }
+
+  // Credits the referrer once, when the referred account is approved, up to REFERRAL_CAP accounts.
+  private async creditReferrer(userId: string) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const prisma = this.prisma as any;
+    const referred = await prisma.user.findUnique({ where: { id: userId }, select: { referredById: true, referralCreditedAt: true } });
+    if (!referred?.referredById || referred.referralCreditedAt) return;
+    const credited = await prisma.user.count({ where: { referredById: referred.referredById, referralCreditedAt: { not: null } } });
+    if (credited >= REFERRAL_CAP) return;
+    const claimed = await prisma.user.updateMany({ where: { id: userId, referralCreditedAt: null }, data: { referralCreditedAt: new Date() } });
+    if (claimed.count === 1) {
+      await prisma.user.update({ where: { id: referred.referredById }, data: { reputationScore: { increment: REFERRAL_REPUTATION } } });
+    }
   }
 
   async rejectUser(actor: Actor, userId: string) {

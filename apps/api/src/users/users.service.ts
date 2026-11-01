@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, UnauthorizedExcepti
 import * as argon2 from 'argon2';
 import { PrismaClient } from '@prisma/client';
 import { UpdateMeDto } from './users.dto';
+import { newReferralCode, REFERRAL_CAP, REFERRAL_REPUTATION } from '../shared/referrals';
 
 const POST_CARD = {
   id: true, seoSlug: true, title: true, language: true, voteScore: true,
@@ -162,6 +163,26 @@ export class UsersService {
     const blockedId = await this.userIdByUsername(username);
     const row = await this.prisma.userBlock.findUnique({ where: { blockerId_blockedId: { blockerId, blockedId } }, select: { id: true } });
     return { blocked: !!row };
+  }
+
+  async myReferral(userId: string) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const prisma = this.prisma as any;
+    let user = await prisma.user.findUnique({ where: { id: userId }, select: { referralCode: true } });
+    if (!user?.referralCode) {
+      for (let attempt = 0; attempt < 5 && !user?.referralCode; attempt++) {
+        try {
+          user = await prisma.user.update({ where: { id: userId }, data: { referralCode: newReferralCode() }, select: { referralCode: true } });
+        } catch {
+          // Code collided with another user's; try again with a new one.
+        }
+      }
+    }
+    const [credited, pending] = await Promise.all([
+      prisma.user.count({ where: { referredById: userId, referralCreditedAt: { not: null } } }),
+      prisma.user.count({ where: { referredById: userId, referralCreditedAt: null } }),
+    ]);
+    return { code: user?.referralCode ?? null, credited, pending, cap: REFERRAL_CAP, reputationPerReferral: REFERRAL_REPUTATION };
   }
 
   async myBlocks(blockerId: string) {
