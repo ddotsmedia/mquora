@@ -476,25 +476,32 @@ export class PostsService {
     };
   }
 
+  // Falls back to all-time top questions when nothing was posted this week, so the panel is never empty.
   async getPopularThisWeek(limit = 5) {
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    return this.prisma.post.findMany({
-      where: {
-        status: 'PUBLISHED',
-        deletedAt: null,
-        createdAt: { gte: sevenDaysAgo },
-      },
-      select: {
-        id: true,
-        seoSlug: true,
-        title: true,
-        viewCount: true,
-        language: true,
-        _count: { select: { answers: true } },
-      },
+    const select = {
+      id: true,
+      seoSlug: true,
+      title: true,
+      viewCount: true,
+      language: true,
+      _count: { select: { answers: true } },
+    };
+    const base = { status: 'PUBLISHED' as const, deletedAt: null };
+    const week = await this.prisma.post.findMany({
+      where: { ...base, createdAt: { gte: sevenDaysAgo } },
+      select,
       orderBy: [{ answerCount: 'desc' }, { viewCount: 'desc' }],
       take: limit,
     });
+    if (week.length > 0) return { window: 'week' as const, data: week };
+    const all = await this.prisma.post.findMany({
+      where: base,
+      select,
+      orderBy: [{ viewCount: 'desc' }, { answerCount: 'desc' }],
+      take: limit,
+    });
+    return { window: 'all' as const, data: all };
   }
 
   async getRecentQuestions(limit = 20, offset = 0) {

@@ -26,8 +26,7 @@ export class PostsController {
 
   @Get('popular-this-week')
   async popularThisWeek(@Query('limit') limit?: string) {
-    const data = await this.postsService.getPopularThisWeek(Math.min(Math.max(parseInt(limit ?? '5', 10) || 5, 1), 50));
-    return { data };
+    return this.postsService.getPopularThisWeek(Math.min(Math.max(parseInt(limit ?? '5', 10) || 5, 1), 50));
   }
 
   @Get('recent')
