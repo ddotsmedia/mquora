@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession, signIn } from 'next-auth/react';
 import { apiFetch, ApiError } from '@/lib/api';
+import { MentionTextarea } from '@/components/mention-textarea';
 import { toast } from 'sonner';
 import { Save } from 'lucide-react';
 
@@ -117,9 +118,10 @@ export function AnswerForm({ postId, accessToken }: AnswerFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
-      <textarea
+      <MentionTextarea
         value={body}
         onChange={handleChange}
+        token={accessToken || session?.user?.accessToken}
         placeholder="Write your answer in Malayalam or English…"
         className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 text-[var(--text)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--primary)] resize-none transition-colors"
         rows={6}
