@@ -26,7 +26,7 @@ interface UserProfile {
   website: string | null;
   credential: string | null;
   badges: Array<{ awardedAt: string; badge: { name: string; description: string | null } }>;
-  stats: { posts: number; answers: number; followers: number; following: number; views: number; viewsThisMonth: number };
+  stats: { posts: number; answers: number; followers: number; following: number; views: number; viewsThisMonth: number; currentStreak: number; longestStreak: number };
   knowsAbout: Array<{ id: string; name: string; slug: string; answerCount: number }>;
   posts: Array<{
     id: string;
@@ -110,6 +110,8 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
     { label: 'Answers', value: user.stats.answers },
     { label: 'Content Views', value: user.stats.views },
     { label: 'Views This Month', value: user.stats.viewsThisMonth },
+    { label: 'Current streak (days)', value: user.stats.currentStreak },
+    { label: 'Longest streak (days)', value: user.stats.longestStreak },
     { label: 'Followers', value: user.stats.followers },
   ];
 

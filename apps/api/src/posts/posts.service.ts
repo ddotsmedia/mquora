@@ -6,6 +6,7 @@ import { LanguageService } from '../shared/language.service';
 import { transliterate } from '../lib/transliterate';
 import slug from 'slug';
 import { customAlphabet } from 'nanoid';
+import { recordActivity } from '../shared/streaks';
 
 @Injectable()
 export class PostsService {
@@ -23,6 +24,7 @@ export class PostsService {
     const isAnonymous = dto.isAnonymous === true;
     const scheduledAt = this.parseSchedule(dto.scheduledAt);
     await this.assertCanPostIn(communityId as string | undefined, authorId);
+    await recordActivity(this.prisma, authorId).catch(() => undefined);
     const contentProcessed = this.languageService.processContent(`${title} ${body}`);
     const seoSlug = `${this.nanoid()}-${slug(title as string, { lower: true }).slice(0, 50)}`;
 
