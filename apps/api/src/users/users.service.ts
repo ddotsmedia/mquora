@@ -166,6 +166,42 @@ export class UsersService {
     return { blocked: !!row };
   }
 
+  /**
+   * One verified member is featured each week, chosen from the 10 most active verified members
+   * in the last 30 days. The week number rotates the pick, so the same person is not featured twice in a row.
+   */
+  async weeklySpotlight() {
+    const since = new Date(Date.now() - 30 * 86_400_000);
+    const verified = await this.prisma.user.findMany({
+      where: { isVerified: true, deletedAt: null, bannedAt: null, isApproved: true },
+      select: { id: true, username: true, displayName: true, profile: { select: { credential: true } } },
+      take: 500,
+    });
+    if (verified.length === 0) return { data: null };
+    const counts = await this.prisma.answer.groupBy({
+      by: ['authorId'],
+      where: { authorId: { in: verified.map((u) => u.id) }, createdAt: { gte: since }, deletedAt: null },
+      _count: { _all: true },
+    });
+    const countById = new Map(counts.map((c) => [c.authorId, c._count._all]));
+    const ranked = verified
+      .map((u) => ({ ...u, answers: countById.get(u.id) ?? 0 }))
+      .filter((u) => u.answers > 0)
+      .sort((a, b) => b.answers - a.answers || a.id.localeCompare(b.id))
+      .slice(0, 10);
+    if (ranked.length === 0) return { data: null };
+    const gulfWeek = Math.floor((Date.now() + 4 * 3_600_000) / (7 * 86_400_000));
+    const pick = ranked[gulfWeek % ranked.length];
+    return {
+      data: {
+        username: pick.username,
+        displayName: pick.displayName,
+        credential: pick.profile?.credential ?? null,
+        answersLast30Days: pick.answers,
+      },
+    };
+  }
+
   async myReferral(userId: string) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const prisma = this.prisma as any;
