@@ -69,6 +69,18 @@ export class AnswersController {
     return this.answersService.voteAnswer(id, userId, dto.type);
   }
 
+  @Post('answers/:id/helpful')
+  @UseGuards(JwtAuthGuard)
+  async markHelpful(@Param('id') id: string, @Req() req: Request) {
+    return this.answersService.setHelpful(id, (req.user as Record<string, unknown>).id as string, true);
+  }
+
+  @Delete('answers/:id/helpful')
+  @UseGuards(JwtAuthGuard)
+  async unmarkHelpful(@Param('id') id: string, @Req() req: Request) {
+    return this.answersService.setHelpful(id, (req.user as Record<string, unknown>).id as string, false);
+  }
+
   @Delete('answers/:id/vote')
   @UseGuards(JwtAuthGuard)
   async removeVote(@Param('id') id: string, @Req() req: Request) {

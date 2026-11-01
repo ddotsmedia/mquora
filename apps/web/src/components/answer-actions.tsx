@@ -9,7 +9,8 @@ import { apiFetch, ApiError } from '@/lib/api';
 interface Revision { id: string; body: string; createdAt: string }
 
 // Edit (author only) and view edit history for an answer.
-export function AnswerActions({ answerId, authorId, body, questionAuthorId, isPinned, shareSlug, questionTitle }: { answerId: string; authorId: string; body: string; questionAuthorId?: string; isPinned?: boolean; shareSlug?: string; questionTitle?: string }) {
+export function AnswerActions({ answerId, authorId, body, questionAuthorId, isPinned, shareSlug, questionTitle, helpfulCount = 0 }: { answerId: string; authorId: string; body: string; questionAuthorId?: string; isPinned?: boolean; shareSlug?: string; questionTitle?: string; helpfulCount?: number }) {
+  const [helpful, setHelpfulState] = useState<{ on: boolean; count: number }>({ on: false, count: helpfulCount });
   const { data: session } = useSession();
   const router = useRouter();
   const token = session?.user?.accessToken;
@@ -19,6 +20,20 @@ export function AnswerActions({ answerId, authorId, body, questionAuthorId, isPi
   const [busy, setBusy] = useState(false);
   const [history, setHistory] = useState<Revision[] | null>(null);
   const canPin = !!session?.user?.id && session.user.id === questionAuthorId;
+
+  const toggleHelpful = async () => {
+    if (!token) return;
+    const next = !helpful.on;
+    try {
+      const r = await apiFetch<{ helpful: boolean; helpfulCount: number }>(`/api/v1/answers/${answerId}/helpful`, {
+        method: next ? 'POST' : 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setHelpfulState({ on: r.helpful, count: r.helpfulCount });
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : 'Could not update');
+    }
+  };
 
   const shareWhatsApp = () => {
     const url = `${window.location.origin}/q/${shareSlug}#answer-${answerId}`;
@@ -94,6 +109,7 @@ export function AnswerActions({ answerId, authorId, body, questionAuthorId, isPi
           {isAuthor && <button onClick={() => setEditing(true)} className={link}>Edit</button>}
           {canPin && <button onClick={togglePin} className={link}>{isPinned ? 'Unpin' : 'Pin to top'}</button>}
           <button onClick={loadHistory} className={link}>{history ? 'Hide edit history' : 'Edit history'}</button>
+          {!isAuthor && token && <button onClick={toggleHelpful} className={link}>{helpful.on ? 'Helpful ✓' : 'Helpful'} · {helpful.count}</button>}
           {shareSlug && <button onClick={shareWhatsApp} className={link}>Share on WhatsApp</button>}
         </div>
       )}

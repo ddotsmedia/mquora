@@ -113,7 +113,7 @@ export class AnswersService {
     const answers = await this.prisma.answer.findMany({
       where: whereClause,
       select: {
-        id: true, body: true, language: true, voteScore: true, qualityScore: true, viewCount: true, isAccepted: true, commentCount: true, createdAt: true, updatedAt: true, editedAt: true, isPinned: true,
+        id: true, body: true, language: true, voteScore: true, helpfulCount: true, qualityScore: true, viewCount: true, isAccepted: true, commentCount: true, createdAt: true, updatedAt: true, editedAt: true, isPinned: true,
         author: { select: { id: true, username: true, displayName: true, isVerified: true, reputationScore: true, profile: { select: { credential: true } } } },
       },
       orderBy: recent ? [{ isPinned: 'desc' }, { createdAt: 'desc' }] : [{ isPinned: 'desc' }, { isAccepted: 'desc' }, { voteScore: 'desc' }, { createdAt: 'asc' }],
@@ -187,6 +187,22 @@ export class AnswersService {
   }
 
   // Author edits their answer; the previous body is kept as a revision.
+  /** Marks or unmarks an answer as helpful. Authors cannot mark their own answers. */
+  async setHelpful(answerId: string, userId: string, on: boolean) {
+    const answer = await this.prisma.answer.findFirst({ where: { id: answerId }, select: { authorId: true } });
+    if (!answer) throw new NotFoundException('Answer not found');
+    if (answer.authorId === userId) throw new BadRequestException('You cannot mark your own answer as helpful');
+    if (on) {
+      const created = await this.prisma.answerHelpful.createMany({ data: [{ answerId, userId }], skipDuplicates: true });
+      if (created.count) await this.prisma.answer.update({ where: { id: answerId }, data: { helpfulCount: { increment: 1 } } });
+    } else {
+      const removed = await this.prisma.answerHelpful.deleteMany({ where: { answerId, userId } });
+      if (removed.count) await this.prisma.answer.update({ where: { id: answerId }, data: { helpfulCount: { decrement: 1 } } });
+    }
+    const updated = await this.prisma.answer.findUnique({ where: { id: answerId }, select: { helpfulCount: true } });
+    return { helpful: on, helpfulCount: updated?.helpfulCount ?? 0 };
+  }
+
   async updateAnswer(id: string, body: string, userId: string) {
     const trimmed = (body ?? '').trim();
     if (trimmed.length < 2) throw new BadRequestException('Answer is too short');

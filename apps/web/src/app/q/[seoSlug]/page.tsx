@@ -63,6 +63,7 @@ interface Answer {
   id: string;
   body: string;
   voteScore: number;
+  helpfulCount?: number;
   qualityScore?: number | null;
   viewCount?: number;
   language?: string;
@@ -317,7 +318,7 @@ export default async function PostPage({ params, searchParams }: { params: Promi
                     <div lang={answer.language === 'MALAYALAM' ? 'ml' : answer.language === 'ENGLISH' ? 'en' : undefined}>
                       <ReadMore text={answer.body} />
                     </div>
-                    <AnswerActions answerId={answer.id} authorId={answer.author.id} body={answer.body} questionAuthorId={post.author.id} isPinned={answer.isPinned} shareSlug={post.seoSlug} questionTitle={post.title} />
+                    <AnswerActions answerId={answer.id} authorId={answer.author.id} body={answer.body} questionAuthorId={post.author.id} isPinned={answer.isPinned} shareSlug={post.seoSlug} questionTitle={post.title} helpfulCount={answer.helpfulCount} />
                     <div className="mt-4 text-sm text-muted-foreground">
                       <div className="mt-2 flex flex-wrap items-center gap-3">
                         <AcceptButton answerId={answer.id} questionAuthorId={post.author.id} accepted={answer.isAccepted} />
