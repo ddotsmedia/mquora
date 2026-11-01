@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "Post" ADD COLUMN "isLocked" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN "lockedById" TEXT,
+ADD COLUMN "lockedAt" TIMESTAMP(3),
+ADD COLUMN "lockReason" TEXT;

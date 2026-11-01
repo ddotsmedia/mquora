@@ -27,9 +27,12 @@ import { ReputationBadge } from '@/components/reputation-badge';
 import { AskToAnswer } from '@/components/ask-to-answer';
 import { formatDistanceToNow } from 'date-fns';
 import { siteOrigin } from '@/lib/site';
+import { LockQuestionButton } from '@/components/lock-question-button';
 
 interface Post {
   id: string;
+  isLocked?: boolean;
+  lockReason?: string | null;
   mergedInto?: { seoSlug: string; title: string } | null;
   isAnonymous?: boolean;
   seoSlug: string;
@@ -341,8 +344,17 @@ export default async function PostPage({ params, searchParams }: { params: Promi
 
         {post.type !== 'ARTICLE' && (
           <div id="your-answer" className="scroll-mt-20 border-t border-border pt-6">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Your Answer</h3>
-            <AnswerForm postId={post.id} />
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h3 className="text-lg font-semibold text-foreground">Your Answer</h3>
+              <LockQuestionButton postId={post.id} authorId={post.author.id} isLocked={!!post.isLocked} />
+            </div>
+            {post.isLocked ? (
+              <p className="rounded-xl bg-[var(--surface-2)] p-4 text-sm text-[var(--text-secondary)]">
+                This question is locked. New answers are closed{post.lockReason ? `: ${post.lockReason}` : '.'}
+              </p>
+            ) : (
+              <AnswerForm postId={post.id} />
+            )}
           </div>
         )}
       </div>

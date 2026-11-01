@@ -20,8 +20,9 @@ export class AnswersService {
   async create(postId: string, dto: CreateAnswerDto, authorId: string) {
     const { body } = dto;
     if (body.trim().length < 2) throw new BadRequestException('Answer is too short');
-    const post = await this.prisma.post.findFirst({ where: { id: postId, status: 'PUBLISHED', deletedAt: null }, select: { title: true, seoSlug: true } });
+    const post = await this.prisma.post.findFirst({ where: { id: postId, status: 'PUBLISHED', deletedAt: null }, select: { title: true, seoSlug: true, isLocked: true } });
     if (!post) throw new NotFoundException('Question not found');
+    if (post.isLocked) throw new ForbiddenException('This question is locked and no longer accepts answers');
     await recordActivity(this.prisma, authorId).catch(() => undefined);
     const contentProcessed = this.languageService.processContent(body);
 
