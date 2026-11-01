@@ -5,6 +5,7 @@ import { Queue } from 'bull';
 import { PrismaClient } from '@prisma/client';
 import { LanguageService } from '../shared/language.service';
 import axios from 'axios';
+import { recordActivity } from '../shared/streaks';
 
 @Injectable()
 export class AnswersService {
@@ -21,6 +22,7 @@ export class AnswersService {
     if (body.trim().length < 2) throw new BadRequestException('Answer is too short');
     const post = await this.prisma.post.findFirst({ where: { id: postId, status: 'PUBLISHED', deletedAt: null }, select: { title: true, seoSlug: true } });
     if (!post) throw new NotFoundException('Question not found');
+    await recordActivity(this.prisma, authorId).catch(() => undefined);
     const contentProcessed = this.languageService.processContent(body);
 
     const [answer] = await this.prisma.$transaction([

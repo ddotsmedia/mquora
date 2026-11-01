@@ -3,6 +3,7 @@ import * as argon2 from 'argon2';
 import { PrismaClient } from '@prisma/client';
 import { UpdateMeDto } from './users.dto';
 import { newReferralCode, REFERRAL_CAP, REFERRAL_REPUTATION } from '../shared/referrals';
+import { effectiveStreak } from '../shared/streaks';
 
 const POST_CARD = {
   id: true, seoSlug: true, title: true, language: true, voteScore: true,
@@ -27,7 +28,7 @@ export class UsersService {
       where: { username, deletedAt: null },
       select: {
         id: true, username: true, displayName: true, role: true, reputationScore: true,
-        isVerified: true, createdAt: true,
+        isVerified: true, createdAt: true, currentStreak: true, longestStreak: true, lastActiveDay: true,
         profile: { select: { bio: true, avatarUrl: true, location: true, website: true, credential: true } },
         badges: { select: { awardedAt: true, badge: { select: { name: true, description: true } } }, orderBy: { awardedAt: 'desc' } },
       },
@@ -76,7 +77,7 @@ export class UsersService {
       credential: profile?.credential ?? null,
       posts,
       knowsAbout,
-      stats: { posts: postCount, answers: answerCount, followers: followerCount, following: followingCount, views: views._sum.viewCount ?? 0, viewsThisMonth },
+      stats: { posts: postCount, answers: answerCount, followers: followerCount, following: followingCount, views: views._sum.viewCount ?? 0, viewsThisMonth, currentStreak: effectiveStreak(user), longestStreak: user.longestStreak },
     };
   }
 

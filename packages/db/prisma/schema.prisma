@@ -82,6 +82,9 @@ enum ReportStatus {
 }
 
 model User {
+  currentStreak      Int       @default(0)
+  longestStreak      Int       @default(0)
+  lastActiveDay      String?
   referralCode       String?   @unique
   referredById       String?
   referralCreditedAt DateTime?

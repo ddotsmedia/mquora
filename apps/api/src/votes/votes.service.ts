@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaClient, VoteType, ReputationEventType } from '@prisma/client';
+import { recordActivity } from '../shared/streaks';
 
 type Target = 'POST' | 'ANSWER' | 'COMMENT';
 
@@ -47,6 +48,7 @@ export class VotesService {
     const t = targetType as Target;
     const ownerId = await this.ownerOf(targetId, t);
     if (ownerId === voterId) throw new BadRequestException('You cannot vote on your own content');
+    await recordActivity(this.prisma, voterId).catch(() => undefined);
 
     const existing = await this.prisma.vote.findUnique({
       where: { authorId_targetId_targetType: { authorId: voterId, targetId, targetType } },
