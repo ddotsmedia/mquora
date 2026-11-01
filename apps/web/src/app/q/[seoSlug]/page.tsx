@@ -7,6 +7,7 @@ import { LanguageBadge } from '@/components/language-badge';
 import { VoteButtons } from '@/components/vote-buttons';
 import { DuplicateReportButton } from '@/components/duplicate-report-button';
 import { AnswerActions } from '@/components/answer-actions';
+import { AnswerEditSuggestions } from '@/components/answer-edit-suggestions';
 import { VisitTracker } from '@/components/visit-tracker';
 import { BookmarkButton } from '@/components/bookmark-button';
 import { SubscribeButton } from '@/components/subscribe-button';
@@ -322,6 +323,7 @@ export default async function PostPage({ params, searchParams }: { params: Promi
                       <ReadMore text={answer.body} />
                     </div>
                     <AnswerActions answerId={answer.id} authorId={answer.author.id} body={answer.body} questionAuthorId={post.author.id} isPinned={answer.isPinned} shareSlug={post.seoSlug} questionTitle={post.title} helpfulCount={answer.helpfulCount} />
+                    <AnswerEditSuggestions answerId={answer.id} authorId={answer.author.id} body={answer.body} />
                     <div className="mt-4 text-sm text-muted-foreground">
                       <div className="mt-2 flex flex-wrap items-center gap-3">
                         <AcceptButton answerId={answer.id} questionAuthorId={post.author.id} accepted={answer.isAccepted} />

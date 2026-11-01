@@ -118,6 +118,7 @@ model User {
   posts                 Post[]
   answers               Answer[]
   answerHelpfulMarks    AnswerHelpful[]
+  editSuggestions       AnswerEditSuggestion[] @relation("editSuggestions")
   comments              Comment[]
   votes                 Vote[]
   bookmarks             Bookmark[]
@@ -252,6 +253,21 @@ model AnswerHelpful {
 
   @@id([answerId, userId])
   @@index([userId])
+}
+
+model AnswerEditSuggestion {
+  id            String    @id @default(cuid())
+  answerId      String
+  suggestedById String
+  body          String
+  status        String    @default("PENDING")
+  createdAt     DateTime  @default(now())
+  decidedAt     DateTime?
+
+  answer        Answer    @relation(fields: [answerId], references: [id], onDelete: Cascade)
+  suggestedBy   User      @relation("editSuggestions", fields: [suggestedById], references: [id], onDelete: Cascade)
+
+  @@index([answerId, status])
 }
 
 model AnswerRevision {
@@ -393,6 +409,7 @@ model Answer {
   author            User      @relation(fields: [authorId], references: [id])
   comments          Comment[]
   revisions         AnswerRevision[]
+  editSuggestions   AnswerEditSuggestion[]
   votes             Vote[]    @relation("answer")
   answerVotes       AnswerVote[] @relation("answer_votes")
   reports           Report[]  @relation("report_answer")
