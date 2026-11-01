@@ -91,7 +91,14 @@ export async function generateMetadata({
   const { seoSlug } = await params;
   try {
     const post = await serverApiFetch<Post>(`/api/v1/posts/${seoSlug}?view=0`);
-    const desc = `${post.body.substring(0, 120)} — ${post.answerCount} answer${post.answerCount !== 1 ? 's' : ''} on askvyo`;
+    // Search snippets use the accepted answer, or else the top-ranked one, instead of the question body.
+    const top = await serverApiFetch<{ data: Array<{ body: string; isAccepted: boolean }> }>(
+      `/api/v1/posts/${post.id}/answers?limit=5&sort=suggested`, undefined, { cache: 'no-store' },
+    ).then((r) => r.data).catch(() => []);
+    const best = top.find((a) => a.isAccepted) ?? top[0];
+    const source = best ? best.body : post.body;
+    const excerpt = source.replace(/[*#>`_\[\]]/g, '').replace(/\s+/g, ' ').trim().substring(0, 140);
+    const desc = `${excerpt} — ${post.answerCount} answer${post.answerCount !== 1 ? 's' : ''} on askvyo`;
     return {
       title: `${post.title.length > 50 ? post.title.slice(0, 50).trimEnd() + '…' : post.title} — askvyo`,
       description: desc,
