@@ -77,6 +77,13 @@ export class PostsController {
     return this.postsService.myHistory(userId);
   }
 
+  @Post(':id/lock')
+  @UseGuards(JwtAuthGuard)
+  async lock(@Param('id') id: string, @Body() body: { locked?: boolean; reason?: string }, @Req() req: Request) {
+    const userId = (req.user as Record<string, unknown>).id as string;
+    return this.postsService.setLocked(id, userId, body?.locked === true, body?.reason);
+  }
+
   @Post(':id/visit')
   @UseGuards(JwtAuthGuard)
   async recordVisit(@Param('id') id: string, @Req() req: Request) {

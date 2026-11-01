@@ -320,6 +320,10 @@ model Post {
   status            ContentStatus @default(PUBLISHED)
   isAnonymous       Boolean  @default(false)
   scheduledAt       DateTime?
+  isLocked          Boolean   @default(false)
+  lockedById        String?
+  lockedAt          DateTime?
+  lockReason        String?
   voteScore         Int       @default(0)
   answerCount       Int       @default(0)
   commentCount      Int       @default(0)

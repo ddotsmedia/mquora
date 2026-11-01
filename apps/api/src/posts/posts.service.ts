@@ -135,6 +135,37 @@ export class PostsService {
     return { data, nextCursor };
   }
 
+  /** Locks or unlocks a question so no new answers can be added. Allowed for the asker, a community moderator or creator, and admins. */
+  async setLocked(postId: string, userId: string, locked: boolean, reason?: string) {
+    const post = await this.prisma.post.findFirst({ where: { id: postId, deletedAt: null }, select: { authorId: true, communityId: true } });
+    if (!post) throw new NotFoundException('Question not found');
+    const allowed = post.authorId === userId || (await this.canModerate(post.communityId, userId));
+    if (!allowed) throw new ForbiddenException('Only the asker or a moderator can lock this question');
+    await this.prisma.post.update({
+      where: { id: postId },
+      data: {
+        isLocked: locked,
+        lockedById: locked ? userId : null,
+        lockedAt: locked ? new Date() : null,
+        lockReason: locked ? (reason?.trim().slice(0, 200) || null) : null,
+      },
+    });
+    return { locked };
+  }
+
+  private async canModerate(communityId: string | null, userId: string): Promise<boolean> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+    if (user?.role === 'ADMIN') return true;
+    if (!communityId) return false;
+    const community = await this.prisma.community.findUnique({ where: { id: communityId }, select: { createdBy: true } });
+    if (community?.createdBy === userId) return true;
+    const membership = await this.prisma.communityMember.findUnique({
+      where: { communityId_userId: { communityId, userId } },
+      select: { role: true },
+    });
+    return membership?.role === 'MODERATOR';
+  }
+
   async findBySlug(seoSlug: string, countView = true) {
     const post = await this.prisma.post.findUnique({
       where: { seoSlug },
@@ -143,6 +174,8 @@ export class PostsService {
         seoSlug: true,
         title: true,
         body: true,
+        isLocked: true,
+        lockReason: true,
         language: true,
         isManglish: true,
         voteScore: true,
