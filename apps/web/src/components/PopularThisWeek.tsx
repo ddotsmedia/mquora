@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
 import { MessageCircle, Eye } from 'lucide-react';
 
+interface PopularResponse { window: 'week' | 'all'; data: PopularPost[] }
+
 interface PopularPost {
   id: string;
   seoSlug: string;
@@ -16,13 +18,15 @@ interface PopularPost {
 
 export function PopularThisWeek() {
   const [posts, setPosts] = useState<PopularPost[]>([]);
+  const [scope, setScope] = useState<'week' | 'all'>('week');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const response = await apiFetch<{ data: PopularPost[] }>('/api/v1/posts/popular-this-week?limit=5');
+        const response = await apiFetch<PopularResponse>('/api/v1/posts/popular-this-week?limit=5');
         setPosts(response.data || []);
+        setScope(response.window);
       } catch (error) {
         console.error('Failed to fetch popular posts:', error);
         setPosts([]);
@@ -44,14 +48,24 @@ export function PopularThisWeek() {
   }
 
   if (posts.length === 0) {
-    return null;
+    return (
+      <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface)] p-4 text-center">
+        <p className="text-sm font-medium text-[var(--text)]">ആദ്യത്തെ ചോദ്യം ചോദിക്കൂ</p>
+        <p className="mt-1 text-xs text-[var(--text-muted)]">No questions yet. Ask the first one.</p>
+        <Link href="/ask" className="mt-3 inline-block rounded-lg bg-[var(--primary)] px-3 py-1.5 text-sm text-white">
+          Ask a question
+        </Link>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 mb-3">
         <span className="text-lg">🔥</span>
-        <h2 className="text-lg font-semibold text-[var(--text)]">Popular This Week</h2>
+        <h2 className="text-lg font-semibold text-[var(--text)]">
+          {scope === 'week' ? 'Popular This Week' : 'Top Questions'}
+        </h2>
       </div>
       <div className="space-y-2">
         {posts.map((post) => (
