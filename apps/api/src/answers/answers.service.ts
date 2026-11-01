@@ -223,6 +223,62 @@ export class AnswersService {
     return { id, unchanged: false };
   }
 
+  // Anyone signed in can suggest a change to someone else's answer. The answer author, the question's asker, and admins decide.
+  private async loadForSuggestions(answerId: string, userId: string) {
+    const answer = await this.prisma.answer.findFirst({
+      where: { id: answerId, deletedAt: null, status: 'PUBLISHED' },
+      select: { id: true, authorId: true, body: true, post: { select: { authorId: true } } },
+    });
+    if (!answer) throw new NotFoundException('Answer not found');
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+    const canDecide = answer.authorId === userId || answer.post.authorId === userId || user?.role === 'ADMIN';
+    return { answer, canDecide };
+  }
+
+  async suggestEdit(answerId: string, userId: string, body: string) {
+    const trimmed = (body ?? '').trim();
+    if (trimmed.length < 2 || trimmed.length > 20000) throw new BadRequestException('Suggestion must be 2 to 20000 characters');
+    const { answer } = await this.loadForSuggestions(answerId, userId);
+    if (answer.authorId === userId) throw new BadRequestException('Edit your own answer instead');
+    if (answer.body.trim() === trimmed) throw new BadRequestException('This is the same as the current answer');
+    const pending = await this.prisma.answerEditSuggestion.findFirst({ where: { answerId, suggestedById: userId, status: 'PENDING' }, select: { id: true } });
+    if (pending) {
+      await this.prisma.answerEditSuggestion.update({ where: { id: pending.id }, data: { body: trimmed, createdAt: new Date() } });
+      return { id: pending.id };
+    }
+    const created = await this.prisma.answerEditSuggestion.create({ data: { answerId, suggestedById: userId, body: trimmed }, select: { id: true } });
+    return { id: created.id };
+  }
+
+  async listEditSuggestions(answerId: string, userId: string) {
+    const { canDecide } = await this.loadForSuggestions(answerId, userId);
+    if (!canDecide) return { data: [] };
+    const data = await this.prisma.answerEditSuggestion.findMany({
+      where: { answerId, status: 'PENDING' },
+      orderBy: { createdAt: 'asc' },
+      select: { id: true, body: true, createdAt: true, suggestedBy: { select: { username: true, displayName: true } } },
+    });
+    return { data };
+  }
+
+  async decideEditSuggestion(answerId: string, suggestionId: string, userId: string, accept: boolean) {
+    const { answer, canDecide } = await this.loadForSuggestions(answerId, userId);
+    if (!canDecide) throw new ForbiddenException('Only the answer author, the question asker or an admin can decide');
+    const suggestion = await this.prisma.answerEditSuggestion.findFirst({ where: { id: suggestionId, answerId, status: 'PENDING' }, select: { id: true, body: true } });
+    if (!suggestion) throw new NotFoundException('Suggestion not found');
+    if (accept) {
+      const contentProcessed = this.languageService.processContent(suggestion.body);
+      await this.prisma.$transaction([
+        this.prisma.answerRevision.create({ data: { answerId, body: answer.body } }),
+        this.prisma.answer.update({ where: { id: answerId }, data: { body: suggestion.body, ...contentProcessed, editedAt: new Date() } }),
+        this.prisma.answerEditSuggestion.update({ where: { id: suggestionId }, data: { status: 'ACCEPTED', decidedAt: new Date() } }),
+      ]);
+    } else {
+      await this.prisma.answerEditSuggestion.update({ where: { id: suggestionId }, data: { status: 'REJECTED', decidedAt: new Date() } });
+    }
+    return { accepted: accept };
+  }
+
   // Public edit history, newest first.
   async listRevisions(id: string) {
     const answer = await this.prisma.answer.findFirst({ where: { id, deletedAt: null }, select: { id: true, body: true, editedAt: true } });

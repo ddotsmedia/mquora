@@ -36,6 +36,24 @@ export class AnswersController {
     return this.answersService.setPinned(id, body?.pinned === true, userId);
   }
 
+  @Post('answers/:id/edit-suggestions')
+  @UseGuards(JwtAuthGuard)
+  async suggestEdit(@Param('id') id: string, @Body() body: { body?: string }, @Req() req: Request) {
+    return this.answersService.suggestEdit(id, (req.user as Record<string, unknown>).id as string, body?.body ?? '');
+  }
+
+  @Get('answers/:id/edit-suggestions')
+  @UseGuards(JwtAuthGuard)
+  async listEditSuggestions(@Param('id') id: string, @Req() req: Request) {
+    return this.answersService.listEditSuggestions(id, (req.user as Record<string, unknown>).id as string);
+  }
+
+  @Post('answers/:id/edit-suggestions/:suggestionId/decide')
+  @UseGuards(JwtAuthGuard)
+  async decideEditSuggestion(@Param('id') id: string, @Param('suggestionId') suggestionId: string, @Body() body: { accept?: boolean }, @Req() req: Request) {
+    return this.answersService.decideEditSuggestion(id, suggestionId, (req.user as Record<string, unknown>).id as string, body?.accept === true);
+  }
+
   @Get('answers/:id/revisions')
   async revisions(@Param('id') id: string) {
     return this.answersService.listRevisions(id);
