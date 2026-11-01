@@ -117,6 +117,7 @@ model User {
   identities            Identity[]
   posts                 Post[]
   answers               Answer[]
+  answerHelpfulMarks    AnswerHelpful[]
   comments              Comment[]
   votes                 Vote[]
   bookmarks             Bookmark[]
@@ -242,6 +243,17 @@ model CommunityMember {
   @@index([userId])
 }
 
+model AnswerHelpful {
+  answerId  String
+  userId    String
+  createdAt DateTime @default(now())
+  answer    Answer   @relation(fields: [answerId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([answerId, userId])
+  @@index([userId])
+}
+
 model AnswerRevision {
   id        String   @id @default(cuid())
   answerId  String
@@ -351,6 +363,8 @@ model Post {
 
 model Answer {
   id                String    @id @default(cuid())
+  helpfulCount      Int       @default(0)
+  helpfulMarks      AnswerHelpful[]
   postId            String
   authorId          String
   body              String
