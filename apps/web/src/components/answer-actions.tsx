@@ -9,7 +9,7 @@ import { apiFetch, ApiError } from '@/lib/api';
 interface Revision { id: string; body: string; createdAt: string }
 
 // Edit (author only) and view edit history for an answer.
-export function AnswerActions({ answerId, authorId, body, questionAuthorId, isPinned }: { answerId: string; authorId: string; body: string; questionAuthorId?: string; isPinned?: boolean }) {
+export function AnswerActions({ answerId, authorId, body, questionAuthorId, isPinned, shareSlug, questionTitle }: { answerId: string; authorId: string; body: string; questionAuthorId?: string; isPinned?: boolean; shareSlug?: string; questionTitle?: string }) {
   const { data: session } = useSession();
   const router = useRouter();
   const token = session?.user?.accessToken;
@@ -19,6 +19,14 @@ export function AnswerActions({ answerId, authorId, body, questionAuthorId, isPi
   const [busy, setBusy] = useState(false);
   const [history, setHistory] = useState<Revision[] | null>(null);
   const canPin = !!session?.user?.id && session.user.id === questionAuthorId;
+
+  const shareWhatsApp = () => {
+    const url = `${window.location.origin}/q/${shareSlug}#answer-${answerId}`;
+    const snippet = body.replace(/\s+/g, ' ').trim();
+    const excerpt = snippet.length > 140 ? `${snippet.slice(0, 140)}…` : snippet;
+    const text = `${questionTitle ?? ''}\n\n${excerpt}\n${url}`.trim();
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+  };
 
   const togglePin = async () => {
     if (!token) return;
@@ -86,6 +94,7 @@ export function AnswerActions({ answerId, authorId, body, questionAuthorId, isPi
           {isAuthor && <button onClick={() => setEditing(true)} className={link}>Edit</button>}
           {canPin && <button onClick={togglePin} className={link}>{isPinned ? 'Unpin' : 'Pin to top'}</button>}
           <button onClick={loadHistory} className={link}>{history ? 'Hide edit history' : 'Edit history'}</button>
+          {shareSlug && <button onClick={shareWhatsApp} className={link}>Share on WhatsApp</button>}
         </div>
       )}
 
