@@ -14,6 +14,7 @@ const labels: Record<string, { title: string; help: string }> = {
   COMMENT: { title: 'Comments', help: 'Comments on your posts' },
   FOLLOW: { title: 'New followers', help: 'When someone follows you' },
   MENTION: { title: 'Mentions', help: 'When someone mentions you' },
+  SEARCH: { title: 'Saved search alerts', help: 'When new questions match a search you saved' },
   MODERATION: { title: 'Moderation', help: 'Required notices about your content. Always on.' },
   SYSTEM: { title: 'Announcements', help: 'Important announcements from askvyo. Always on.' },
 };
