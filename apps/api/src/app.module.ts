@@ -1,3 +1,4 @@
+import { SavedSearchesModule } from './saved-searches/saved-searches.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AnonymousMaskInterceptor } from './shared/anonymous-mask.interceptor';
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
@@ -57,6 +58,7 @@ import { DigestModule } from './digest/digest.module';
     NotificationsModule,
     AdminModule,
     SearchModule,
+    SavedSearchesModule,
     HealthModule,
     MetricsModule,
     TrendingModule,

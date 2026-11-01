@@ -64,6 +64,7 @@ enum NotifType {
   MENTION
   MODERATION
   SYSTEM
+  SEARCH
 }
 
 enum ReputationEventType {
@@ -119,6 +120,7 @@ model User {
   answers               Answer[]
   answerHelpfulMarks    AnswerHelpful[]
   editSuggestions       AnswerEditSuggestion[] @relation("editSuggestions")
+  savedSearches         SavedSearch[]
   comments              Comment[]
   votes                 Vote[]
   bookmarks             Bookmark[]
@@ -926,4 +928,17 @@ model PushToken {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model SavedSearch {
+  id            String    @id @default(cuid())
+  userId        String
+  query         String
+  lastCheckedAt DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, query])
+  @@index([lastCheckedAt])
 }

@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { SubscribePushDto, UnsubscribePushDto, SendTestNotificationDto, PushNotificationPayload } from './notifications.dto';
 import * as webpush from 'web-push';
 
-const NOTIF_TYPES = ['VOTE', 'ANSWER', 'COMMENT', 'FOLLOW', 'MENTION', 'MODERATION', 'SYSTEM'];
+const NOTIF_TYPES = ['VOTE', 'ANSWER', 'COMMENT', 'FOLLOW', 'MENTION', 'MODERATION', 'SYSTEM', 'SEARCH'];
 const LOCKED_TYPES = ['MODERATION', 'SYSTEM'];
 
 @Injectable()

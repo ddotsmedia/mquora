@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
 import { VoiceInput } from '@/components/VoiceInput';
+import { SavedSearchButton } from '@/components/saved-search-button';
 
 type Post = {
   id: string;
@@ -123,6 +124,7 @@ function SearchPageContent() {
             placeholder="Click mic to search by voice"
           />
         </form>
+        <div className="mt-2"><SavedSearchButton query={query} /></div>
       </div>
 
       {error && (
