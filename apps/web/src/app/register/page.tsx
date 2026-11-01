@@ -9,7 +9,7 @@ import { RegisterForm } from '@/components/register-form';
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
-export default async function RegisterPage({ searchParams }: { searchParams: Promise<{ error?: string; pending?: string }> }) {
+export default async function RegisterPage({ searchParams }: { searchParams: Promise<{ error?: string; pending?: string; ref?: string }> }) {
   const [sp, session] = await Promise.all([searchParams, auth()]);
   if (session?.user?.accessToken && !session.error) redirect('/');
 
@@ -37,7 +37,7 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
       {sp.error && <div className="mb-4 rounded-xl bg-red-500/10 p-3 text-sm text-red-600">{sp.error}</div>}
       <GoogleSignInButton />
       {authDivider}
-      <RegisterForm />
+      <RegisterForm referralCode={/^[a-z0-9]{4,32}$/i.test(sp.ref ?? '') ? sp.ref : undefined} />
       <p className="mt-4 text-xs text-[var(--text-muted)]">
         By joining you agree to our <Link href="/terms" className="underline">Terms</Link> and <Link href="/guidelines" className="underline">Guidelines</Link>.
       </p>

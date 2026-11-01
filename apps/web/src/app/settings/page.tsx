@@ -73,6 +73,7 @@ export default async function SettingsPage({
           <h1 className="text-2xl font-bold text-[var(--text)]">Settings</h1>
           <p className="text-sm text-[var(--text-secondary)]">@{me.username} · {me.email}</p>
         </div>
+        <Link href="/referrals" className="text-sm text-[var(--primary)] hover:underline">Invite friends</Link>
         <Link href={`/profile/${me.username}`} className="text-sm text-[var(--primary)] hover:underline">
           View profile →
         </Link>

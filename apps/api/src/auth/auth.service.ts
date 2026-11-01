@@ -33,6 +33,10 @@ export class AuthService {
     }
 
     const passwordHash = await argon2.hash(dto.password);
+    // An unknown or malformed referral code is ignored; sign-up still succeeds.
+    const referrer = dto.ref
+      ? await this.prisma.user.findUnique({ where: { referralCode: String(dto.ref) }, select: { id: true } })
+      : null;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const user = await (this.prisma as any).user.create({
       data: {
@@ -42,6 +46,7 @@ export class AuthService {
         passwordHash,
         isApproved: false,
         profile: { create: {} },
+        ...(referrer ? { referredById: referrer.id } : {}),
       },
       select: { id: true, email: true, username: true, role: true, displayName: true },
     }) as { id: string; email: string; username: string; role: string; displayName: string };
