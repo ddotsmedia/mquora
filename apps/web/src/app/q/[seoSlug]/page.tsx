@@ -4,6 +4,7 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { serverApiFetch } from '@/lib/api';
 import { LanguageBadge } from '@/components/language-badge';
+import { DocumentLanguage } from '@/components/document-language';
 import { VoteButtons } from '@/components/vote-buttons';
 import { DuplicateReportButton } from '@/components/duplicate-report-button';
 import { AnswerActions } from '@/components/answer-actions';
@@ -112,6 +113,7 @@ export async function generateMetadata({
         title: post.title,
         description: desc,
         type: 'article',
+        locale: post.language === 'MALAYALAM' || post.language === 'MIXED' ? 'ml_IN' : 'en_IN',
         url: `${siteOrigin()}/q/${post.seoSlug}`,
         siteName: 'askvyo',
       },
@@ -209,6 +211,7 @@ export default async function PostPage({ params, searchParams }: { params: Promi
           <span className="text-sm text-muted-foreground">{post.viewCount} views</span>
         </div>
 
+        <DocumentLanguage lang={post.language === 'MALAYALAM' || post.language === 'MIXED' ? 'ml' : 'en'} />
         <h1 lang={post.language === 'MALAYALAM' || post.language === 'MIXED' ? 'ml' : undefined} className="text-3xl font-bold text-foreground mb-4">{post.title}</h1>
 
         <div className="flex items-center gap-4 mb-6 text-sm text-muted-foreground">
