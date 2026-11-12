@@ -763,6 +763,39 @@ export class AdminService {
   // ── Admin notifications ──────────────────────────────────────────────────
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async getExtendedAnalytics() {
+    const now = Date.now();
+    const d7 = new Date(now - 7 * DAY);
+    const d14 = new Date(now - 14 * DAY);
+    const d30 = new Date(now - 30 * DAY);
+
+    const [newUsers7d, newUsersPrev7d, questions30d, unansweredQuestions30d, reports30d, resolved30d, resolvedRows] = await Promise.all([
+      this.prisma.user.count({ where: { deletedAt: null, createdAt: { gte: d7 } } }),
+      this.prisma.user.count({ where: { deletedAt: null, createdAt: { gte: d14, lt: d7 } } }),
+      this.prisma.post.count({ where: { type: 'QUESTION', status: 'PUBLISHED', deletedAt: null, createdAt: { gte: d30 } } }),
+      this.prisma.post.count({ where: { type: 'QUESTION', status: 'PUBLISHED', deletedAt: null, createdAt: { gte: d30 }, answers: { none: {} } } }),
+      this.prisma.report.count({ where: { createdAt: { gte: d30 } } }),
+      this.prisma.report.count({ where: { createdAt: { gte: d30 }, status: { not: 'PENDING' } } }),
+      this.prisma.report.findMany({ where: { resolvedAt: { gte: d30 } }, select: { createdAt: true, resolvedAt: true }, take: 1000 }),
+    ]);
+
+    const hours = resolvedRows
+      .filter((r) => r.resolvedAt)
+      .map((r) => (r.resolvedAt!.getTime() - r.createdAt.getTime()) / 3_600_000);
+    const avgResolutionHours = hours.length ? Math.round((hours.reduce((a, b) => a + b, 0) / hours.length) * 10) / 10 : null;
+
+    return {
+      newUsers7d,
+      newUsersPrev7d,
+      questions30d,
+      unansweredQuestions30d,
+      answeredRate30d: questions30d ? Math.round((1 - unansweredQuestions30d / questions30d) * 100) : null,
+      reports30d,
+      resolved30d,
+      avgResolutionHours,
+    };
+  }
+
   private get an(): any { return (this.prisma as any).adminNotification; }
 
   async getAdminNotifications(unreadOnly = false) {

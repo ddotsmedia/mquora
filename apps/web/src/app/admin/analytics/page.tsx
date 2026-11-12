@@ -1,7 +1,7 @@
 import { adminFetch } from '@/lib/admin-server';
 import { PageHeader, Panel, StatCard, EmptyState } from '@/components/admin/ui';
 import { ActivityChart, HorizontalBars, type DailyPoint } from '@/components/admin/Charts';
-import { Activity, LogIn, MessageSquare, Percent } from 'lucide-react';
+import { Activity, HelpCircle, LogIn, MessageSquare, Percent, ShieldAlert, Timer, Users } from 'lucide-react';
 
 type Analytics = {
   sessions1d: number;
@@ -14,10 +14,22 @@ type Analytics = {
   languageBreakdown: { name: string; count: number }[];
 };
 
+type Extended = {
+  newUsers7d: number;
+  newUsersPrev7d: number;
+  questions30d: number;
+  unansweredQuestions30d: number;
+  answeredRate30d: number | null;
+  reports30d: number;
+  resolved30d: number;
+  avgResolutionHours: number | null;
+};
+
 export default async function AnalyticsPage() {
-  const [a, ts] = await Promise.all([
+  const [a, ts, x] = await Promise.all([
     adminFetch<Analytics>('/analytics'),
     adminFetch<{ days: DailyPoint[] }>('/timeseries', { query: { days: 30 } }),
+    adminFetch<Extended>('/analytics/extended'),
   ]);
 
   return (
@@ -29,6 +41,13 @@ export default async function AnalyticsPage() {
         <StatCard label="Posts (7d)" value={a.posts7d} icon={Activity} tone="gold" />
         <StatCard label="Answers (7d)" value={a.answers7d} icon={MessageSquare} tone="sky" />
         <StatCard label="Answers per post" value={a.answerRate} icon={Percent} tone="rose" hint="7-day ratio" />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="New users (7d)" value={x.newUsers7d} icon={Users} tone="green" delta={x.newUsers7d - x.newUsersPrev7d} hint="vs previous 7 days" />
+        <StatCard label="Unanswered questions (30d)" value={x.unansweredQuestions30d} icon={HelpCircle} tone="gold" hint={x.answeredRate30d === null ? 'No questions yet' : `${x.answeredRate30d}% answered`} />
+        <StatCard label="Reports (30d)" value={x.reports30d} icon={ShieldAlert} tone="rose" hint={`${x.resolved30d} resolved`} />
+        <StatCard label="Avg time to resolve" value={x.avgResolutionHours === null ? '—' : `${x.avgResolutionHours}h`} icon={Timer} tone="sky" hint="Reports resolved in 30 days" />
       </div>
 
       <Panel title="Daily activity · last 30 days">

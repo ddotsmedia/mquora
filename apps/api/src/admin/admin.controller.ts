@@ -230,6 +230,12 @@ export class AdminController {
     return this.admin.getAnalytics();
   }
 
+  @UseGuards(JwtAuthGuard, ModeratorGuard)
+  @Get('analytics/extended')
+  getExtendedAnalytics() {
+    return this.admin.getExtendedAnalytics();
+  }
+
   // ── Admin notifications ────────────────────────────────────────────────────
 
   @UseGuards(JwtAuthGuard, ModeratorGuard)
