@@ -7,6 +7,8 @@ import { JoinButton } from '@/components/join-button';
 import { RequestJoinButton } from '@/components/request-join-button';
 import { InviteButton } from '@/components/invite-button';
 import { siteOrigin } from '@/lib/site';
+import { pageLang } from '@/lib/lang';
+import { DocumentLanguage } from '@/components/document-language';
 
 interface Community {
   id: string;
@@ -96,6 +98,7 @@ export default async function CommunityPage({ params }: { params: Promise<{ slug
 
   return (
     <div className="max-w-3xl mx-auto">
+      <DocumentLanguage lang={pageLang(community.name, community.description)} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
       <div className="border-b border-[var(--border)] p-6 bg-[var(--surface)]">
         <h1 className="text-3xl font-bold text-[var(--text)]">{community.name}</h1>

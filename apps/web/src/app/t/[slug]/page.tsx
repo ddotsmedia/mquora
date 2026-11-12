@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation';
 import { serverApiFetch, ApiError } from '@/lib/api';
 import { PostCard } from '@/components/post-card';
 import { FollowTopicButton } from '@/components/follow-topic-button';
+import { DocumentLanguage } from '@/components/document-language';
+import { pageLang } from '@/lib/lang';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,6 +39,7 @@ export default async function TagDetailPage({ params }: { params: Promise<{ slug
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
+      <DocumentLanguage lang={pageLang(tag.name)} />
       <Link href="/tags" className="text-sm text-[var(--primary)] hover:underline">← All topics</Link>
       <header className="mb-6 mt-2 flex items-end justify-between gap-3">
         <div>
