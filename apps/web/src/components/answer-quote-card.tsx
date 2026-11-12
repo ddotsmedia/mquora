@@ -122,7 +122,7 @@ export function AnswerQuoteCard({ authorName, questionTitle, siteUrl = 'askvyo.c
           <div className="w-full max-w-2xl rounded-2xl bg-[var(--surface)] p-6 shadow-2xl">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-[var(--text)]">Create quote card</h2>
-              <button onClick={() => setOpen(false)} aria-label="Close" className="rounded-full p-1.5 hover:bg-[var(--surface-2)] transition-colors">
+              <button onClick={() => setOpen(false)} aria-label="Close" className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full hover:bg-[var(--surface-2)] transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
