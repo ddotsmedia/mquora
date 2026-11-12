@@ -576,10 +576,23 @@ export class PostsService {
     return { data };
   }
 
+  // Same status policy as a new post (spam checks, trust level, pending review). Never publishes directly.
   async publishDraft(id: string, authorId: string) {
-    const post = await this.prisma.post.findFirst({ where: { id, authorId, status: 'DRAFT', deletedAt: null } });
-    if (!post) throw new Error('Draft not found');
-    return this.prisma.post.update({ where: { id }, data: { status: 'PUBLISHED', scheduledAt: null }, select: { id: true, seoSlug: true } });
+    const draft = await this.prisma.post.findFirst({
+      where: { id, authorId, status: 'DRAFT', deletedAt: null },
+      select: { id: true, title: true, body: true },
+    });
+    if (!draft) throw new Error('Draft not found');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const status = (await this.resolvePostStatus({ title: draft.title, body: draft.body }, authorId)) as any;
+    const claimed = await this.prisma.post.updateMany({
+      where: { id, authorId, status: 'DRAFT', deletedAt: null },
+      data: { status, scheduledAt: null },
+    });
+    if (claimed.count === 0) throw new Error('Draft not found');
+    const post = await this.prisma.post.findUnique({ where: { id }, select: { id: true, seoSlug: true, status: true } });
+    if (post?.status === 'PUBLISHED') void this.pingIndexNow(post.seoSlug).catch(() => undefined);
+    return post;
   }
 
   private parseSchedule(value: unknown): Date | null {
