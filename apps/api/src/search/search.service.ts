@@ -28,6 +28,7 @@ export class SearchService {
           FROM "Post" p
           JOIN "PostEmbedding" pe ON pe."postId" = p.id
           WHERE p."deletedAt" IS NULL
+            AND p.status = 'PUBLISHED'
             AND (${options.language}::text IS NULL OR p.language = ${options.language})
           ORDER BY score DESC
           LIMIT ${limit + 1}
@@ -53,6 +54,7 @@ export class SearchService {
       SELECT p.id, p.title, p."seoSlug", p.language, p."createdAt"
       FROM "Post" p
       WHERE p."deletedAt" IS NULL
+        AND p.status = 'PUBLISHED'
         AND (${options.language}::text IS NULL OR p.language::text = ${options.language})
         AND (p.title ILIKE ANY(${patterns}::text[])
           OR p.body ILIKE ANY(${patterns}::text[])
@@ -80,7 +82,7 @@ export class SearchService {
     if (cached) return JSON.parse(cached);
 
     const results = await this.prisma.post.findMany({
-      where: { title: { startsWith: query, mode: 'insensitive' }, deletedAt: null },
+      where: { title: { startsWith: query, mode: 'insensitive' }, deletedAt: null, status: 'PUBLISHED' },
       select: { title: true },
       take: 5,
     });

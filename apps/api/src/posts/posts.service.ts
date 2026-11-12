@@ -166,7 +166,8 @@ export class PostsService {
     return membership?.role === 'MODERATOR';
   }
 
-  async findBySlug(seoSlug: string, countView = true) {
+  // Only published posts are public. A draft, pending or scheduled post is visible to its author only.
+  async findBySlug(seoSlug: string, countView = true, viewerId?: string) {
     const post = await this.prisma.post.findUnique({
       where: { seoSlug },
       select: {
@@ -174,6 +175,7 @@ export class PostsService {
         seoSlug: true,
         title: true,
         body: true,
+        status: true,
         isLocked: true,
         lockReason: true,
         language: true,
@@ -193,7 +195,9 @@ export class PostsService {
       },
     });
 
-    if (!post || post.deletedAt) {
+    const isOwnerPreview = !!post && !!viewerId && post.author.id === viewerId;
+    const hidden = !post || post.deletedAt || (post.status !== 'PUBLISHED' && !isOwnerPreview);
+    if (hidden) {
       // Merged duplicates: point visitors to the question they were merged into.
       const merged = await this.prisma.duplicateCandidate.findFirst({
         where: { status: 'MERGED', sourcePost: { seoSlug } },
@@ -202,8 +206,8 @@ export class PostsService {
       if (merged) return { mergedInto: merged.targetPost };
       throw new NotFoundException('Post not found');
     }
-    // Count the view without slowing the response.
-    if (countView) {
+    // Count the view without slowing the response. Previews by the author do not count.
+    if (countView && post.status === 'PUBLISHED' && !isOwnerPreview) {
       void this.prisma.$transaction([
         this.prisma.post.update({ where: { id: post.id }, data: { viewCount: { increment: 1 } } }),
         this.prisma.postView.create({ data: { postId: post.id } }),
