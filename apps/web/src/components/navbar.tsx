@@ -5,7 +5,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import { NotificationBell } from './notification-bell';
 import { LanguageToggle, useI18n } from '@/lib/i18n';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Menu, X, Moon, Sun, Search, Plus } from 'lucide-react';
 
@@ -42,6 +42,9 @@ export function Navbar() {
   const isStaff = ['ADMIN', 'COMMUNITY_MODERATOR'].includes(session?.user?.role ?? '');
   const [mobileOpen, setMobileOpen] = useState(false);
   const { t } = useI18n();
+
+  // The menu stays mounted across route changes, so close it whenever the page changes.
+  useEffect(() => { setMobileOpen(false); }, [pathname]);
 
   const navItems = [
     { href: '/', label: t('nav.home') },
@@ -174,7 +177,10 @@ export function Navbar() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-[var(--border)] bg-[var(--surface)] p-4 space-y-3">
+        <div
+          className="md:hidden border-t border-[var(--border)] bg-[var(--surface)] p-4 space-y-3"
+          onClick={() => setMobileOpen(false)}
+        >
           {navItems.map((item) => (
             <Link
               key={item.href}
