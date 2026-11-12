@@ -31,7 +31,7 @@ export class SearchService {
             AND p.status = 'PUBLISHED'
             AND (${options.language}::text IS NULL OR p.language = ${options.language})
           ORDER BY score DESC
-          LIMIT ${limit + 1}
+          LIMIT ${limit + 1} OFFSET ${offset}
         `;
 
         const typedResults = results as Array<{ id: string; title: string; seoSlug: string; language: string; createdAt: Date; score: number }>;
@@ -59,7 +59,7 @@ export class SearchService {
         AND (p.title ILIKE ANY(${patterns}::text[])
           OR p.body ILIKE ANY(${patterns}::text[])
           OR similarity(p.title, ${query}) > 0.3)
-      ORDER BY similarity(p.title, ${query}) DESC, p."createdAt" DESC
+      ORDER BY (lower(p.title) = lower(${query})) DESC, similarity(p.title, ${query}) DESC, p."createdAt" DESC
       LIMIT ${limit + 1} OFFSET ${offset}
     `;
 
