@@ -64,9 +64,10 @@ export class PostsController {
 
   @Get(':seoSlug')
   @UseGuards(OptionalJwtGuard)
-  async findBySlug(@Param('seoSlug') seoSlug: string, @Query('view') view?: string) {
+  async findBySlug(@Param('seoSlug') seoSlug: string, @Query('view') view: string | undefined, @Req() req: Request) {
     // view=0: metadata/share-card fetches that must not count as a page view.
-    return this.postsService.findBySlug(seoSlug, view !== '0');
+    const viewerId = (req.user as Record<string, unknown> | undefined)?.id as string | undefined;
+    return this.postsService.findBySlug(seoSlug, view !== '0', viewerId);
   }
 
   @Get('me/history')
