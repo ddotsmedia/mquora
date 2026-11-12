@@ -63,15 +63,16 @@ jobs:
           fi
 
           echo "Running admin initialization..."
-          ssh "${SSH_OPTS[@]}" "$VPS_USER@$VPS_HOST" bash -s "$ADMIN_PASSWORD" << 'EOFSCRIPT'
+          ssh "${SSH_OPTS[@]}" "$VPS_USER@$VPS_HOST" bash -s "$ADMIN_PASSWORD" "$ADMIN_EMAIL" << 'EOFSCRIPT'
             ADMIN_PASSWORD="$1"
+            ADMIN_EMAIL="$2"
             set -e
             cd /opt/askvyo
             # Only askvyo's own one-off containers are touched.
             docker ps -aq --filter 'name=^askvyo-api-run-' | xargs -r docker rm -f
             docker compose -p askvyo -f docker-compose.prod.yml --env-file .env run -T \
-              --rm --no-deps -e ADMIN_PASSWORD="$ADMIN_PASSWORD" api \
-              node apps/api/dist/apps/api/src/init-admin.js
+              --rm --no-deps -e ADMIN_PASSWORD="$ADMIN_PASSWORD" -e ADMIN_EMAIL="$ADMIN_EMAIL" api \
+              node packages/db/prisma/ensure-admin.mjs
           EOFSCRIPT
 
           echo "Verifying admin account..."

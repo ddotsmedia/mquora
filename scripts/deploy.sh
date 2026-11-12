@@ -97,16 +97,8 @@ if ! timeout 120 $COMPOSE run -T --rm --no-deps api sh -c 'pnpm --filter @askvyo
   exit 1
 fi
 
-# Admin password is reset from PROD_ENV (ADMIN_PASSWORD) only; never from a built-in default.
-if [ -n "${ADMIN_PASSWORD:-}" ]; then
-  echo "Ensuring admin user exists..."
-  if ! $COMPOSE run -T --rm --no-deps -e ADMIN_PASSWORD -e ADMIN_EMAIL api sh -c 'node packages/db/prisma/ensure-admin.mjs'; then
-    echo "ERROR: ensure-admin failed — check logs above"
-    exit 1
-  fi
-else
-  echo "WARNING: ADMIN_PASSWORD not set in PROD_ENV; skipping admin reset."
-fi
+# The admin password is not changed by deploys. Set it with the admin-setup workflow.
+# (Deploys used to reset it from PROD_ENV, which overwrote the password on every release.)
 
 # Always ensure the admin account is approved regardless of whether password was reset.
 # This is a no-op if already approved; safe to run on every deploy.
