@@ -22,7 +22,7 @@ fi
 echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin >/dev/null
 
 echo "Cleaning up leftover containers..."
-# Remove any stale containers from the old mquora project (safe no-op if already gone)
+# Remove any stale containers from the old compose project (safe no-op if already gone)
 docker ps -q --filter 'label=com.docker.compose.project=mquora' | xargs -r docker stop >/dev/null 2>&1 || true
 docker ps -aq --filter 'label=com.docker.compose.project=mquora' | xargs -r docker rm -f >/dev/null 2>&1 || true
 # Clean up any stray askvyo containers from interrupted deploys

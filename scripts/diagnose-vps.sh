@@ -56,9 +56,9 @@ netstat -tlnp 2>/dev/null | grep -E ':(3022|3024|5432|6379)' || \
   echo "(netstat/ss not available)"
 echo ""
 
-echo "=== Old mquora containers (should be removed) ==="
+echo "=== Old compose-project containers (should be removed) ==="
 docker ps -a --filter 'label=com.docker.compose.project=mquora' --format "table {{.Names}}\t{{.Status}}" || \
-  echo "(no mquora containers found - good)"
+  echo "(no old compose-project containers found - good)"
 echo ""
 
 echo "=== /opt/askvyo directory ==="

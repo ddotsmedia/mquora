@@ -1,4 +1,4 @@
-# Public HTTPS entry point for mquora. Certificates are issued automatically by Let's Encrypt
+# Public HTTPS entry point for askvyo. Certificates are issued automatically by Let's Encrypt
 # once DNS for PUBLIC_DOMAIN points at this server.
 {$PUBLIC_DOMAIN} {
 	encode zstd gzip
