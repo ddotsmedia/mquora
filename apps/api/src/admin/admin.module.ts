@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
 import { AdminService } from './admin.service';
 import { AdminController } from './admin.controller';
+import { AdminAlertsService } from './admin-alerts.service';
 
 @Module({
   imports: [
@@ -13,7 +14,7 @@ import { AdminController } from './admin.controller';
       { name: 'build-feed' },
     ),
   ],
-  providers: [AdminService],
+  providers: [AdminService, AdminAlertsService],
   controllers: [AdminController],
   exports: [AdminService],
 })

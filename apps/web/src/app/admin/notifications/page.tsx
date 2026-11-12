@@ -3,11 +3,11 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { apiFetch } from '@/lib/api';
-import { Bell, Check, CheckCheck, User, FileQuestion, Terminal } from 'lucide-react';
+import { Bell, Check, CheckCheck, User, FileQuestion, Terminal, AlertTriangle, Flag, Mail } from 'lucide-react';
 
 interface AdminNotif {
   id: string;
-  type: 'USER_REGISTRATION' | 'NEW_QUESTION' | 'COMMAND';
+  type: 'USER_REGISTRATION' | 'NEW_QUESTION' | 'COMMAND' | 'CONTENT_REPORT' | 'ALERT' | 'DIGEST';
   title: string;
   body: string;
   link: string | null;
@@ -21,12 +21,18 @@ const typeIcon = {
   USER_REGISTRATION: User,
   NEW_QUESTION: FileQuestion,
   COMMAND: Terminal,
+  CONTENT_REPORT: Flag,
+  ALERT: AlertTriangle,
+  DIGEST: Mail,
 };
 
 const typeColor = {
   USER_REGISTRATION: 'text-blue-400 bg-blue-500/10',
   NEW_QUESTION: 'text-emerald-400 bg-emerald-500/10',
   COMMAND: 'text-violet-400 bg-violet-500/10',
+  CONTENT_REPORT: 'text-rose-400 bg-rose-500/10',
+  ALERT: 'text-amber-400 bg-amber-500/10',
+  DIGEST: 'text-sky-400 bg-sky-500/10',
 };
 
 export default function AdminNotificationsPage() {

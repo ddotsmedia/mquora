@@ -29,6 +29,8 @@ enum AdminNotifType {
   NEW_QUESTION
   COMMAND
   CONTENT_REPORT
+  ALERT
+  DIGEST
 }
 
 enum VoteType {
