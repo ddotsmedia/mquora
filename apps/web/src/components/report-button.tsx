@@ -106,7 +106,7 @@ export function ReportButton({ targetId, targetType }: { targetId: string; targe
           id={panelId}
           role="dialog"
           aria-label="Report to admin"
-          className="absolute right-0 z-20 mt-1 w-64 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3 text-left shadow-lg"
+          className="absolute right-0 z-20 mt-1 w-64 max-w-[calc(100vw-2rem)] max-h-[70vh] overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3 text-left shadow-lg"
         >
           <p className="mb-2 text-xs font-medium text-[var(--text-secondary)]">Why are you reporting this?</p>
           <div role="radiogroup" aria-label="Reason" className="flex flex-col gap-1">
