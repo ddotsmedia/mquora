@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { DuplicateModule } from './duplicate/duplicate.module';
 import { EmbeddingModule } from './embedding/embedding.module';
 import { QualityModule } from './quality/quality.module';
+import { WatchdogModule } from './watchdog/watchdog.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { QualityModule } from './quality/quality.module';
     DuplicateModule,
     EmbeddingModule,
     QualityModule,
+    WatchdogModule,
   ],
   controllers: [AppController],
   providers: [AppService],
