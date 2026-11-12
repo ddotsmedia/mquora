@@ -21,9 +21,10 @@ async function getProfile(username: string) {
   }
 }
 
-export default async function Image({ params }: { params: { username: string } }) {
-  const profile = await getProfile(params.username);
-  const name = profile?.name || `@${params.username}`;
+export default async function Image({ params }: { params: Promise<{ username: string }> }) {
+  const { username } = await params;
+  const profile = await getProfile(username);
+  const name = profile?.name || `@${username}`;
   const credential = profile?.credential || '';
   const answerCount: number = profile?.stats?.answers ?? 0;
 

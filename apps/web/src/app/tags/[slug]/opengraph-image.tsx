@@ -21,9 +21,10 @@ async function getTag(slug: string) {
   }
 }
 
-export default async function Image({ params }: { params: { slug: string } }) {
-  const tag = await getTag(params.slug);
-  const name = tag?.name || params.slug.replace(/-/g, ' ');
+export default async function Image({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const tag = await getTag(slug);
+  const name = tag?.name || slug.replace(/-/g, ' ');
   const postCount: number = tag?.postCount ?? 0;
 
   const buf = await renderCard({
