@@ -19,7 +19,7 @@ export async function generateMetadata({
       alternates: { canonical: `/c/${community.slug}` },
     };
   } catch {
-    return { title: 'Community members — askvyo' };
+    return { title: 'Community members — askvyo', alternates: { canonical: `/c/` } };
   }
 }
 
