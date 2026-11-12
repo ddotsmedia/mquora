@@ -9,7 +9,7 @@ on:
         type: string
 
 env:
-  ADMIN_EMAIL: admin@admin.com
+  ADMIN_EMAIL: admin@askvyo.com
   ADMIN_USERNAME: admin
   ADMIN_DISPLAY_NAME: Admin
 
