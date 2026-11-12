@@ -10,10 +10,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = siteOrigin();
 
   const staticPages: MetadataRoute.Sitemap = [
-    { url: base, lastModified: new Date(), changeFrequency: 'daily', priority: 1 },
+    // No lastModified on static pages: a fresh timestamp on every build tells crawlers nothing.
+    { url: base, changeFrequency: 'daily', priority: 1 },
     ...['/communities', '/discover', '/leaderboard', '/tags', '/about', '/guidelines', '/privacy', '/terms'].map((p) => ({
       url: `${base}${p}`,
-      lastModified: new Date(),
       changeFrequency: 'weekly' as const,
       priority: 0.8,
     })),
@@ -24,9 +24,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const tagEntries: MetadataRoute.Sitemap = [];
 
   try {
-    // Paginate posts — up to 500 entries
+    // Paginate all published posts. Sitemap protocol allows 50,000 URLs per file.
     let cursor: string | undefined;
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 50; i++) {
       const url = `/api/v1/posts?limit=100${cursor ? `&cursor=${cursor}` : ''}`;
       const res = await serverApiFetch<{ data: Post[]; nextCursor: string | null }>(url);
       res.data.forEach((p) =>
@@ -59,7 +59,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     res.data.forEach((t) =>
       tagEntries.push({
         url: `${base}/t/${t.slug}`,
-        lastModified: t.updatedAt ? new Date(t.updatedAt) : new Date(),
+        lastModified: t.updatedAt ? new Date(t.updatedAt) : undefined,
         changeFrequency: 'daily',
         priority: 0.6,
       }),
