@@ -45,11 +45,17 @@ export default function DraftsPage() {
     if (!session?.user?.accessToken) return;
     setPublishing(id);
     try {
-      const res = await apiFetch<{ id: string; seoSlug: string }>(`/api/v1/posts/${id}/publish`, {
+      const res = await apiFetch<{ id: string; seoSlug: string; status: string }>(`/api/v1/posts/${id}/publish`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${session.user.accessToken}` },
       });
-      router.push(`/q/${res.seoSlug}`);
+      if (res.status === 'PUBLISHED') {
+        router.push(`/q/${res.seoSlug}`);
+      } else {
+        alert('Your question was sent for review. It will be published once approved.');
+        setPublishing(null);
+        router.push('/drafts');
+      }
     } catch {
       alert('Failed to publish');
       setPublishing(null);
