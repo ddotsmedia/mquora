@@ -33,7 +33,7 @@ function SearchPageContent() {
   const query = searchParams.get('q') || '';
   
   const [results, setResults] = useState<Post[]>([]);
-  const [total, setTotal] = useState(0);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState(query);
@@ -43,7 +43,7 @@ function SearchPageContent() {
   const handleSearch = async (q: string, off = 0) => {
     if (!q.trim()) {
       setResults([]);
-      setTotal(0);
+      setNextCursor(null);
       setError(null);
       return;
     }
@@ -55,7 +55,8 @@ function SearchPageContent() {
       const params = new URLSearchParams({ q: expanded, limit: String(limit), cursor: String(off) });
       const data = await apiFetch<SearchResponse>(`/api/v1/search?${params}`);
       setResults(data.data);
-      setTotal(data.data.length + off);
+      setNextCursor(data.nextCursor);
+      setOffset(off);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Search failed');
     } finally {
@@ -66,7 +67,6 @@ function SearchPageContent() {
   useEffect(() => {
     if (query) {
       handleSearch(query, 0);
-      setOffset(0);
     }
   }, [query]);
 
@@ -74,7 +74,7 @@ function SearchPageContent() {
     <div className="mx-auto max-w-4xl space-y-6 px-4 py-8">
       <div>
         <h1 className="font-malayalam mb-4 text-3xl font-bold text-[var(--text)]">തിരയുക</h1>
-        <form onSubmit={(e) => { e.preventDefault(); handleSearch(searchInput, 0); setOffset(0); }} className="space-y-3">
+        <form onSubmit={(e) => { e.preventDefault(); handleSearch(searchInput, 0); }} className="space-y-3">
           <div className="flex gap-2">
             <input
               type="text"
@@ -116,7 +116,7 @@ function SearchPageContent() {
       {results.length > 0 && (
         <div>
           <p className="mb-4 text-sm text-[var(--text-muted)]">
-            Found {total} result{total !== 1 ? 's' : ''} for "{query}"
+            Showing {offset + 1}–{offset + results.length} for "{query}"
           </p>
           <div className="space-y-3 rounded-lg border border-[var(--border)] bg-[var(--surface)]">
             {results.map((post) => (
@@ -135,21 +135,21 @@ function SearchPageContent() {
             ))}
           </div>
 
-          {total > limit && (
+          {(offset > 0 || nextCursor) && (
             <div className="mt-6 flex justify-center gap-2">
               <button
-                onClick={() => { setOffset(Math.max(0, offset - limit)); handleSearch(query, Math.max(0, offset - limit)); }}
-                disabled={offset === 0}
+                onClick={() => handleSearch(query, Math.max(0, offset - limit))}
+                disabled={offset === 0 || loading}
                 className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm hover:bg-[var(--surface-2)] disabled:opacity-50"
               >
                 Previous
               </button>
               <span className="flex items-center px-4 py-2 text-sm text-[var(--text-muted)]">
-                Page {Math.floor(offset / limit) + 1} of {Math.ceil(total / limit)}
+                Page {Math.floor(offset / limit) + 1}
               </span>
               <button
-                onClick={() => { setOffset(offset + limit); handleSearch(query, offset + limit); }}
-                disabled={offset + limit >= total}
+                onClick={() => nextCursor && handleSearch(query, Number(nextCursor))}
+                disabled={!nextCursor || loading}
                 className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm hover:bg-[var(--surface-2)] disabled:opacity-50"
               >
                 Next
