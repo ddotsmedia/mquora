@@ -21,9 +21,10 @@ async function getCommunity(slug: string) {
   }
 }
 
-export default async function Image({ params }: { params: { slug: string } }) {
-  const community = await getCommunity(params.slug);
-  const name = community?.name || params.slug.replace(/-/g, ' ');
+export default async function Image({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const community = await getCommunity(slug);
+  const name = community?.name || slug.replace(/-/g, ' ');
   const memberCount: number = community?.memberCount ?? 0;
 
   const buf = await renderCard({

@@ -21,9 +21,10 @@ async function getPost(seoSlug: string) {
   }
 }
 
-export default async function Image({ params }: { params: { seoSlug: string } }) {
-  const post = await getPost(params.seoSlug);
-  const title = post?.title || decodeURIComponent(params.seoSlug.replace(/-/g, ' '));
+export default async function Image({ params }: { params: Promise<{ seoSlug: string }> }) {
+  const { seoSlug } = await params;
+  const post = await getPost(seoSlug);
+  const title = post?.title || decodeURIComponent(seoSlug.replace(/-/g, ' '));
   const answerCount: number = post?.answerCount ?? 0;
   const community: string = post?.community?.name || '';
 
