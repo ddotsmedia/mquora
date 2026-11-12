@@ -68,7 +68,7 @@ export function VoteButtons({ targetId, targetType, initialScore, accessToken }:
         onClick={() => handleVote('UP')}
         aria-label="Upvote"
         aria-pressed={userVote === 'UP'}
-        className={`p-2 rounded hover:bg-[var(--surface-2)] ${userVote === 'UP' ? 'bg-green-100 dark:bg-green-900' : ''}`}
+        className={`flex min-h-[44px] min-w-[44px] items-center justify-center rounded hover:bg-[var(--surface-2)] ${userVote === 'UP' ? 'bg-green-100 dark:bg-green-900' : ''}`}
       >
         <ThumbsUp size={16} />
       </button>
@@ -77,7 +77,7 @@ export function VoteButtons({ targetId, targetType, initialScore, accessToken }:
         onClick={() => handleVote('DOWN')}
         aria-label="Downvote"
         aria-pressed={userVote === 'DOWN'}
-        className={`p-2 rounded hover:bg-[var(--surface-2)] ${userVote === 'DOWN' ? 'bg-red-100 dark:bg-red-900' : ''}`}
+        className={`flex min-h-[44px] min-w-[44px] items-center justify-center rounded hover:bg-[var(--surface-2)] ${userVote === 'DOWN' ? 'bg-red-100 dark:bg-red-900' : ''}`}
       >
         <ThumbsDown size={16} />
       </button>

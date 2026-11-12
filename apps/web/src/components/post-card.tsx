@@ -54,7 +54,7 @@ export function PostCard(props: PostCardProps) {
           <div className="flex items-center gap-2 mb-2 flex-wrap">
             <LanguageBadge language={props.language} />
             {props.type === 'ARTICLE' && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
                 <FileText className="h-2.5 w-2.5" /> Article
               </span>
             )}

@@ -22,7 +22,7 @@ export default async function QueuesPage() {
           return (
             <Panel key={name} title={labels[name] ?? name}>
               <p className="mb-4 font-mono text-xs text-[var(--text-muted)]">{name}</p>
-              <div className="grid grid-cols-3 gap-3 text-center">
+              <div className="grid grid-cols-1 gap-3 text-center sm:grid-cols-3">
                 {(['waiting', 'active', 'completed', 'delayed', 'failed'] as const).map((k) => (
                   <div key={k} className="rounded-xl bg-[var(--surface-2)] p-3">
                     <p className={`text-xl font-semibold tabular-nums ${k === 'failed' && failed > 0 ? 'text-rose-300' : ''}`}>{(c[k] ?? 0).toLocaleString()}</p>

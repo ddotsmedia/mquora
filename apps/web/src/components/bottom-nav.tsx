@@ -53,7 +53,7 @@ export function BottomNav() {
                   strokeWidth={active || accent ? 2.2 : 1.6}
                   className={accent ? 'drop-shadow-sm' : ''}
                 />
-                <span className={`text-[10px] font-medium leading-none ${accent ? 'text-[var(--accent)]' : ''}`}>
+                <span className={`text-[11px] font-medium leading-none ${accent ? 'text-[var(--accent)]' : ''}`}>
                   {label}
                 </span>
               </Link>

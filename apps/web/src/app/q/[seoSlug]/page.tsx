@@ -204,7 +204,7 @@ export default async function PostPage({ params, searchParams }: { params: Promi
         <div className="mb-4 flex items-center gap-2 flex-wrap">
           <LanguageBadge language={post.language} />
           {post.type === 'ARTICLE' && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
               ✍️ Article
             </span>
           )}
@@ -316,7 +316,7 @@ export default async function PostPage({ params, searchParams }: { params: Promi
                       <p className="text-xs flex items-center gap-1.5">
                         {formatDistanceToNow(new Date(answer.createdAt), { addSuffix: true })}
                         {answer.editedAt && (
-                          <span className="inline-flex items-center gap-0.5 rounded bg-[var(--surface-2)] px-1.5 py-0.5 text-[10px] text-[var(--text-muted)]" title={`Last edited ${new Date(answer.editedAt).toLocaleString()}`}>
+                          <span className="inline-flex items-center gap-0.5 rounded bg-[var(--surface-2)] px-1.5 py-0.5 text-[11px] text-[var(--text-muted)]" title={`Last edited ${new Date(answer.editedAt).toLocaleString()}`}>
                             ✏️ edited
                           </span>
                         )}
