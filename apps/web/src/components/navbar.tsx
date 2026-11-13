@@ -29,6 +29,7 @@ function ThemeToggle() {
   return (
     <button
       onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+      aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
       className="w-10 h-10 rounded-full bg-[var(--surface-2)] hover:bg-[var(--border)] flex items-center justify-center transition-colors"
     >
       {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
@@ -70,7 +71,7 @@ export function Navbar() {
         </Link>
 
         {/* Search bar */}
-        <div className="flex-1 max-w-md hidden sm:block">
+        <div className="flex-1 min-w-0 max-w-md hidden sm:block">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
             <form action="/search" role="search">
@@ -86,7 +87,7 @@ export function Navbar() {
         </div>
 
         {/* Nav links */}
-        <div className="hidden md:flex items-center gap-6">
+        <div className="hidden lg:flex items-center gap-6">
           {navItems.map((item) => (
             <NavLink key={item.href} href={item.href} active={pathname === item.href}>
               {item.label}
@@ -97,12 +98,13 @@ export function Navbar() {
         {/* Actions */}
         <div className="flex items-center gap-2 ml-auto">
           <NotificationBell />
-          <LanguageToggle className="hidden md:flex" />
+          <LanguageToggle className="hidden lg:flex" />
           <ThemeToggle />
           <Link
             href="/create/article"
             className="hidden sm:flex items-center gap-1.5 px-3 py-2 border border-[var(--border)] text-[var(--text-secondary)] hover:text-amber-600 hover:border-amber-500 text-sm rounded-full transition-all"
             title={t('nav.write')}
+            aria-label={t('nav.write')}
           >
             ✍️
           </Link>
@@ -115,7 +117,7 @@ export function Navbar() {
           </Link>
 
           {session ? (
-            <div className="hidden sm:flex items-center gap-3">
+            <div className="hidden lg:flex items-center gap-3">
               {isStaff && (
                 <Link href="/admin/dashboard" className="text-sm font-medium text-[var(--primary)] hover:underline">
                   {t('nav.admin')}
@@ -144,7 +146,7 @@ export function Navbar() {
               </button>
             </div>
           ) : (
-            <div className="hidden sm:flex items-center gap-2">
+            <div className="hidden lg:flex items-center gap-2">
               <Link
                 href="/login"
                 className="px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text)] transition-colors"
@@ -168,7 +170,9 @@ export function Navbar() {
           {/* Mobile menu */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden p-2.5 rounded-full hover:bg-[var(--surface-2)] transition-colors"
+            aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={mobileOpen}
+            className="lg:hidden p-2.5 rounded-full hover:bg-[var(--surface-2)] transition-colors"
           >
             {mobileOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
@@ -178,7 +182,7 @@ export function Navbar() {
       {/* Mobile menu */}
       {mobileOpen && (
         <div
-          className="md:hidden border-t border-[var(--border)] bg-[var(--surface)] p-4 space-y-3"
+          className="lg:hidden border-t border-[var(--border)] bg-[var(--surface)] p-4 space-y-3"
           onClick={() => setMobileOpen(false)}
         >
           {navItems.map((item) => (
