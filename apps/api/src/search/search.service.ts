@@ -16,6 +16,7 @@ export class SearchService {
   ) {
     const limit = options.limit || 10;
     const offset = options.cursor ? parseInt(options.cursor, 10) : 0;
+    const language = options.language ?? null; // bind null, not undefined, for the optional filter
 
     const embedding = await this.embedding.embed(query);
     const isZeroVector = embedding.every((v: number) => v === 0);
@@ -29,7 +30,7 @@ export class SearchService {
           JOIN "PostEmbedding" pe ON pe."postId" = p.id
           WHERE p."deletedAt" IS NULL
             AND p.status = 'PUBLISHED'
-            AND (${options.language}::text IS NULL OR p.language = ${options.language})
+            AND (${language}::text IS NULL OR p.language::text = ${language})
           ORDER BY score DESC
           LIMIT ${limit + 1} OFFSET ${offset}
         `;
@@ -49,13 +50,13 @@ export class SearchService {
     // Substring match on the query and its Malayalam-script forms, OR typo-tolerant title similarity (pg_trgm).
     const patterns = expandQuery(query).map((q) => `%${q}%`);
     const posts = await this.prisma.$queryRaw<
-      Array<{ id: string; title: string; seoSlug: string; language: string; createdAt: Date }>
+      Array<{ id: string; title: string; seoSlug: string; language: string; createdAt: Date; answerCount: number }>
     >`
-      SELECT p.id, p.title, p."seoSlug", p.language, p."createdAt"
+      SELECT p.id, p.title, p."seoSlug", p.language, p."createdAt", p."answerCount"
       FROM "Post" p
       WHERE p."deletedAt" IS NULL
         AND p.status = 'PUBLISHED'
-        AND (${options.language}::text IS NULL OR p.language::text = ${options.language})
+        AND (${language}::text IS NULL OR p.language::text = ${language})
         AND (p.title ILIKE ANY(${patterns}::text[])
           OR p.body ILIKE ANY(${patterns}::text[])
           OR similarity(p.title, ${query}) > 0.3)
