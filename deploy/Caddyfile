@@ -3,6 +3,10 @@
 {$PUBLIC_DOMAIN} {
 	encode zstd gzip
 	# The NestJS API lives under /api/v1; everything else (pages, /api/auth, /api/register) is Next.js.
+	# Internal-only: the web server calls this over the Docker network (API_INTERNAL_URL), never from a browser.
+	handle /api/v1/auth/oauth-signin {
+		respond 404
+	}
 	handle /api/v1/* {
 		reverse_proxy api:3100
 	}
