@@ -235,11 +235,10 @@ export class PostsService {
     // clean post cannot be changed after approval to add spam or links.
     const contentChanged = dto.title !== undefined || dto.body !== undefined;
     if (contentChanged && post.status === 'PUBLISHED') {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      updateData.status = (await this.resolvePostStatus(
+      updateData.status = await this.resolvePostStatus(
         { title: dto.title ?? post.title, body: dto.body ?? post.body },
         authorId,
-      )) as any;
+      );
     }
 
     return this.prisma.post.update({
