@@ -55,7 +55,7 @@ packages/
 - **@askvyo/config**: Env parsing only
 - **@askvyo/ui**: React components only, no backend
 - **@askvyo/ai**: AI logic, no database access
-- **@askvyo/security**: Auth/crypto, no dependencies
+- (removed) `@askvyo/security`: unused helpers deleted in the Nov 2026 security audit
 
 ## TypeScript
 

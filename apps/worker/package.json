@@ -13,7 +13,6 @@
     "@askvyo/ai": "workspace:*",
     "@askvyo/config": "workspace:*",
     "@askvyo/db": "workspace:*",
-    "@askvyo/security": "workspace:*",
     "@askvyo/types": "workspace:*",
     "@nestjs/bull": "^12.0.0",
     "@nestjs/common": "^12.1.2",

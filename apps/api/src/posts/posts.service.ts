@@ -1,7 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { LanguageService } from '../shared/language.service';
 import { transliterate } from '../lib/transliterate';
 import slug from 'slug';
@@ -219,7 +219,7 @@ export class PostsService {
   async update(id: string, dto: Record<string, unknown>, authorId: string) {
     const post = await this.prisma.post.findUnique({
       where: { id },
-      select: { authorId: true },
+      select: { authorId: true, status: true, title: true, body: true },
     });
 
     if (!post || post.authorId !== authorId) throw new Error('Not authorized');
@@ -230,6 +230,16 @@ export class PostsService {
       Object.assign(updateData, contentProcessed);
     }
     if (dto.type) updateData.type = dto.type;
+
+    // An edit to a live post goes through the same policy as a new post, so a
+    // clean post cannot be changed after approval to add spam or links.
+    const contentChanged = dto.title !== undefined || dto.body !== undefined;
+    if (contentChanged && post.status === 'PUBLISHED') {
+      updateData.status = await this.resolvePostStatus(
+        { title: dto.title ?? post.title, body: dto.body ?? post.body },
+        authorId,
+      );
+    }
 
     return this.prisma.post.update({
       where: { id },
@@ -365,57 +375,44 @@ export class PostsService {
   async search(query: string, limit = 20, offset = 0, communityId?: string) {
     if (!query?.trim()) return { posts: [], total: 0 };
 
-    // Apply Manglish → Malayalam transliteration
-    const transliteratedQuery = transliterate(query.trim());
-    const searchQuery = `${query.trim()} ${transliteratedQuery}`;
+    // Trigram search with typo tolerance. Every value is bound as a parameter (Prisma.sql), and the
+    // column names are quoted to match the camelCase columns Prisma creates.
+    const term = query.trim();
+    const searchQuery = `${term} ${transliterate(term)}`;
+    const likeQuery = `%${term}%`;
+    const communityFilter = communityId ? Prisma.sql`AND p."communityId" = ${communityId}` : Prisma.empty;
+    const matchFilter = Prisma.sql`(
+      p.title % ${searchQuery} OR p.title ILIKE ${likeQuery}
+      OR p.body % ${searchQuery} OR p.body ILIKE ${likeQuery}
+      OR a.body % ${searchQuery} OR a.body ILIKE ${likeQuery}
+    )`;
 
-    // Use raw SQL for trigram-based full-text search with typo tolerance
-    const whereClause = [
-      'p.status = \'PUBLISHED\'',
-      'p.deletedAt IS NULL',
-      `(p.title % $1 OR p.title ILIKE $2 OR p.body % $1 OR p.body ILIKE $2 OR a.body % $1 OR a.body ILIKE $2)`,
-      ...(communityId ? ['p.communityId = $3'] : [])
-    ].join(' AND ');
-
-    const offset_idx = communityId ? 4 : 3;
-    const limit_idx = communityId ? 5 : 4;
-
-    const countQuery = `
-      SELECT COUNT(DISTINCT p.id) as total FROM "Post" p
-      LEFT JOIN "Answer" a ON p.id = a.postId AND a.status = 'PUBLISHED' AND a.deletedAt IS NULL
-      WHERE ${whereClause}
+    const countQuery = Prisma.sql`
+      SELECT COUNT(DISTINCT p.id) AS total FROM "Post" p
+      LEFT JOIN "Answer" a ON p.id = a."postId" AND a.status = 'PUBLISHED' AND a."deletedAt" IS NULL
+      WHERE p.status = 'PUBLISHED' AND p."deletedAt" IS NULL AND ${matchFilter} ${communityFilter}
     `;
 
-    const dataQuery = `
-      SELECT DISTINCT
-        p.id, p.title, p.body, p.seoSlug, p.viewCount,
-        (p.title % $1)::float +
-        (p.body % $1)::float +
-        (COALESCE(MAX(a.body % $1), 0))::float as relevance
+    const dataQuery = Prisma.sql`
+      SELECT p.id, p.title, p.body, p."seoSlug", p."viewCount",
+        (similarity(p.title, ${searchQuery}) + similarity(p.body, ${searchQuery})
+          + COALESCE(MAX(similarity(a.body, ${searchQuery})), 0))::float AS relevance
       FROM "Post" p
-      LEFT JOIN "Answer" a ON p.id = a.postId AND a.status = 'PUBLISHED' AND a.deletedAt IS NULL
-      WHERE ${whereClause}
-      GROUP BY p.id, p.title, p.body, p.seoSlug, p.viewCount
-      ORDER BY relevance DESC, p.viewCount DESC
-      LIMIT $${limit_idx} OFFSET $${offset_idx}
+      LEFT JOIN "Answer" a ON p.id = a."postId" AND a.status = 'PUBLISHED' AND a."deletedAt" IS NULL
+      WHERE p.status = 'PUBLISHED' AND p."deletedAt" IS NULL AND ${matchFilter} ${communityFilter}
+      GROUP BY p.id, p.title, p.body, p."seoSlug", p."viewCount"
+      ORDER BY relevance DESC, p."viewCount" DESC
+      LIMIT ${limit} OFFSET ${offset}
     `;
-
-    const params = [
-      searchQuery,
-      `%${query.trim()}%`,
-      ...(communityId ? [communityId] : []),
-      limit,
-      offset
-    ];
 
     const [countResult, posts] = await Promise.all([
-      this.prisma.$queryRawUnsafe(countQuery, ...params.slice(0, communityId ? 3 : 2)),
-      this.prisma.$queryRawUnsafe(dataQuery, ...params) as Promise<Array<{
+      this.prisma.$queryRaw<Array<{ total: bigint | number }>>(countQuery),
+      this.prisma.$queryRaw<Array<{
         id: string; title: string; body: string; seoSlug: string; viewCount: number; relevance: number;
-      }>>
+      }>>(dataQuery),
     ]);
 
-    const total = (countResult as Array<{ total: number }>)[0]?.total || 0;
+    const total = Number(countResult[0]?.total ?? 0);
 
     // Fetch full post data with community
     const postIds = posts.map((p) => p.id);
@@ -694,7 +691,7 @@ export class PostsService {
     ];
 
     for (const endpoint of endpoints) {
-      await fetch(`${endpoint}?url=${encodeURIComponent(url)}&key=${key}`, {
+      await fetch(`${endpoint}?url=${encodeURIComponent(url)}&key=${encodeURIComponent(key)}`, {
         method: 'GET',
         headers: { host },
       }).catch(() => undefined);

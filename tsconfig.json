@@ -37,8 +37,7 @@
       "@types/*": ["./packages/types/*"],
       "@config/*": ["./packages/config/*"],
       "@ui/*": ["./packages/ui/*"],
-      "@ai/*": ["./packages/ai/*"],
-      "@security/*": ["./packages/security/*"]
+      "@ai/*": ["./packages/ai/*"]
     }
   },
   "include": ["apps", "packages"],
