@@ -219,7 +219,7 @@ export class PostsService {
   async update(id: string, dto: Record<string, unknown>, authorId: string) {
     const post = await this.prisma.post.findUnique({
       where: { id },
-      select: { authorId: true },
+      select: { authorId: true, status: true, title: true, body: true },
     });
 
     if (!post || post.authorId !== authorId) throw new Error('Not authorized');
@@ -230,6 +230,17 @@ export class PostsService {
       Object.assign(updateData, contentProcessed);
     }
     if (dto.type) updateData.type = dto.type;
+
+    // An edit to a live post goes through the same policy as a new post, so a
+    // clean post cannot be changed after approval to add spam or links.
+    const contentChanged = dto.title !== undefined || dto.body !== undefined;
+    if (contentChanged && post.status === 'PUBLISHED') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      updateData.status = (await this.resolvePostStatus(
+        { title: dto.title ?? post.title, body: dto.body ?? post.body },
+        authorId,
+      )) as any;
+    }
 
     return this.prisma.post.update({
       where: { id },
