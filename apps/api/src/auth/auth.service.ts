@@ -278,7 +278,7 @@ export class AuthService {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let user = await (this.prisma as any).user.findUnique({
       where: { email: dto.email },
-    }) as { id: string; email: string; username: string; displayName: string; role: string; deletedAt: Date | null; bannedAt: Date | null; bannedUntil: Date | null; isApproved: boolean } | null;
+    }) as { id: string; email: string; username: string; displayName: string; role: string; deletedAt: Date | null; bannedAt: Date | null; bannedUntil: Date | null; isApproved: boolean } & { passwordHash?: string | null } | null;
 
     if (!user) {
       // First Google sign-in — create account (auto-approved, no admin notification needed)
@@ -297,6 +297,18 @@ export class AuthService {
         select: { id: true, email: true, username: true, displayName: true, role: true, deletedAt: true, bannedAt: true, bannedUntil: true, isApproved: true },
       }) as typeof user;
     } else {
+      // An account created with a password has no proof the signer owns the email. Linking a social
+      // login to it would let whoever registered that email (and knows the password) share the account
+      // with the real owner, so only a provider already linked to the account may sign in.
+      if (user.passwordHash) {
+        const linked = await this.prisma.identity.findFirst({
+          where: { userId: user.id, provider: dto.provider },
+          select: { id: true },
+        });
+        if (!linked) {
+          throw new ForbiddenException('An account already exists for this email. Sign in with your password instead.');
+        }
+      }
       if (user.deletedAt) throw new UnauthorizedException('Account deleted');
       if (isBanned(user)) {
         const until = user.bannedUntil ? ` until ${user.bannedUntil.toISOString().slice(0, 10)}` : ' permanently';
@@ -307,6 +319,14 @@ export class AuthService {
         throw new ForbiddenException('Your account is pending admin approval. You will be notified once approved.');
       }
     }
+
+    // Record the provider link so later sign-ins with this provider keep working, even after a password is set.
+    const providerUserId = `${dto.provider}:${dto.email}`;
+    await this.prisma.identity.upsert({
+      where: { providerUserId },
+      create: { userId: user!.id, provider: dto.provider, providerUserId },
+      update: {},
+    });
 
     const tokens = await this.generateTokens(user!.id);
     return {
