@@ -33,6 +33,7 @@ Environment `production` is referenced by the deploy job; create it to add requi
 ## Rollback
 Re-run the deploy job of an earlier successful commit (Actions → Re-run) or set `IMAGE_TAG` to that commit's SHA in `PROD_ENV` and run the workflow.
 
-## Not yet done
-- Public domain routing for `/api/v1` and the web UI to ports 3022/3024 (reverse proxy on the VPS; `nginx.conf` in the repo is not used by compose).
-- `nginx.conf` is kept for reference only.
+## Edge routing
+- Caddy (`deploy/Caddyfile`, in compose) terminates TLS and routes `/api/v1/*` to the API and everything else to the web app.
+- `/api/v1/auth/oauth-signin` is blocked at the edge: the web server calls it over the Docker network only.
+- `nginx.conf` in the repo is not used by compose and can be deleted.
