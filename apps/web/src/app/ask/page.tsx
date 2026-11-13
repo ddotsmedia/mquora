@@ -73,7 +73,7 @@ function AskPageInner() {
     }
     const timer = setTimeout(async () => {
       try {
-        const res = await apiFetch<{data: Array<{id:string;seoSlug:string;title:string;answerCount:number}>}>('/api/v1/posts/search?q=' + encodeURIComponent(title) + '&limit=5');
+        const res = await apiFetch<{data: Array<{id:string;seoSlug:string;title:string;answerCount:number}>}>('/api/v1/search?q=' + encodeURIComponent(title) + '&limit=5');
         setSimilarQuestions(res.data || []);
       } catch {
         // silently ignore
