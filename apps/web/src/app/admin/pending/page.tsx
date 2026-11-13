@@ -31,12 +31,18 @@ export default function PendingPage() {
   const [postTotal, setPostTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const { data: session } = useSession();
   const token = session?.user?.accessToken;
 
   const load = useCallback(async () => {
-    if (!token) return;
+    if (!token) {
+      setError('Your admin session has no access token. Sign out and sign in again.');
+      setLoading(false);
+      return;
+    }
     setLoading(true);
+    setError(null);
     try {
       const data = await apiFetch<{ users: PendingUser[]; posts: PendingPost[]; userTotal: number; postTotal: number }>(
         '/api/v1/admin/pending',
@@ -46,8 +52,8 @@ export default function PendingPage() {
       setPosts(data.posts ?? []);
       setUserTotal(data.userTotal ?? 0);
       setPostTotal(data.postTotal ?? 0);
-    } catch {
-      // ignore
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not load pending items.');
     } finally {
       setLoading(false);
     }
@@ -58,17 +64,29 @@ export default function PendingPage() {
   const userAction = async (id: string, action: 'approve' | 'reject') => {
     if (!window.confirm(action === 'approve' ? 'Approve this user?' : 'Reject and delete this user?')) return;
     setBusy(id);
-    await apiFetch(`/api/v1/admin/users/${id}/${action}`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } }).catch(() => undefined);
-    setBusy(null);
+    setError(null);
+    try {
+      await apiFetch(`/api/v1/admin/users/${id}/${action}`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+    } catch (e) {
+      setError(`Could not ${action} user: ${e instanceof Error ? e.message : 'unknown error'}`);
+    } finally {
+      setBusy(null);
+    }
     load();
   };
 
   const postAction = async (id: string, action: 'approve' | 'remove') => {
     if (!window.confirm(action === 'approve' ? 'Approve and publish this post?' : 'Remove this post?')) return;
     setBusy(id);
+    setError(null);
     const path = action === 'approve' ? `/api/v1/admin/content/${id}/approve` : `/api/v1/admin/content/${id}/remove`;
-    await apiFetch(path, { method: 'POST', headers: { Authorization: `Bearer ${token}` } }).catch(() => undefined);
-    setBusy(null);
+    try {
+      await apiFetch(path, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+    } catch (e) {
+      setError(`Could not ${action} post: ${e instanceof Error ? e.message : 'unknown error'}`);
+    } finally {
+      setBusy(null);
+    }
     load();
   };
 
@@ -88,6 +106,12 @@ export default function PendingPage() {
           New registrations and submitted questions/articles awaiting review.
         </p>
       </div>
+
+      {error && (
+        <div role="alert" className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
+          {error}
+        </div>
+      )}
 
       {/* Pending Users */}
       <section>

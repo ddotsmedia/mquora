@@ -73,7 +73,7 @@ export class PostsService {
           type: 'NEW_QUESTION',
           title: 'New question pending review',
           body: `"${post.title}" is awaiting approval`,
-          link: `/admin/content?id=${post.id}`,
+          link: '/admin/pending',
           relatedPostId: post.id,
         },
       }).catch(() => undefined);
@@ -627,7 +627,7 @@ export class PostsService {
             type: 'NEW_QUESTION',
             title: 'New question pending review',
             body: `"${post.title}" is awaiting approval`,
-            link: `/admin/content?id=${post.id}`,
+            link: '/admin/pending',
             relatedPostId: post.id,
           },
         }).catch(() => undefined);

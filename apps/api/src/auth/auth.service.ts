@@ -58,7 +58,7 @@ export class AuthService {
         type: 'USER_REGISTRATION',
         title: 'New user registration',
         body: `${dto.displayName} (@${dto.username}) registered and is awaiting approval`,
-        link: `/admin/users/${user.id}`,
+        link: '/admin/pending',
         relatedUserId: user.id,
       },
     });
