@@ -705,7 +705,7 @@ export class PostsService {
     ];
 
     for (const endpoint of endpoints) {
-      await fetch(`${endpoint}?url=${encodeURIComponent(url)}&key=${key}`, {
+      await fetch(`${endpoint}?url=${encodeURIComponent(url)}&key=${encodeURIComponent(key)}`, {
         method: 'GET',
         headers: { host },
       }).catch(() => undefined);
