@@ -60,9 +60,6 @@ importers:
       '@askvyo/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@askvyo/security':
-        specifier: workspace:*
-        version: link:../../packages/security
       '@askvyo/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -381,9 +378,6 @@ importers:
       '@askvyo/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@askvyo/security':
-        specifier: workspace:*
-        version: link:../../packages/security
       '@askvyo/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -481,28 +475,6 @@ importers:
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@26.6.4)(typescript@6.0.3)
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-
-  packages/security:
-    dependencies:
-      bcrypt:
-        specifier: ^6.0.0
-        version: 6.0.0
-      jsonwebtoken:
-        specifier: ^9.0.3
-        version: 9.0.3
-    devDependencies:
-      '@types/bcrypt':
-        specifier: ^6.0.0
-        version: 6.0.0
-      '@types/jsonwebtoken':
-        specifier: ^9.0.10
-        version: 9.0.10
-      '@types/node':
-        specifier: ^26.6.4
-        version: 26.6.4
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
