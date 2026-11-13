@@ -2,11 +2,6 @@ name: Admin Setup
 
 on:
   workflow_dispatch:
-    inputs:
-      admin_password:
-        description: 'Admin password (uses secret if empty)'
-        required: false
-        type: string
 
 env:
   ADMIN_EMAIL: admin@askvyo.com
@@ -51,29 +46,31 @@ jobs:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PORT: ${{ secrets.VPS_PORT || 22 }}
-          ADMIN_PASSWORD: ${{ inputs.admin_password || secrets.ADMIN_PASSWORD }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
         run: |
           set -euo pipefail
           SSH_OPTS=(-i ~/.ssh/deploy_key -p "$VPS_PORT" -o StrictHostKeyChecking=accept-new)
 
           if [ -z "$ADMIN_PASSWORD" ]; then
-            echo "ERROR: No admin password provided"
-            echo "Set ADMIN_PASSWORD secret or provide password as input"
+            echo "ERROR: ADMIN_PASSWORD secret is not set"
             exit 1
           fi
 
           echo "Running admin initialization..."
-          ssh "${SSH_OPTS[@]}" "$VPS_USER@$VPS_HOST" bash -s "$ADMIN_PASSWORD" "$ADMIN_EMAIL" << 'EOFSCRIPT'
-            ADMIN_PASSWORD="$1"
-            ADMIN_EMAIL="$2"
-            set -e
-            cd /opt/askvyo
-            # Only askvyo's own one-off containers are touched.
-            docker ps -aq --filter 'name=^askvyo-api-run-' | xargs -r docker rm -f
-            docker compose -p askvyo -f docker-compose.prod.yml --env-file .env run -T \
-              --rm --no-deps -e ADMIN_PASSWORD="$ADMIN_PASSWORD" -e ADMIN_EMAIL="$ADMIN_EMAIL" api \
-              node packages/db/prisma/ensure-admin.mjs
+          # The password is sent over stdin, never as a command argument, so it does not
+          # appear in the VPS process list. The remote side passes it to docker by name only.
+          {
+            printf '%s\n' "$ADMIN_PASSWORD"
+            cat <<'EOFSCRIPT'
+          set -e
+          cd /opt/askvyo
+          docker ps -aq --filter 'name=^askvyo-api-run-' | xargs -r docker rm -f
+          docker compose -p askvyo -f docker-compose.prod.yml --env-file .env run -T \
+            --rm --no-deps -e ADMIN_PASSWORD -e ADMIN_EMAIL api \
+            node packages/db/prisma/ensure-admin.mjs
           EOFSCRIPT
+          } | ssh "${SSH_OPTS[@]}" "$VPS_USER@$VPS_HOST" \
+            "IFS= read -r ADMIN_PASSWORD && export ADMIN_PASSWORD ADMIN_EMAIL='$ADMIN_EMAIL' && bash -s"
 
           echo "Verifying admin account..."
           curl -fsS --max-time 10 "http://$VPS_HOST:3024/health" || {
