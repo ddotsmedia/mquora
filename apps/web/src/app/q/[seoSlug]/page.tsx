@@ -197,7 +197,10 @@ export default async function PostPage({ params, searchParams }: { params: Promi
 
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-0">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
+      {/* QAPage rich results need at least one answer; unanswered questions get only the breadcrumbs. */}
+      {answers.length > 0 && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
+      )}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd).replace(/</g, '\\u003c') }} />
       <VisitTracker postId={post.id} />
       <article className="p-4 sm:p-6">

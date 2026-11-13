@@ -17,9 +17,10 @@ export async function generateMetadata({
       title: `Members of ${community.name} — askvyo`,
       description: `Members and moderators of the ${community.name} community on askvyo.`,
       alternates: { canonical: `/c/${community.slug}` },
+      robots: { index: false, follow: true },
     };
   } catch {
-    return { title: 'Community members — askvyo', alternates: { canonical: `/c/${slug}` } };
+    return { title: 'Community members — askvyo', alternates: { canonical: `/c/${slug}` }, robots: { index: false, follow: true } };
   }
 }
 
