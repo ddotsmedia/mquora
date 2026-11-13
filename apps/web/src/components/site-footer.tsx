@@ -31,9 +31,14 @@ export function SiteFooter({ className }: { className?: string }) {
         <div className="h-[3px] bg-gradient-to-r from-red-500 via-yellow-400 via-green-500 via-blue-500 via-indigo-500 to-pink-500" />
         <div className="bg-[#0f172a] py-3 text-center text-xs text-slate-500">
           Built and managed by{' '}
-          <span className="bg-gradient-to-r from-sky-400 via-violet-400 to-pink-400 bg-clip-text font-semibold text-transparent">
+          <a
+            href="https://ddotsmedia.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-gradient-to-r from-sky-400 via-violet-400 to-pink-400 bg-clip-text font-semibold text-transparent hover:underline"
+          >
             Ddotsmedia Technologies LLC
-          </span>
+          </a>
         </div>
       </div>
     </footer>
